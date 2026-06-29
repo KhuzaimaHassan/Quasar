@@ -1,67 +1,36 @@
-# Quasar
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-> An AI-powered developer workspace — chat, RAG, agents, and tool access in one place.
+## Getting Started
 
-Quasar is a production-grade AI SaaS built to demonstrate modern AI engineering: streaming LLM responses, retrieval-augmented generation over uploaded documents, persistent user memory, MCP-based tool integrations (GitHub, filesystem, Figma), and a LangGraph multi-agent orchestration layer — all in a clean Next.js interface.
+First, run the development server:
 
----
+```bash
+npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
+```
 
-## Product Vision
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-Software engineers lose hours context-switching between their editor, documentation, AI chat, and version control. Quasar collapses that into a single workspace: you bring your codebase, your documents, and your tools — Quasar brings the AI that understands all of them together.
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-**This is a portfolio/learning project** built to demonstrate:
-- Modern full-stack development (Next.js 14, TypeScript, Prisma)
-- Production AI integration (streaming, RAG, multi-agent)
-- Real deployment practices (Docker, GitHub Actions, Vercel)
-- Observability and evaluation (LangSmith, OpenTelemetry)
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
----
+## Learn More
 
-## Milestones
+To learn more about Next.js, take a look at the following resources:
 
-| Milestone | Focus | Est. Duration |
-|-----------|-------|---------------|
-| M1 | Foundation — auth, DB, basic UI | 2 weeks |
-| M2 | Chat — streaming, markdown, history | 2 weeks |
-| M3 | RAG — document ingestion and retrieval | 3 weeks |
-| M4 | Memory — short-term and long-term | 2 weeks |
-| M5 | Agents — MCP + LangGraph orchestration | 3 weeks |
-| M6 | Production — evals, monitoring, CI/CD | 2 weeks |
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
----
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-## Tech Stack (Quick Reference)
+## Deploy on Vercel
 
-- **Frontend**: Next.js 14, TypeScript, Tailwind CSS, shadcn/ui
-- **Backend**: Next.js API Routes (M1–M2), FastAPI (M3+)
-- **Database**: PostgreSQL + Prisma, pgvector (embeddings), Redis (memory)
-- **AI**: Claude (Anthropic), GPT-4 (OpenAI), Vercel AI SDK, LangGraph
-- **Storage**: Supabase Storage
-- **Monitoring**: LangSmith, OpenTelemetry
-- **Deployment**: Vercel (frontend), Docker + GitHub Actions (backend)
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
----
-
-## Documentation
-
-| File | Contents |
-|------|----------|
-| [Architecture.md](docs/Architecture.md) | System design, component relationships, data flow |
-| [Database.md](docs/Database.md) | Schema, tables, relationships, migration notes |
-| [AI-Pipeline.md](docs/AI-Pipeline.md) | LLM integration, streaming, prompt design |
-| [RAG.md](docs/RAG.md) | Document ingestion, chunking, embeddings, retrieval |
-| [Memory.md](docs/Memory.md) | Short-term buffer, long-term store, preference capture |
-| [Agents.md](docs/Agents.md) | LangGraph FSM, agent nodes, MCP tool integrations |
-| [API.md](docs/API.md) | All API routes, request/response shapes |
-| [Deployment.md](docs/Deployment.md) | Docker, Vercel, GitHub Actions CI/CD |
-| [Roadmap.md](docs/Roadmap.md) | Feature backlog, v2 ideas |
-| [Decisions.md](docs/Decisions.md) | Architecture Decision Records (ADRs) |
-| [Lessons-Learned.md](docs/Lessons-Learned.md) | Notes as the project progresses |
-| [GitHub-Setup.md](docs/GitHub-Setup.md) | Repo setup, labels, milestones, all 38 issues |
-
----
-
-## Project Status
-
-🟡 **In planning** — documentation and schema finalized, development not yet started.
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
