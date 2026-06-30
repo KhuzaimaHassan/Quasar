@@ -4,8 +4,8 @@ import { useState } from "react";
 import { Search, Bell, Menu, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Sidebar } from "./Sidebar";
+import { UserButton } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
 
 export function Header() {
@@ -60,14 +60,14 @@ export function Header() {
             </Button>
           </div>
           
-          <button 
-            className="flex items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ml-1"
-            aria-label="User profile menu"
-          >
-            <Avatar className="h-8 w-8 border bg-background hover:opacity-80 transition-opacity">
-              <AvatarFallback className="text-xs font-semibold bg-primary/10 text-primary">JD</AvatarFallback>
-            </Avatar>
-          </button>
+          <UserButton 
+            afterSignOutUrl="/sign-in"
+            appearance={{
+              elements: {
+                userButtonAvatarBox: "h-8 w-8 border border-border hover:opacity-80 transition-opacity"
+              }
+            }}
+          />
         </div>
       </header>
 
