@@ -4,7 +4,7 @@
 
 | Milestone | Status | Target |
 |-----------|--------|--------|
-| M1 — Foundation (auth, DB, UI) | 🔲 Not started | Week 2 |
+| M1 — Foundation (auth, DB, UI) | 🔄 In progress | Week 2 |
 | M2 — Chat (streaming, history) | 🔲 Not started | Week 4 |
 | M3 — RAG (ingestion, retrieval) | 🔲 Not started | Week 7 |
 | M4 — Memory (short + long-term) | 🔲 Not started | Week 9 |
