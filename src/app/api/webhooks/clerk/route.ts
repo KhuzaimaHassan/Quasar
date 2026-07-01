@@ -1,6 +1,8 @@
 import { Webhook } from 'svix'
 import { headers } from 'next/headers'
 import { WebhookEvent } from '@clerk/nextjs/server'
+import { db } from '@/lib/db'
+import { Prisma } from '@prisma/client'
 
 export async function POST(req: Request) {
   // You can find this in the Clerk Dashboard -> Webhooks -> choose the webhook
@@ -54,16 +56,26 @@ export async function POST(req: Request) {
     
     console.log(`Webhook received: user.created for ID ${id}. Email: ${email_addresses?.[0]?.email_address}. Name: ${first_name} ${last_name}. Image: ${image_url}`)
     
-    // TODO: Phase 2 - Prisma Integration
-    // await prisma.user.create({
-    //   data: {
-    //     id,
-    //     email: email_addresses[0]?.email_address,
-    //     firstName: first_name,
-    //     lastName: last_name,
-    //     imageUrl: image_url,
-    //   }
-    // })
+    try {
+      const email = email_addresses?.[0]?.email_address || ''
+      const displayName = [first_name, last_name].filter(Boolean).join(' ') || null
+
+      await db.user.create({
+        data: {
+          clerkId: id,
+          email: email,
+          displayName: displayName,
+        },
+      })
+      console.log(`Successfully saved user ${id} to database`)
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        console.log(`User ${id} already exists in the database (P2002). Treating as success.`)
+      } else {
+        console.error('Error saving user to database:', error)
+        return new Response('Error saving user', { status: 500 })
+      }
+    }
   }
 
   return new Response('Webhook processed successfully', { status: 200 })
