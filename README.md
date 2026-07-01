@@ -28,9 +28,9 @@ It exists to bridge the gap between traditional development environments and nex
 - **Route Protection:** Next.js middleware securing internal workspace routes.
 - **Dynamic Profile Integration:** Custom User Menu synced with Clerk.
 - **Auth Webhooks:** API route with `svix` verification for handling user creation events.
+- **Database Foundation:** Integrating PostgreSQL via Prisma.
 
 ### 🚧 In Progress
-- **Database Foundation:** Integrating PostgreSQL via Prisma.
 - **Workspace Data Model:** Building the core schema for users, documents, and chat history.
 
 ### 🔮 Planned
@@ -57,7 +57,7 @@ It exists to bridge the gap between traditional development environments and nex
 - Clerk Authentication
 - Svix (Webhook Verification)
 
-*(Note: Database and AI components are planned for upcoming milestones and will be added to the stack as they are implemented.)*
+*(Note: AI components are planned for upcoming milestones and will be added to the stack as they are implemented.)*
 
 ---
 
@@ -193,7 +193,6 @@ npm run start
 
 ## Known Limitations
 
-- The database and Prisma client are not yet integrated.
 - The Chat, Documents, Memory, and Settings views are currently static frontend shells without backend state.
 - Notifications and Dark Mode toggles are placeholders and not yet functional.
 
