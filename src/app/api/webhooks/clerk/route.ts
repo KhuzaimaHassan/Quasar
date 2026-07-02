@@ -25,9 +25,8 @@ export async function POST(req: Request) {
     })
   }
 
-  // Get the body
-  const payload = await req.json()
-  const body = JSON.stringify(payload)
+  // Get the body as raw text for Svix verification
+  const body = await req.text()
 
   // Create a new Svix instance with your secret.
   const wh = new Webhook(WEBHOOK_SECRET)
@@ -60,14 +59,26 @@ export async function POST(req: Request) {
       const email = email_addresses?.[0]?.email_address || ''
       const displayName = [first_name, last_name].filter(Boolean).join(' ') || null
 
-      await db.user.create({
-        data: {
-          clerkId: id,
-          email: email,
-          displayName: displayName,
-        },
+      await db.$transaction(async (tx) => {
+        const user = await tx.user.create({
+          data: {
+            clerkId: id,
+            email: email,
+            displayName: displayName,
+          },
+        })
+
+        await tx.workspace.create({
+          data: {
+            userId: user.id,
+            name: 'Personal Workspace',
+            // Using the clerkId in the slug ensures global uniqueness 
+            // without needing an external random ID library.
+            slug: `personal-${id.toLowerCase()}`,
+          },
+        })
       })
-      console.log(`Successfully saved user ${id} to database`)
+      console.log(`Successfully saved user ${id} and default workspace to database`)
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
         console.log(`User ${id} already exists in the database (P2002). Treating as success.`)

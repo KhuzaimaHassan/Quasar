@@ -7,9 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Sidebar } from "./Sidebar";
 import { UserButton } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
+import { useWorkspace } from "@/components/providers/workspace-provider";
 
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { activeWorkspace } = useWorkspace();
 
   return (
     <>
@@ -31,7 +33,7 @@ export function Header() {
           <nav aria-label="Breadcrumb" className="hidden sm:flex items-center gap-2 text-sm">
             <span className="text-muted-foreground">Quasar</span>
             <span className="text-muted-foreground" aria-hidden="true">/</span>
-            <span className="font-medium text-foreground">Personal Workspace</span>
+            <span className="font-medium text-foreground">{activeWorkspace?.name || 'Loading...'}</span>
           </nav>
         </div>
 
@@ -61,7 +63,6 @@ export function Header() {
           </div>
           
           <UserButton 
-            afterSignOutUrl="/sign-in"
             appearance={{
               elements: {
                 userButtonAvatarBox: "h-8 w-8 border border-border hover:opacity-80 transition-opacity"

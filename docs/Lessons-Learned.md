@@ -62,6 +62,23 @@ After finishing each milestone (or whenever something significant happens), add 
   - *Why it happened*: Clerk's production servers cannot send HTTP POST requests directly to `localhost:3000`, and our local `.env` still had a placeholder `whsec_` secret, causing Svix to reject any payloads.
   - *How we solved it*: We used `ngrok` to expose the local server to the public internet, updated the Clerk webhook dashboard with the ngrok URL, and synced the new signing secret into `.env.local`.
 
+**Issue #75: Workspace CRUD & Global State**
+
+- **Svix Webhook Signature Mismatches**:
+  - *What happened*: Webhook signature verification randomly failed with `No matching signature found`.
+  - *Why it happened*: We were parsing the request via `req.json()` and immediately calling `JSON.stringify()`. This stripped out natural whitespace/formatting from the original payload, fundamentally altering the string that Svix was trying to cryptographically verify.
+  - *How we solved it*: We swapped to `await req.text()`, pulling the raw, unadulterated string directly from the Next.js request object before passing it into `wh.verify()`.
+
+- **Disjointed UI State (Switcher vs Header)**:
+  - *What happened*: The Sidebar workspace switcher updated its local state, but the top Header breadcrumb remained stale.
+  - *Why it happened*: The components didn't share state, and standard React Query caching only synchronizes server data, not active UI selections.
+  - *How we solved it*: We lifted the state up into a lightweight React Context (`WorkspaceProvider`) wrapped around the root layout, allowing both the Switcher and the Header to read/write the `activeWorkspace` instantaneously.
+
+- **Prisma JSON Typing vs Zod**:
+  - *What happened*: TypeScript threw an error when passing Zod's `z.record(z.string(), z.unknown())` into Prisma's JSON column.
+  - *Why it happened*: Prisma enforces a strict `InputJsonValue` type which guarantees JSON serializability, while Zod's `unknown` is too broad for the compiler to automatically trust.
+  - *How we solved it*: Since we trust Zod's runtime validation of the record, we satisfied the compiler by safely casting the `parsed.data` payload before injection.
+
 ---
 
 ### M2 — Chat
