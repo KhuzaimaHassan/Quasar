@@ -25,12 +25,42 @@ After finishing each milestone (or whenever something significant happens), add 
 
 ### M1 — Foundation
 
-> Fill this in after completing Milestone 1.
+**Issue #72: Project Initialization**
 
-**Topics to reflect on:**
-- How long did Clerk setup actually take vs estimate?
-- Was Prisma straightforward or did migrations cause problems?
-- What was the first unexpected issue you hit?
+- **Structural Foundation for Scalability**:
+  - *What happened*: Needed a clean base for a fast-scaling AI application.
+  - *Why it happened*: Messy imports and inconsistent routing paradigms (App Router vs Pages Router) often plague Next.js projects as they grow.
+  - *How we solved it*: Initialized Next.js 14 specifically using the App Router for optimal streaming support. Enforced strict TypeScript/ESLint rules and set up path aliases (`@/*` to `src/*`) to guarantee clean, refactorable imports from day one.
+
+**Issue #76: Frontend Shell Layout**
+
+- **Managing Server vs. Client Component Boundaries**:
+  - *What happened*: Building a responsive sidebar, mobile navigation, and workspace switcher required interactivity.
+  - *Why it happened*: Next.js App Router defaults to Server Components, but UI elements requiring state (like toggling a sidebar or a dropdown) must run on the client, leading to potential hydration mismatches if not isolated properly.
+  - *How we solved it*: We strategically placed the `"use client"` directive on specific interactive components (like the sidebar toggler and dropdowns) while keeping the root layout server-rendered. We also combined this with robust CSS to handle mobile and desktop responsive states seamlessly.
+
+**Issue #73: Frontend Shell & Authentication**
+
+- **Inconsistent Sign-Out Routing**: We found that signing out from different components (Avatar vs Sidebar) led to different routes (`/` vs `/sign-in`). 
+  - *Why it happened*: Clerk's components and our custom sign-out buttons had different fallback redirect configurations.
+  - *How we solved it*: We aligned the fallback redirect URLs to explicitly point to our designated routes (`/chat` for authenticated fallbacks, and `/sign-in` for sign-out fallbacks) across all Clerk components and middleware.
+
+**Issue #74: Database & Webhooks**
+
+- **Prisma Version and directUrl Deprecation**:
+  - *What happened*: Initial setup with Prisma `v6+` threw errors because `directUrl` is no longer supported directly inside `schema.prisma`.
+  - *Why it happened*: Prisma recently overhauled their configuration, requiring a `prisma.config.ts` file instead.
+  - *How we solved it*: We intentionally downgraded Prisma and `@prisma/client` to `v5.22.0`. This allowed us to keep the standard `directUrl` string within `schema.prisma`, which is simpler and maintains compatibility with the requested architecture.
+
+- **Supabase Pooler Password Encoding**:
+  - *What happened*: Running `npx prisma migrate dev` failed with `P1000: Authentication failed`.
+  - *Why it happened*: The Supabase auto-generated password contained special characters (e.g., `/`, `:`) and the user had accidentally included the placeholder brackets `[` and `]` in the `.env` strings. 
+  - *How we solved it*: We stripped the placeholder brackets and strictly URL-encoded the special characters in the password (e.g., `/` to `%2F`, `:` to `%3A`) for both `DATABASE_URL` and `DIRECT_URL`.
+
+- **Testing Webhooks Locally**:
+  - *What happened*: The newly created Clerk webhook wasn't writing to the local Prisma database.
+  - *Why it happened*: Clerk's production servers cannot send HTTP POST requests directly to `localhost:3000`, and our local `.env` still had a placeholder `whsec_` secret, causing Svix to reject any payloads.
+  - *How we solved it*: We used `ngrok` to expose the local server to the public internet, updated the Clerk webhook dashboard with the ngrok URL, and synced the new signing secret into `.env.local`.
 
 ---
 
