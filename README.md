@@ -29,9 +29,7 @@ It exists to bridge the gap between traditional development environments and nex
 - **Dynamic Profile Integration:** Custom User Menu synced with Clerk.
 - **Auth Webhooks:** API route with `svix` verification for handling user creation events.
 - **Database Foundation:** Integrating PostgreSQL via Prisma.
-
-### 🚧 In Progress
-- **Workspace Data Model:** Building the core schema for users, documents, and chat history.
+- **Workspace Data Model:** Core schema for users, documents, and chat history.
 
 ### 🔮 Planned
 - **AI-Powered Chat Workspace:** Streaming LLM responses and multi-agent conversations.
