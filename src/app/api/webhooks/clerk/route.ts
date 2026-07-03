@@ -51,9 +51,9 @@ export async function POST(req: Request) {
   const eventType = evt.type
 
   if (eventType === 'user.created') {
-    const { id, email_addresses, first_name, last_name, image_url } = evt.data
+    const { id, email_addresses, first_name, last_name } = evt.data
     
-    console.log(`Webhook received: user.created for ID ${id}. Email: ${email_addresses?.[0]?.email_address}. Name: ${first_name} ${last_name}. Image: ${image_url}`)
+    console.log(`Webhook received: ${eventType} for clerkId ${id}`)
     
     try {
       const email = email_addresses?.[0]?.email_address || ''
@@ -85,6 +85,27 @@ export async function POST(req: Request) {
       } else {
         console.error('Error saving user to database:', error)
         return new Response('Error saving user', { status: 500 })
+      }
+    }
+  }
+
+  if (eventType === 'user.deleted') {
+    const { id } = evt.data
+
+    console.log(`Webhook received: ${eventType} for clerkId ${id}`)
+
+    try {
+      await db.user.delete({
+        where: { clerkId: id! },
+      })
+      console.log(`Successfully deleted user ${id} and cascaded workspaces`)
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+        // Record not found — user was already deleted (retry scenario)
+        console.log(`User ${id} not found in database (P2025). Treating as success.`)
+      } else {
+        console.error('Error deleting user from database:', error)
+        return new Response('Error deleting user', { status: 500 })
       }
     }
   }

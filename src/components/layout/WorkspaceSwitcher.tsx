@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useWorkspaces, useCreateWorkspace } from "@/lib/queries/workspaces";
 import { useWorkspace } from "@/components/providers/workspace-provider";
+import { Workspace } from "@/types";
 
 export function WorkspaceSwitcher() {
   const { data: workspaces, isLoading } = useWorkspaces();
@@ -61,7 +62,7 @@ export function WorkspaceSwitcher() {
           Workspaces
         </DropdownMenuLabel>
         
-        {!isLoading && workspaces?.map((workspace: any) => (
+        {!isLoading && workspaces?.map((workspace: Workspace) => (
           <DropdownMenuItem 
             key={workspace.id} 
             className="cursor-pointer"

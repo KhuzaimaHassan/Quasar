@@ -79,6 +79,28 @@ After finishing each milestone (or whenever something significant happens), add 
   - *Why it happened*: Prisma enforces a strict `InputJsonValue` type which guarantees JSON serializability, while Zod's `unknown` is too broad for the compiler to automatically trust.
   - *How we solved it*: Since we trust Zod's runtime validation of the record, we satisfied the compiler by safely casting the `parsed.data` payload before injection.
 
+**Issue: Bug-Fix Audit & Code Hardening**
+
+- **Next.js 16 Route Protection Constraints**:
+  - *What happened*: Unauthenticated users could face silent redirect loops or 401 errors.
+  - *Why it happened*: Next.js 16 deprecated `middleware.ts` in favor of `proxy.ts`. Also, Clerk's proxy runtime requires explicit `NEXT_PUBLIC_CLERK_SIGN_IN_URL` environment variables to prevent inference failures. Furthermore, wrapping unauthenticated routes in a provider that fetches authenticated data causes 401s.
+  - *How we solved it*: We moved `WorkspaceProvider` strictly into the `(dashboard)` layout, explicitly defined fallback URLs in `.env`, and adopted the `proxy.ts` convention to ensure deterministic route protection.
+
+- **Prisma Foreign Key Performance**:
+  - *What happened*: The `GET /api/workspaces` route performed a full table scan for every request.
+  - *Why it happened*: Searching a large database via `where: { userId }` without a database index creates massive O(n) performance bottlenecks at scale.
+  - *How we solved it*: We added `@@index([userId])` to the `Workspace` model in Prisma, ensuring lightning-fast O(log n) index scans for all workspace lookups.
+
+- **Prisma Type-Safety with JSON**:
+  - *What happened*: Strict TypeScript checking failed on the `PATCH` route for updating workspaces.
+  - *Why it happened*: Spreading `parsed.data` containing `settings: Record<string, unknown>` clashed with Prisma's extremely rigid internal `Prisma.InputJsonValue` definitions.
+  - *How we solved it*: We forcefully cast the update payload using `parsed.data as Prisma.WorkspaceUpdateInput`, allowing Prisma's own generated typings to natively handle the JSON mapping without TS spreading conflicts.
+
+- **Clean Webhook Cascades**:
+  - *What happened*: Deleting a user in Clerk left orphaned database records.
+  - *Why it happened*: The `user.deleted` webhook was not enabled or handled.
+  - *How we solved it*: We mapped the `user.deleted` payload to `db.user.delete()`. Because we had configured `onDelete: Cascade` in the Prisma schema, deleting the User natively triggered the database to automatically wipe all associated Workspaces in one transaction, completely eliminating the need for manual cleanup code.
+
 ---
 
 ### M2 — Chat

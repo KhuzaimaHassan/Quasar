@@ -15,8 +15,7 @@ const eslintConfig = defineConfig([
     // Custom ignores for setup scripts and temporary folders:
     "setup_github.js",
     "setup_github.ps1",
-    "setup_github.py",
-    "temp_app/**"
+    "setup_github.py"
   ]),
 ]);
 

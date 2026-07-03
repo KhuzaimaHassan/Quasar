@@ -2,6 +2,7 @@ import { auth } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { updateWorkspaceSchema } from '@/lib/validations/workspace'
+import { Prisma } from '@prisma/client'
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -42,7 +43,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
     const updatedWorkspace = await db.workspace.update({
       where: { id: workspaceId },
-      data: parsed.data as any,
+      data: parsed.data as Prisma.WorkspaceUpdateInput,
     })
 
     return NextResponse.json(updatedWorkspace, { status: 200 })
