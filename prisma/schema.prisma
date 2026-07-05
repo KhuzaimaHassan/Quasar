@@ -16,7 +16,8 @@ model User {
   preferences  Json     @default("{}")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-  workspaces   Workspace[]
+  workspaces    Workspace[]
+  conversations Conversation[]
 
   @@map("users")
 }
@@ -29,8 +30,41 @@ model Workspace {
   slug      String   @unique
   settings  Json     @default("{}")
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  updatedAt     DateTime @updatedAt
+  conversations Conversation[]
 
   @@index([userId])
   @@map("workspaces")
+}
+
+model Conversation {
+  id          String    @id @default(uuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspaceId String?
+  workspace   Workspace? @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+  title       String    @default("New conversation")
+  model       String    @default("claude-sonnet-4-5")
+  totalTokens Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  messages    Message[]
+
+  @@index([userId])
+  @@index([workspaceId])
+  @@map("conversations")
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           String
+  content        String
+  metadata       Json         @default("{}")
+  tokenCount     Int          @default(0)
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId, createdAt])
+  @@map("messages")
 }

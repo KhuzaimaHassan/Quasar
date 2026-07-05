@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Search, Plus, ChevronDown } from "lucide-react";
+import { useRouter, useParams } from "next/navigation";
+import { Search, Plus, ChevronDown, Loader2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,13 +13,55 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { ConversationCard } from "./ConversationCard";
-import { MOCK_CONVERSATIONS } from "@/lib/mock-data";
+import { useWorkspace } from "@/components/providers/workspace-provider";
+import { useConversations, useCreateConversation } from "@/lib/queries/conversations";
 
 export function ConversationList() {
+  const router = useRouter();
+  const params = useParams();
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedModel, setSelectedModel] = useState("GPT-4");
+  const [selectedModel, setSelectedModel] = useState("claude-sonnet-4-5");
+  
+  const { activeWorkspace } = useWorkspace();
+  const { data: conversations = [], isLoading } = useConversations(activeWorkspace?.id);
+  const { mutate: createConversation, isPending: isCreating } = useCreateConversation();
 
-  const models = ["GPT-4", "Claude 3.5 Sonnet", "Gemini 1.5 Pro"];
+  const models = [
+    { id: "claude-sonnet-4-5", name: "Claude 4.5 Sonnet" },
+    { id: "gpt-4o", name: "GPT-4o" },
+    { id: "gemini-1.5-pro", name: "Gemini 1.5 Pro" }
+  ];
+
+  const currentModelName = models.find(m => m.id === selectedModel)?.name || "Claude 4.5 Sonnet";
+
+  const handleNewChat = () => {
+    createConversation(
+      { workspaceId: activeWorkspace?.id, model: selectedModel },
+      {
+        onSuccess: (data) => {
+          router.push(`/chat/${data.id}`);
+        }
+      }
+    );
+  };
+
+  const filteredConversations = conversations.filter((c: any) => 
+    c.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const formatRelativeTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInMinutes = Math.abs(now.getTime() - date.getTime()) / 60000;
+    
+    if (diffInMinutes < 1) return 'Just now';
+    if (diffInMinutes < 60) return `${Math.floor(diffInMinutes)}m ago`;
+    
+    const diffInHours = diffInMinutes / 60;
+    if (diffInHours < 24) return `${Math.floor(diffInHours)}h ago`;
+    if (diffInHours < 48) return 'Yesterday';
+    return date.toLocaleDateString();
+  };
 
   return (
     <aside 
@@ -34,20 +77,20 @@ export function ConversationList() {
                 variant="ghost" 
                 size="sm" 
                 className="h-7 text-xs gap-1 text-muted-foreground font-medium px-2 rounded-md hover:bg-accent focus-visible:ring-2"
-                aria-label={`Select AI Model. Current model: ${selectedModel}`}
+                aria-label={`Select AI Model. Current model: ${currentModelName}`}
               >
-                {selectedModel}
+                {currentModelName}
                 <ChevronDown className="h-3.5 w-3.5 opacity-50" aria-hidden="true" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-48">
               {models.map(model => (
                 <DropdownMenuItem 
-                  key={model} 
-                  onClick={() => setSelectedModel(model)}
-                  className={cn("cursor-pointer", selectedModel === model && "bg-accent text-accent-foreground font-medium")}
+                  key={model.id} 
+                  onClick={() => setSelectedModel(model.id)}
+                  className={cn("cursor-pointer", selectedModel === model.id && "bg-accent text-accent-foreground font-medium")}
                 >
-                  {model}
+                  {model.name}
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
@@ -56,10 +99,12 @@ export function ConversationList() {
         <Button 
           size="icon" 
           variant="ghost" 
+          onClick={handleNewChat}
+          disabled={isCreating}
           className="h-8 w-8 text-muted-foreground hover:text-foreground focus-visible:ring-2"
           aria-label="Start new chat"
         >
-          <Plus className="h-[18px] w-[18px]" />
+          {isCreating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-[18px] w-[18px]" />}
         </Button>
       </div>
       
@@ -78,17 +123,25 @@ export function ConversationList() {
       </div>
 
       <div className="flex-1 overflow-y-auto px-2 pb-4 space-y-1" role="list" aria-label="Conversation list">
-        {MOCK_CONVERSATIONS.map((chat) => (
-          <ConversationCard 
-            key={chat.id}
-            title={chat.title}
-            preview={chat.preview}
-            time={chat.time}
-            model={chat.model}
-            files={chat.files}
-            isActive={chat.isActive}
-          />
-        ))}
+        {isLoading ? (
+          <div className="p-4 text-center text-sm text-muted-foreground">Loading chats...</div>
+        ) : filteredConversations.length === 0 ? (
+          <div className="p-4 text-center text-sm text-muted-foreground">
+            {searchQuery ? "No chats found." : "No conversations yet. Start a new chat above."}
+          </div>
+        ) : (
+          filteredConversations.map((chat: any) => (
+            <div key={chat.id} onClick={() => router.push(`/chat/${chat.id}`)}>
+              <ConversationCard 
+                title={chat.title}
+                time={formatRelativeTime(chat.updatedAt)}
+                model={models.find(m => m.id === chat.model)?.name || chat.model}
+                files={0}
+                isActive={params?.id === chat.id}
+              />
+            </div>
+          ))
+        )}
       </div>
     </aside>
   );
