@@ -105,9 +105,24 @@ After finishing each milestone (or whenever something significant happens), add 
 
 ### M2 — Chat
 
-> Fill this in after completing Milestone 2.
+**Issue #78: Conversation Data Layer & API Routes**
 
-**Topics to reflect on:**
+- **Database Cascades and Data Retention**:
+  - *What happened*: Deciding how to handle conversations when users delete workspaces.
+  - *Why it happened*: If a user deletes a workspace, they might not want to lose all their chat history from that workspace, but if they delete their entire account, data must be fully purged.
+  - *How we solved it*: We implemented split cascading logic. We used `onDelete: SetNull` for the `workspaceId` relation (safely orphaning the conversation to preserve chat history if a workspace is deleted) but used `onDelete: Cascade` for the `userId` relation (ensuring strict GDPR-style data deletion if the user is deleted).
+
+- **Optimizing Chat History Sorting**:
+  - *What happened*: Fetching messages for a conversation requires chronological ordering.
+  - *Why it happened*: Querying `ORDER BY createdAt ASC` on large chat histories requires an expensive in-memory sort operation by the database ($O(N \log N)$).
+  - *How we solved it*: We added a composite index `@@index([conversationId, createdAt])` to the `Message` model. This allows PostgreSQL to read the records directly off the B-Tree index in perfectly pre-sorted order, turning it into a lightning-fast $O(1)$ read.
+
+- **Next.js 15 Dynamic Route Params**:
+  - *What happened*: We hit an error: `params is a Promise and must be unwrapped with await`.
+  - *Why it happened*: Next.js 15+ changed dynamic route parameters in Page components and Route Handlers to be asynchronous Promises rather than synchronous objects.
+  - *How we solved it*: We correctly typed all dynamic params as `Promise<{ id: string }>` and explicitly `await`ed them inside `async` components and API routes. We also learned to use `_req: Request` to satisfy TypeScript when the Request object is unused but the second `params` argument is required.
+
+**Topics to reflect on (for upcoming Issue #9):**
 - How did Vercel AI SDK streaming work in practice? Any rough edges?
 - Did `useChat` handle edge cases well (network errors, retries)?
 - What did you learn about token counting that surprised you?
