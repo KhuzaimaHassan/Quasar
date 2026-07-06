@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
+import { cn, formatRelativeTime } from "@/lib/utils";
 import { ConversationCard } from "./ConversationCard";
 import { useWorkspace } from "@/components/providers/workspace-provider";
 import { useConversations, useCreateConversation } from "@/lib/queries/conversations";
@@ -48,20 +48,6 @@ export function ConversationList() {
   const filteredConversations = conversations.filter((c: any) => 
     c.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
-
-  const formatRelativeTime = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInMinutes = Math.abs(now.getTime() - date.getTime()) / 60000;
-    
-    if (diffInMinutes < 1) return 'Just now';
-    if (diffInMinutes < 60) return `${Math.floor(diffInMinutes)}m ago`;
-    
-    const diffInHours = diffInMinutes / 60;
-    if (diffInHours < 24) return `${Math.floor(diffInHours)}h ago`;
-    if (diffInHours < 48) return 'Yesterday';
-    return date.toLocaleDateString();
-  };
 
   return (
     <aside 
