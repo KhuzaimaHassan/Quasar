@@ -122,6 +122,23 @@ After finishing each milestone (or whenever something significant happens), add 
   - *Why it happened*: Next.js 15+ changed dynamic route parameters in Page components and Route Handlers to be asynchronous Promises rather than synchronous objects.
   - *How we solved it*: We correctly typed all dynamic params as `Promise<{ id: string }>` and explicitly `await`ed them inside `async` components and API routes. We also learned to use `_req: Request` to satisfy TypeScript when the Request object is unused but the second `params` argument is required.
 
+**Issue #79: Chat UI & Optimistic State**
+
+- **Smart Auto-Scrolling UX**:
+  - *What happened*: Forcing the chat to scroll to the bottom on every new message creates a frustrating experience if the user is scrolling up to read chat history.
+  - *Why it happened*: Standard `useEffect` implementations blindly scroll to `scrollHeight` whenever the messages array changes.
+  - *How we solved it*: We added an `onScroll` listener to track the distance from the bottom (`scrollHeight - scrollTop - clientHeight`). If that distance exceeds 100px, we flag the user as "scrolled up" and pause the auto-scroll behavior until they manually return to the bottom.
+
+- **Native Auto-Resizing Textareas**:
+  - *What happened*: We needed an input box that grows with the text but caps at a maximum height before scrolling.
+  - *Why it happened*: Textareas natively have static rows. Usually, developers reach for external libraries like `react-textarea-autosize`.
+  - *How we solved it*: We implemented a zero-dependency solution using a `useEffect` that listens to the content. It resets `style.height = 'auto'` (to shrink if text is deleted) and immediately sets it to `textarea.scrollHeight + 'px'`. By adding Tailwind's `max-h-40`, the CSS engine seamlessly takes over to provide internal scrolling once the height limit is reached.
+
+- **Platform-Agnostic Modifiers**:
+  - *What happened*: We wanted to support sending messages via keyboard shortcuts.
+  - *Why it happened*: Mac users expect `Cmd+Enter`, while Windows/Linux users expect `Ctrl+Enter`.
+  - *How we solved it*: We checked `e.metaKey || e.ctrlKey` during the `onKeyDown` event, providing a universally accessible shortcut without hardcoding platform-specific navigator checks.
+
 **Topics to reflect on (for upcoming Issue #9):**
 - How did Vercel AI SDK streaming work in practice? Any rough edges?
 - Did `useChat` handle edge cases well (network errors, retries)?
