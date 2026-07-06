@@ -2,7 +2,7 @@
 
 > AI-powered developer workspace.
 
-**Live Demo:** [https://quasar.vercel.app](https://quasar.vercel.app)
+**Live Demo:** [https://quasar.vercel.app](https://qausar.vercel.app/)
 
 [![Next.js](https://img.shields.io/badge/Next.js-16.2-black?logo=next.js)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19-blue?logo=react)](https://react.dev/)
