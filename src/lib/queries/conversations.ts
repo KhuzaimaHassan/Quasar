@@ -43,6 +43,7 @@ export function useMessages(conversationId: string) {
       return res.json()
     },
     enabled: !!conversationId,
+    retry: false, // Don't retry infinitely on 404s
   })
 }
 

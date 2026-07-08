@@ -1,6 +1,6 @@
 "use client";
 
-import { use } from "react";
+import { use, useMemo } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { ConversationList } from "../ConversationList";
@@ -34,15 +34,19 @@ export default function DynamicChatPage({ params }: { params: Promise<{ id: stri
 }
 
 function ChatContainer({ conversationId, persistedMessages }: { conversationId: string, persistedMessages: any[] }) {
+  const transport = useMemo(() => new DefaultChatTransport({
+    api: '/api/chat',
+    headers: {
+      'x-conversation-id': conversationId
+    }
+  }), [conversationId]);
+
+  const initMsgs = useMemo(() => toInitialMessages(persistedMessages), [persistedMessages]);
+
   // @ts-ignore - The ai/react vs @ai-sdk/react type definitions conflict in this setup
   const { messages, sendMessage, stop, status, error } = useChat({
-    transport: new DefaultChatTransport({
-      api: '/api/chat',
-      headers: {
-        'x-conversation-id': conversationId
-      }
-    }),
-    messages: toInitialMessages(persistedMessages),
+    transport,
+    messages: initMsgs,
   });
 
   const isSending = status === 'submitted' || status === 'streaming';
