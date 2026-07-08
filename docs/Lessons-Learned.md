@@ -139,11 +139,22 @@ After finishing each milestone (or whenever something significant happens), add 
   - *Why it happened*: Mac users expect `Cmd+Enter`, while Windows/Linux users expect `Ctrl+Enter`.
   - *How we solved it*: We checked `e.metaKey || e.ctrlKey` during the `onKeyDown` event, providing a universally accessible shortcut without hardcoding platform-specific navigator checks.
 
-**Topics to reflect on (for upcoming Issue #9):**
-- How did Vercel AI SDK streaming work in practice? Any rough edges?
-- Did `useChat` handle edge cases well (network errors, retries)?
-- What did you learn about token counting that surprised you?
-- How did you handle the UX of streaming — typing indicator, stop button?
+**Issue #80: Vercel AI SDK & Infinite Loops**
+
+- **useChat Hook Object References**:
+  - *What happened*: The application spun infinitely, and API endpoints were hammered with hundreds of requests.
+  - *Why it happened*: We passed inline object literals (`new DefaultChatTransport({...})` and `toInitialMessages(...)`) directly into the `useChat` hook. Because these objects were created fresh on every render, the hook detected "changed" options and triggered a state update, causing an aggressive infinite re-render loop.
+  - *How we solved it*: We aggressively memoized the transport configuration and initial messages array using React's `useMemo` hook, stabilizing the references and breaking the render loop.
+
+- **Graceful Failures in React Query**:
+  - *What happened*: Visiting an old or deleted conversation URL caused the app to hang on a loading spinner indefinitely.
+  - *Why it happened*: Our `/api/conversations/[id]/messages` endpoint correctly returned a 404 when the ID wasn't found in the DB. However, React Query's default behavior is to retry failed requests. Combined with the render loop, this paralyzed the application.
+  - *How we solved it*: We added `retry: false` to the `useMessages` query configuration, ensuring that 404s fail instantly and predictably.
+
+- **Navigating Free Tier API Limits**:
+  - *What happened*: We continually hit 429 Rate Limit Errors while trying to build out the chat streaming functionality with Claude 3.5 Sonnet.
+  - *Why it happened*: Premium models have strict usage quotas that are quickly exhausted during high-velocity local development.
+  - *How we solved it*: We pivoted to a "Free Tier Default / BYOK Premium" strategy. We set `gemini-3.5-flash` as the default model using a server-side API key for unlimited dev testing, and formally deferred premium models to a future "Bring Your Own Key" (BYOK) milestone (Issue #13).
 
 ---
 
