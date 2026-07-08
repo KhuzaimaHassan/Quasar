@@ -58,6 +58,7 @@ You need accounts with these services before starting:
 
 | Service | Free tier | What it's used for |
 |---------|-----------|-------------------|
+| [Google AI Studio](https://aistudio.google.com) | Free | Gemini API access |
 | [Anthropic](https://console.anthropic.com) | Pay-as-you-go | Claude API |
 | [OpenAI](https://platform.openai.com) | Pay-as-you-go | GPT-4 + embeddings |
 | [Clerk](https://clerk.com) | Free | Authentication |
@@ -117,6 +118,14 @@ cd quasar
 
 ---
 
+## Step 4.5: Set Up Google AI Studio
+
+1. Go to [aistudio.google.com](https://aistudio.google.com).
+2. Create an API key (note that it's created as an auth key by default).
+3. Copy the **API key** → `GOOGLE_GENERATIVE_AI_API_KEY`
+
+---
+
 ## Step 5: Configure Environment Variables
 
 ### Next.js
@@ -143,6 +152,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
 SUPABASE_SERVICE_ROLE_KEY=eyJ...
 
 # AI Providers
+GOOGLE_GENERATIVE_AI_API_KEY=AIzaSy...
 ANTHROPIC_API_KEY=sk-ant-...
 OPENAI_API_KEY=sk-...
 

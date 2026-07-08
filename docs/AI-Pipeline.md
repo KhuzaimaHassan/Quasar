@@ -10,12 +10,17 @@ The AI pipeline is the core of Quasar. It handles everything from accepting a us
 
 | Model | Provider | Use case |
 |-------|----------|----------|
-| `claude-sonnet-4-5` | Anthropic | Default — best quality/cost balance |
-| `claude-opus-4` | Anthropic | Complex reasoning tasks |
-| `gpt-4o` | OpenAI | Fallback / user preference |
-| `gpt-4o-mini` | OpenAI | Fast, cheap, simple tasks |
+| `gemini-3.5-flash` | Google | Default (free tier, server-provided key, used unless user adds key) |
+| `claude-sonnet-4-5` | Anthropic | Available once BYOK (Issue #13) ships |
+| `gpt-4o` | OpenAI | Available once BYOK (Issue #13) ships |
 
 Model is stored per-conversation and switchable mid-conversation by the user.
+
+---
+
+## Model Strategy
+
+Quasar uses a default-free-plus-BYOK approach. By default, it uses Google's free tier for Gemini 3.5 Flash via a server-provided API key to manage development costs. Premium models like Claude and GPT-4o will be available once the Bring Your Own Key (BYOK) functionality is shipped (Issue #13). For full reasoning, see the new ADR in [Decisions.md](Decisions.md).
 
 ---
 
@@ -25,10 +30,12 @@ Use **Vercel AI SDK** (`ai` package) for all LLM calls in Next.js:
 
 ```typescript
 import { streamText } from 'ai';
+import { google } from '@ai-sdk/google';
 import { anthropic } from '@ai-sdk/anthropic';
 import { openai } from '@ai-sdk/openai';
 
 const modelMap = {
+  'gemini-3.5-flash': google('gemini-3.5-flash'),
   'claude-sonnet-4-5': anthropic('claude-sonnet-4-5'),
   'gpt-4o': openai('gpt-4o'),
 };

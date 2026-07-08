@@ -150,3 +150,26 @@ Each decision is recorded here with the context, options considered, and rationa
 **Rationale**: LangSmith is purpose-built for LLM tracing. It integrates automatically with LangGraph and LangChain with zero code changes (just env vars). Building custom logging for LLM calls would require significant effort to get to parity.
 
 **Consequences**: LangSmith is a SaaS product — data leaves the application. Acceptable for a portfolio project. For production with sensitive data, evaluate self-hosted alternatives (Langfuse, Phoenix).
+
+---
+
+## ADR-009: Default to Gemini Free Tier, BYOK for Premium Models Later
+
+**Status**: Accepted  
+**Date**: M2 planning
+
+**Context**: As a solo developer managing API costs during active development, providing open access to premium models like Claude Sonnet 3.5 or GPT-4o is cost-prohibitive.
+
+**Options considered**:
+1. Paying for Claude/GPT-4 myself
+2. Free Gemini tier
+3. BYOK-only from day one
+
+**Decision**: Default to the free Gemini tier (Gemini 3.5 Flash), and implement Bring Your Own Key (BYOK) for premium models later (Issue #13).
+
+**Rationale**: The free Gemini tier allows users to experience the application immediately without setup friction or me absorbing high costs. BYOK-only from day one adds too much onboarding friction for a portfolio project.
+
+**Consequences**: 
+- Google's free tier rate limits are lower than paid tiers.
+- Google's free tier terms permit using inputs/outputs to improve their products, which should be disclosed to users eventually.
+- BYOK requires secure key storage, which is deferred to Issue #13.

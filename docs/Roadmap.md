@@ -20,7 +20,7 @@ Update statuses as you go: 🔲 Not started → 🔄 In progress → ✅ Done �
 The following features are **in scope for v1.0**. Everything else goes below in the backlog.
 
 - [x] Workspace-based project organisation
-- [x] Streaming chat with Claude and GPT-4
+- [x] Streaming chat with Gemini as the default free model (optional user-provided Claude/GPT-4 keys via BYOK)
 - [x] Document upload + RAG retrieval
 - [x] Short-term conversation memory
 - [x] Long-term user preference memory
