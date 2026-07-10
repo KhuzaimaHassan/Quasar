@@ -1,5 +1,8 @@
 import { cn, formatRelativeTime } from "@/lib/utils";
 
+import { Streamdown } from "streamdown";
+import { code } from "@streamdown/code";
+
 export interface MessageProps {
   id: string;
   role: string;
@@ -10,9 +13,30 @@ export interface MessageProps {
 interface MessageBubbleProps {
   message: MessageProps;
   isPending?: boolean;
+  isStreaming?: boolean;
 }
 
-export function MessageBubble({ message, isPending }: MessageBubbleProps) {
+const streamdownComponents = {
+  table: ({ children, ...props }: any) => (
+    <div className="overflow-x-auto my-4 rounded-xl border border-border">
+      <table className="w-full text-sm text-left divide-y divide-border" {...props}>
+        {children}
+      </table>
+    </div>
+  ),
+  th: ({ children, ...props }: any) => (
+    <th className="bg-muted/50 px-4 py-2 font-semibold" {...props}>
+      {children}
+    </th>
+  ),
+  td: ({ children, ...props }: any) => (
+    <td className="px-4 py-2" {...props}>
+      {children}
+    </td>
+  ),
+};
+
+export function MessageBubble({ message, isPending, isStreaming }: MessageBubbleProps) {
   const isUser = message.role === "user";
 
   return (
@@ -37,8 +61,23 @@ export function MessageBubble({ message, isPending }: MessageBubbleProps) {
             <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce"></span>
           </div>
         ) : (
-          <div className="whitespace-pre-wrap break-words leading-relaxed">
-            {message.content}
+          <div className="w-full break-words leading-relaxed">
+            {isUser ? (
+              <div className="whitespace-pre-wrap [&_[data-streamdown='code-block']]:text-foreground [&_[data-streamdown='inline-code']]:text-foreground [&_[data-streamdown='table-wrapper']]:text-foreground">
+                <Streamdown mode="static" components={streamdownComponents} plugins={{ code }}>
+                  {message.content}
+                </Streamdown>
+              </div>
+            ) : (
+              <Streamdown
+                mode={isStreaming ? "streaming" : "static"}
+                isAnimating={isStreaming}
+                plugins={{ code }}
+                components={streamdownComponents}
+              >
+                {message.content}
+              </Streamdown>
+            )}
           </div>
         )}
 

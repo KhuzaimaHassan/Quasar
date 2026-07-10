@@ -119,7 +119,7 @@ Or open them manually through the GitHub UI.
 
 **#10** — Markdown + code syntax highlighting in messages
 - Label: `ux`
-- Body: Render assistant messages through `react-markdown` + `rehype-highlight` (or `react-syntax-highlighter`). Ensure fenced code blocks render with language label and copy button. Style inline code distinctly.
+- Body: Render assistant messages through `streamdown` (Vercel's streaming-aware markdown renderer) instead of `react-markdown` + `rehype-highlight`. This handles incomplete markdown gracefully during streaming, and ships syntax highlighting and copy buttons built in. Style inline code distinctly.
 
 **#11** — File and image upload in chat (Supabase Storage)
 - Label: `feat`

@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 
 interface DraftMessage extends MessageProps {
   isPending?: boolean;
+  isStreaming?: boolean;
 }
 
 interface MessageListProps {
@@ -80,6 +81,7 @@ export function MessageList({ conversationId, draftMessages }: MessageListProps)
             key={msg.id}
             message={msg}
             isPending={(msg as DraftMessage).isPending}
+            isStreaming={(msg as DraftMessage).isStreaming}
           />
         ))}
       </div>

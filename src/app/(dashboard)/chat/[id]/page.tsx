@@ -58,13 +58,18 @@ function ChatContainer({ conversationId, persistedMessages }: { conversationId: 
   // We filter out any messages from useChat that are already persisted in the database.
   const draftMessages = messages
     .filter((msg: any) => !persistedMessages.some((p: any) => p.id === msg.id))
-    .map((msg: any) => ({
-      id: msg.id,
-      role: msg.role,
-      content: getMessageText(msg),
-      createdAt: msg.createdAt ? new Date(msg.createdAt).toISOString() : new Date().toISOString(),
-      isPending: false,
-    }));
+    .map((msg: any, index: number, array: any[]) => {
+      const isLast = index === array.length - 1;
+      const isStreamingMessage = isLast && msg.role === 'assistant' && status === 'streaming';
+      return {
+        id: msg.id,
+        role: msg.role,
+        content: getMessageText(msg),
+        createdAt: msg.createdAt ? new Date(msg.createdAt).toISOString() : new Date().toISOString(),
+        isPending: false,
+        isStreaming: isStreamingMessage,
+      };
+    });
 
   // Vercel AI SDK only appends the assistant message once the stream actually begins.
   // To show immediate feedback (the bouncing dots), we inject a stub if a request is actively inflight.
@@ -76,6 +81,7 @@ function ChatContainer({ conversationId, persistedMessages }: { conversationId: 
       content: '',
       createdAt: new Date().toISOString(),
       isPending: true,
+      isStreaming: false,
     });
   }
 
@@ -87,6 +93,7 @@ function ChatContainer({ conversationId, persistedMessages }: { conversationId: 
       content: `Error: ${error.message || 'Something went wrong.'}`,
       createdAt: new Date().toISOString(),
       isPending: false,
+      isStreaming: false,
     });
   }
 
