@@ -156,6 +156,18 @@ After finishing each milestone (or whenever something significant happens), add 
   - *Why it happened*: Premium models have strict usage quotas that are quickly exhausted during high-velocity local development.
   - *How we solved it*: We pivoted to a "Free Tier Default / BYOK Premium" strategy. We set `gemini-3.5-flash` as the default model using a server-side API key for unlimited dev testing, and formally deferred premium models to a future "Bring Your Own Key" (BYOK) milestone (Issue #13).
 
+**Issue #81: Markdown Parsing & Streaming UI**
+
+- **Graceful Streaming Markdown**:
+  - *What happened*: Standard Markdown parsers (like `react-markdown`) glitch and throw errors when fed incomplete markdown tokens during a live stream.
+  - *Why it happened*: Parsers expect complete, closed tags (like a closing ``` for a code block). While streaming, these tags arrive character by character.
+  - *How we solved it*: We swapped to `streamdown`, Vercel's purpose-built streaming markdown renderer. It natively understands incomplete markdown states and provides smooth progressive rendering with built-in syntax highlighting and copy buttons.
+
+- **Standard Markdown White-Space Quirks**:
+  - *What happened*: Users pasting unformatted python code into the chat input saw their code chopped up — parts of it collapsed into single sentences, and other parts snapped into code blocks.
+  - *Why it happened*: Standard Markdown ignores single newlines in paragraphs, but automatically parses any line starting with 4+ spaces as an indented code block.
+  - *How we solved it*: We applied a `whitespace-pre-wrap` CSS class to the user message container. This preserves the original newlines of un-indented lines, preventing them from collapsing into an unreadable wall of text when a user forgets to use triple backticks.
+
 ---
 
 ### M3 — RAG
