@@ -1,9 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useMessages } from "@/lib/queries/conversations";
 import { MessageBubble, type MessageProps } from "./MessageBubble";
-import { cn } from "@/lib/utils";
 
 interface DraftMessage extends MessageProps {
   isPending?: boolean;
@@ -11,12 +9,11 @@ interface DraftMessage extends MessageProps {
 }
 
 interface MessageListProps {
-  conversationId: string;
   draftMessages: DraftMessage[];
+  persistedMessages?: any[];
 }
 
-export function MessageList({ conversationId, draftMessages }: MessageListProps) {
-  const { data: persistedMessages = [], isLoading } = useMessages(conversationId);
+export function MessageList({ draftMessages, persistedMessages = [] }: MessageListProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isUserScrolledUp, setIsUserScrolledUp] = useState(false);
 
@@ -41,24 +38,6 @@ export function MessageList({ conversationId, draftMessages }: MessageListProps)
     const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
     setIsUserScrolledUp(distanceFromBottom > 100);
   };
-
-  if (isLoading) {
-    return (
-      <div className="flex-1 overflow-y-auto p-4 space-y-6">
-        {[1, 2, 3].map((i) => (
-          <div
-            key={i}
-            className={cn(
-              "flex w-full",
-              i % 2 === 0 ? "justify-start" : "justify-end"
-            )}
-          >
-            <div className="w-[60%] h-12 bg-muted animate-pulse rounded-2xl"></div>
-          </div>
-        ))}
-      </div>
-    );
-  }
 
   if (allMessages.length === 0) {
     return (

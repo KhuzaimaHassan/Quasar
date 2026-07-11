@@ -104,7 +104,7 @@ function ChatContainer({ conversationId, persistedMessages }: { conversationId: 
       </div>
 
       <div className="flex flex-1 flex-col bg-muted/10 h-full relative">
-        <MessageList conversationId={conversationId} draftMessages={draftMessages} />
+        <MessageList draftMessages={draftMessages} persistedMessages={persistedMessages} />
         <ChatInput onSend={handleSend} isSending={isSending} onStop={stop} />
       </div>
     </div>
