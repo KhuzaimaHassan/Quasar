@@ -2,12 +2,15 @@ import { cn, formatRelativeTime } from "@/lib/utils";
 
 import { Streamdown } from "streamdown";
 import { code } from "@streamdown/code";
+import type { PersistedAttachment } from "@/lib/attachment-types";
+import { AttachmentChip } from "./AttachmentChip";
 
 export interface MessageProps {
   id: string;
   role: string;
   content: string;
   createdAt: string | Date;
+  attachments?: PersistedAttachment[];
 }
 
 interface MessageBubbleProps {
@@ -54,6 +57,15 @@ export function MessageBubble({ message, isPending, isStreaming }: MessageBubble
             : "bg-muted text-foreground rounded-2xl rounded-bl-sm"
         )}
       >
+        {/* Render attachments above the text if they exist */}
+        {message.attachments && message.attachments.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-3">
+            {message.attachments.map((attachment) => (
+              <AttachmentChip key={attachment.id} {...attachment} />
+            ))}
+          </div>
+        )}
+
         {isPending ? (
           <div className="flex items-center h-5 gap-1 px-1">
             <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce [animation-delay:-0.3s]"></span>

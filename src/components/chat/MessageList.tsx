@@ -17,8 +17,12 @@ export function MessageList({ draftMessages, persistedMessages = [] }: MessageLi
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isUserScrolledUp, setIsUserScrolledUp] = useState(false);
 
-  // Combine persisted and local draft messages
-  const allMessages = [...persistedMessages, ...draftMessages];
+  // Combine persisted and local draft messages, extracting attachments from metadata
+  const mappedPersisted = persistedMessages.map((msg) => ({
+    ...msg,
+    attachments: msg.metadata?.attachments || undefined,
+  }));
+  const allMessages = [...mappedPersisted, ...draftMessages];
 
   // Auto-scroll logic
   useEffect(() => {

@@ -168,6 +168,18 @@ After finishing each milestone (or whenever something significant happens), add 
   - *Why it happened*: Standard Markdown ignores single newlines in paragraphs, but automatically parses any line starting with 4+ spaces as an indented code block.
   - *How we solved it*: We applied a `whitespace-pre-wrap` CSS class to the user message container. This preserves the original newlines of un-indented lines, preventing them from collapsing into an unreadable wall of text when a user forgets to use triple backticks.
 
+**Issue #82: File and Image Uploads in Chat**
+
+- **AI SDK Multi-Modal "Empty Text" Erasure**:
+  - *What happened*: Sending an image without any accompanying text caused the backend to crash with `Error: Invalid prompt: messages must not be empty`.
+  - *Why it happened*: Our backend utility function `convertToModelMessages` was aggressively filtering out any user message where the string `content` was empty, failing to realize the Vercel AI SDK actually stores uploaded image data inside separate `experimental_attachments` or `parts` arrays while leaving the text `content` blank.
+  - *How we solved it*: We rewrote the utility to safely preserve messages if they contain either text or attachments, effectively preventing the AI SDK from erasing multimodal messages.
+
+- **AI SDK CoreMessage Schema Strictness**:
+  - *What happened*: Trying to migrate from the deprecated `{ type: 'image' }` format to the newer `{ type: 'file' }` format caused the Gemini provider to crash with `ModelMessage[] schema` validation errors.
+  - *Why it happened*: Although the AI SDK logs deprecation warnings urging developers to use the new `file` format, the specific `@ai-sdk/google` provider version we had installed did not fully support passing a `URL` object inside a `file` block.
+  - *How we solved it*: We purposefully reverted back to the "deprecated" `image` type format because it perfectly passes schema validation and works cleanly with Gemini, opting to tolerate the terminal warning over a broken application.
+
 ---
 
 ### M3 — RAG

@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useMemo } from "react";
+import { use, useMemo, useRef } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { ConversationList } from "../ConversationList";
@@ -8,6 +8,8 @@ import { MessageList } from "@/components/chat/MessageList";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { useMessages } from "@/lib/queries/conversations";
 import { toInitialMessages, getMessageText } from "@/lib/chat-utils";
+import type { UploadedAttachment, PersistedAttachment } from "@/lib/attachment-types";
+import { isImageMimeType } from "@/lib/attachment-types";
 
 export default function DynamicChatPage({ params }: { params: Promise<{ id: string }> }) {
   // Unwrap the Promise params for Client Components in Next.js 15+
@@ -43,6 +45,10 @@ function ChatContainer({ conversationId, persistedMessages }: { conversationId: 
 
   const initMsgs = useMemo(() => toInitialMessages(persistedMessages), [persistedMessages]);
 
+  // Track attachments sent with each message for optimistic rendering
+  // Maps a "send index" to the attachments for that send
+  const pendingAttachmentsRef = useRef<PersistedAttachment[]>([]);
+
   // @ts-ignore - The ai/react vs @ai-sdk/react type definitions conflict in this setup
   const { messages, sendMessage, stop, status, error } = useChat({
     transport,
@@ -51,8 +57,48 @@ function ChatContainer({ conversationId, persistedMessages }: { conversationId: 
 
   const isSending = status === 'submitted' || status === 'streaming';
 
-  const handleSend = (content: string) => {
-    sendMessage({ role: 'user', content, conversationId } as any);
+  const handleSend = async (content: string, attachments: UploadedAttachment[]) => {
+    // Separate images (have .file) from non-images
+    // TODO: PDF/DOCX document content understanding is M3's RAG pipeline.
+    // For now, they are uploaded and shown in the UI but NOT fed into the model's context.
+    const imageAttachments = attachments.filter(a => isImageMimeType(a.mimeType) && a.file);
+    const allAttachmentMeta: PersistedAttachment[] = attachments.map(a => ({
+      id: a.id,
+      filename: a.filename,
+      mimeType: a.mimeType,
+      sizeBytes: a.sizeBytes,
+      storagePath: a.storagePath,
+      url: a.url,
+    }));
+
+    // Store attachments for optimistic rendering
+    pendingAttachmentsRef.current = allAttachmentMeta;
+
+    // Build FileUIPart[] for images so the model can actually see them
+    const fileParts: Array<{ type: 'file'; mediaType: string; url: string; filename: string }> = [];
+    for (const img of imageAttachments) {
+      // Convert the File to a data URL for the AI SDK
+      const dataUrl = await fileToDataUrl(img.file!);
+      fileParts.push({
+        type: 'file',
+        mediaType: img.mimeType,
+        url: dataUrl,
+        filename: img.filename,
+      });
+    }
+
+    // Call sendMessage with text + files (images only), and pass attachment metadata via body
+    if (fileParts.length > 0) {
+      sendMessage(
+        { text: content || ' ', files: fileParts },
+        { body: { conversationId, attachments: allAttachmentMeta } }
+      );
+    } else {
+      sendMessage(
+        { text: content, files: undefined } as any,
+        { body: { conversationId, attachments: allAttachmentMeta.length > 0 ? allAttachmentMeta : undefined } }
+      );
+    }
   };
 
   // We filter out any messages from useChat that are already persisted in the database.
@@ -61,6 +107,10 @@ function ChatContainer({ conversationId, persistedMessages }: { conversationId: 
     .map((msg: any, index: number, array: any[]) => {
       const isLast = index === array.length - 1;
       const isStreamingMessage = isLast && msg.role === 'assistant' && status === 'streaming';
+
+      // For user draft messages, attach the pending attachments from this send
+      const attachments = msg.role === 'user' ? pendingAttachmentsRef.current : undefined;
+
       return {
         id: msg.id,
         role: msg.role,
@@ -68,6 +118,7 @@ function ChatContainer({ conversationId, persistedMessages }: { conversationId: 
         createdAt: msg.createdAt ? new Date(msg.createdAt).toISOString() : new Date().toISOString(),
         isPending: false,
         isStreaming: isStreamingMessage,
+        attachments,
       };
     });
 
@@ -82,6 +133,7 @@ function ChatContainer({ conversationId, persistedMessages }: { conversationId: 
       createdAt: new Date().toISOString(),
       isPending: true,
       isStreaming: false,
+      attachments: undefined,
     });
   }
 
@@ -94,6 +146,7 @@ function ChatContainer({ conversationId, persistedMessages }: { conversationId: 
       createdAt: new Date().toISOString(),
       isPending: false,
       isStreaming: false,
+      attachments: undefined,
     });
   }
 
@@ -105,8 +158,18 @@ function ChatContainer({ conversationId, persistedMessages }: { conversationId: 
 
       <div className="flex flex-1 flex-col bg-muted/10 h-full relative">
         <MessageList draftMessages={draftMessages} persistedMessages={persistedMessages} />
-        <ChatInput onSend={handleSend} isSending={isSending} onStop={stop} />
+        <ChatInput onSend={handleSend} isSending={isSending} onStop={stop} conversationId={conversationId} />
       </div>
     </div>
   );
+}
+
+/** Convert a File to a data URL string */
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 }

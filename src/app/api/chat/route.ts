@@ -51,12 +51,15 @@ export async function POST(req: Request) {
       userMessageContent = JSON.stringify(lastMessage.content)
     }
 
+    const attachments = Array.isArray(json.attachments) ? json.attachments : undefined
+
     await db.message.create({
       data: {
         conversationId,
         role: 'user',
         content: userMessageContent,
         tokenCount: 0,
+        metadata: attachments && attachments.length > 0 ? { attachments } : {},
       },
     })
 
@@ -64,7 +67,7 @@ export async function POST(req: Request) {
     const systemPrompt = "You are Quasar, an AI developer workspace assistant. Be concise and specific. Focus ONLY on answering the user's latest message. Do not repeat or re-answer previous questions from the chat history."
 
     const modelMessages = await convertToModelMessages(messages);
-    console.log('[CHAT] Final Model Messages:', JSON.stringify(modelMessages.map(m => ({ role: m.role, len: m.content.length })), null, 2));
+    console.log('[CHAT] Final Model Messages:', JSON.stringify(modelMessages.map(m => ({ role: m.role, len: m.content?.length, isArray: Array.isArray(m.content) })), null, 2));
 
     const result = streamText({
       model: google('gemini-3.5-flash'),
