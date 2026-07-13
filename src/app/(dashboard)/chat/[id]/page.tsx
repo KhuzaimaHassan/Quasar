@@ -54,7 +54,7 @@ function ChatContainer({ conversationId, persistedMessages }: { conversationId: 
   // @ts-ignore - The ai/react vs @ai-sdk/react type definitions conflict in this setup
   const { messages, setMessages, sendMessage, stop, status, error } = useChat({
     transport,
-    initialMessages: initMsgs,
+    messages: initMsgs,
   });
 
   // Sync useChat's internal state with the DB when not streaming.
