@@ -40,20 +40,13 @@ export async function convertToModelMessages(messages: any[]): Promise<any[]> {
           return { role: 'user', content: m.content };
         }
 
-        const contentParts: any[] = [];
-        
-        // 1. Text part
-        if (typeof m.content === 'string' && m.content.trim().length > 0) {
-          contentParts.push({ type: 'text', text: m.content });
-        } else if (typeof m.content === 'string') {
-          contentParts.push({ type: 'text', text: m.content || ' ' });
-        }
+        const imageParts: any[] = [];
 
         // 2. Add experimental_attachments
         if (Array.isArray(m.experimental_attachments)) {
           for (const att of m.experimental_attachments) {
             if (att.contentType?.startsWith('image/')) {
-              contentParts.push({ type: 'image', image: new URL(att.url) });
+              imageParts.push({ type: 'image', image: new URL(att.url) });
             }
           }
         }
@@ -64,15 +57,23 @@ export async function convertToModelMessages(messages: any[]): Promise<any[]> {
             const mediaType = part.mediaType || part.contentType || '';
             if (part.type === 'file' || part.type === 'image') {
               if (mediaType.startsWith('image/')) {
-                 contentParts.push({ type: 'image', image: new URL(part.url) });
+                 imageParts.push({ type: 'image', image: new URL(part.url) });
               }
             }
           }
         }
 
+        if (imageParts.length > 0) {
+          const textPart = { type: 'text', text: (typeof m.content === 'string' && m.content.trim().length > 0) ? m.content : ' ' };
+          return {
+            role: 'user',
+            content: [textPart, ...imageParts]
+          };
+        }
+
         return {
           role: 'user',
-          content: contentParts.length > 0 ? contentParts : m.content
+          content: m.content || ' '
         };
       }
 
