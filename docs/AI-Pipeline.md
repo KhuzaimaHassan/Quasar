@@ -148,11 +148,12 @@ const { messages, input, handleSubmit, isLoading, stop } = useChat({
 ## Token Tracking
 
 After every completion:
-1. Add `usage.promptTokens + usage.completionTokens` to `messages.token_count`.
-2. Increment `conversations.total_tokens`.
-3. Expose a cost dashboard using approximate pricing:
-   - Claude Sonnet: $3 / 1M input tokens, $15 / 1M output tokens (verify current pricing).
-   - GPT-4o: $5 / 1M input, $15 / 1M output (verify current pricing).
+1. Add `usage.totalTokens` (which is `usage.inputTokens + usage.outputTokens`) to `messages.token_count` for the assistant message.
+2. Increment `conversations.total_tokens` with `usage.totalTokens`.
+3. Display raw token counts in the UI (conversation headers and message hover states).
+
+> [!NOTE]
+> **Cost Estimation Deferred**: Cost estimation mapping is deferred to the Milestone 6 cost dashboard. Since the current default model (Gemini free tier) has no meaningful per-token cost to display right now, we do not attempt to show dollar amounts in the chat interface.
 
 Store raw token counts in the DB, compute cost at display time so pricing changes don't require a migration.
 

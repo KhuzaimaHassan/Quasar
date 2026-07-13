@@ -1,13 +1,15 @@
 "use client";
 
-import { use, useMemo, useRef } from "react";
+import { use, useMemo, useRef, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { ConversationList } from "../ConversationList";
 import { MessageList } from "@/components/chat/MessageList";
 import { ChatInput } from "@/components/chat/ChatInput";
-import { useMessages } from "@/lib/queries/conversations";
+import { useMessages, useConversation } from "@/lib/queries/conversations";
 import { toInitialMessages, getMessageText } from "@/lib/chat-utils";
+import { TokenBadge } from "@/components/chat/TokenBadge";
 import type { UploadedAttachment, PersistedAttachment } from "@/lib/attachment-types";
 import { isImageMimeType } from "@/lib/attachment-types";
 
@@ -50,10 +52,33 @@ function ChatContainer({ conversationId, persistedMessages }: { conversationId: 
   const pendingAttachmentsRef = useRef<PersistedAttachment[]>([]);
 
   // @ts-ignore - The ai/react vs @ai-sdk/react type definitions conflict in this setup
-  const { messages, sendMessage, stop, status, error } = useChat({
+  const { messages, setMessages, sendMessage, stop, status, error } = useChat({
     transport,
-    messages: initMsgs,
+    initialMessages: initMsgs,
   });
+
+  // Sync useChat's internal state with the DB when not streaming.
+  // This prevents duplicates because useChat assigns temporary client-side IDs to new messages,
+  // which won't match the new Prisma UUIDs once they are persisted and refetched.
+  useEffect(() => {
+    if (status === 'ready' && persistedMessages.length > 0) {
+      setMessages(toInitialMessages(persistedMessages));
+    }
+  }, [persistedMessages, status, setMessages]);
+
+  const queryClient = useQueryClient();
+  const prevStatusRef = useRef(status);
+
+  useEffect(() => {
+    const wasActive = prevStatusRef.current === 'streaming' || prevStatusRef.current === 'submitted';
+    if (wasActive && status === 'ready') {
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['conversation', conversationId] });
+        queryClient.invalidateQueries({ queryKey: ['messages', conversationId] });
+      }, 500);
+    }
+    prevStatusRef.current = status;
+  }, [status, conversationId, queryClient]);
 
   const isSending = status === 'submitted' || status === 'streaming';
 
@@ -150,6 +175,21 @@ function ChatContainer({ conversationId, persistedMessages }: { conversationId: 
     });
   }
 
+function ChatHeader({ conversationId }: { conversationId: string }) {
+  const { data: conversation } = useConversation(conversationId);
+  
+  if (!conversation) return null;
+
+  return (
+    <header className="flex items-center justify-between px-4 py-3 border-b bg-background/50 backdrop-blur-sm shrink-0 z-10">
+      <h2 className="text-sm font-semibold text-foreground truncate mr-4">
+        {conversation.title || 'New Conversation'}
+      </h2>
+      <TokenBadge conversationId={conversationId} />
+    </header>
+  );
+}
+
   return (
     <div className="flex h-full w-full overflow-hidden">
       <div className="hidden md:flex h-full shrink-0">
@@ -157,6 +197,7 @@ function ChatContainer({ conversationId, persistedMessages }: { conversationId: 
       </div>
 
       <div className="flex flex-1 flex-col bg-muted/10 h-full relative">
+        <ChatHeader conversationId={conversationId} />
         <MessageList draftMessages={draftMessages} persistedMessages={persistedMessages} />
         <ChatInput onSend={handleSend} isSending={isSending} onStop={stop} conversationId={conversationId} />
       </div>

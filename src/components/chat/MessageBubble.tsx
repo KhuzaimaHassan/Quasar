@@ -11,6 +11,7 @@ export interface MessageProps {
   content: string;
   createdAt: string | Date;
   attachments?: PersistedAttachment[];
+  tokenCount?: number;
 }
 
 interface MessageBubbleProps {
@@ -101,6 +102,7 @@ export function MessageBubble({ message, isPending, isStreaming }: MessageBubble
           )}
         >
           {formatRelativeTime(message.createdAt)}
+          {!isUser && !isStreaming && !isPending && message.tokenCount ? ` · ${message.tokenCount.toLocaleString()} tokens` : ""}
         </span>
       </div>
     </div>

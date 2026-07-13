@@ -14,6 +14,19 @@ export function useConversations(workspaceId?: string | null) {
   })
 }
 
+export function useConversation(conversationId?: string | null) {
+  return useQuery({
+    queryKey: ['conversation', conversationId],
+    queryFn: async () => {
+      const res = await fetch(`/api/conversations/${conversationId}`)
+      if (!res.ok) throw new Error('Failed to fetch conversation')
+      return res.json()
+    },
+    enabled: !!conversationId,
+    retry: false,
+  })
+}
+
 export function useCreateConversation() {
   const queryClient = useQueryClient()
 
