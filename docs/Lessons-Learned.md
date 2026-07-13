@@ -180,6 +180,13 @@ After finishing each milestone (or whenever something significant happens), add 
   - *Why it happened*: Although the AI SDK logs deprecation warnings urging developers to use the new `file` format, the specific `@ai-sdk/google` provider version we had installed did not fully support passing a `URL` object inside a `file` block.
   - *How we solved it*: We purposefully reverted back to the "deprecated" `image` type format because it perfectly passes schema validation and works cleanly with Gemini, opting to tolerate the terminal warning over a broken application.
 
+**Issue #83: Displaying Token Usage & React Query States**
+
+- **Double-Rendering of Messages During Streams**:
+  - *What happened*: Eagerly invalidating the `messages` query right after a stream finished caused the UI to briefly show duplicates of the user prompt and AI response.
+  - *Why it happened*: Vercel's `useChat` hook assigns temporary client-side UUIDs to messages during streaming. When the stream finishes and the backend saves them to the DB, they get permanent database UUIDs. Because we were fetching the DB messages but *not* clearing the temporary client messages from `useChat`, the UI rendered both sets side-by-side because their IDs didn't match.
+  - *How we solved it*: We aggressively synced the client-side state. By pulling the `setMessages` function out of `useChat` and running a `useEffect` that calls `setMessages(toInitialMessages(persistedMessages))` whenever the stream stops, we forcefully overwrite the temporary client IDs with the permanent database IDs behind the scenes, instantly collapsing the duplicates.
+
 ---
 
 ### M3 — RAG
