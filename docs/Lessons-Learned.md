@@ -242,6 +242,9 @@ After finishing each milestone (or whenever something significant happens), add 
 
 > Add any notes that don't fit a milestone here.
 
+### Vercel AI SDK 4 Type Definitions Issue
+When using `@ai-sdk/react@4.0.17`, there is an internal type conflict regarding the `initialMessages` property on the `useChat` hook options. The compiler throws a `TS2353` error (`Object literal may only specify known properties`), but the property is essential at runtime to prepopulate the chat state and prevent race conditions where aggressive client-state synchronization wipes server-loaded messages on refresh. The current workaround is placing a `// @ts-ignore` immediately above the `initialMessages` property inside the options object.
+
 ---
 
 ## Resources That Actually Helped

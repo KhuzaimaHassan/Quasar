@@ -4,6 +4,8 @@ import { db } from '@/lib/db'
 import { streamText, createUIMessageStreamResponse, toUIMessageStream } from 'ai'
 import { google } from '@ai-sdk/google'
 import { convertToModelMessages } from '@/lib/chat-utils'
+import { MODEL_CATALOG } from '@/lib/models'
+import { decrypt } from '@/lib/encryption'
 
 export const maxDuration = 30
 
@@ -69,8 +71,56 @@ export async function POST(req: Request) {
     const modelMessages = await convertToModelMessages(messages);
     console.log('[CHAT] Final Model Messages:', JSON.stringify(modelMessages.map(m => ({ role: m.role, len: m.content?.length, isArray: Array.isArray(m.content) })), null, 2));
 
+    // Look up the conversation's model provider
+    const modelId = conversation.model;
+    const catalogEntry = MODEL_CATALOG.find(m => m.id === modelId);
+    
+    if (!catalogEntry) {
+      return new NextResponse(`Unknown model ID: ${modelId}`, { status: 400 });
+    }
+
+    const { provider } = catalogEntry;
+    let languageModel;
+
+    if (provider === 'google') {
+      languageModel = google(modelId);
+    } else if (provider === 'anthropic' || provider === 'openai') {
+      // Look up user's API key
+      const apiKeyRow = await db.apiKey.findUnique({
+        where: {
+          userId_provider: {
+            userId: user.id,
+            provider,
+          },
+        },
+      });
+
+      if (!apiKeyRow) {
+        return new NextResponse(`Missing API key for provider: ${provider}. Please configure it in settings.`, { status: 400 });
+      }
+
+      try {
+        const decryptedKey = decrypt(apiKeyRow.encryptedKey);
+        
+        if (provider === 'anthropic') {
+          const { createAnthropic } = await import('@ai-sdk/anthropic');
+          const anthropic = createAnthropic({ apiKey: decryptedKey });
+          languageModel = anthropic(modelId);
+        } else {
+          const { createOpenAI } = await import('@ai-sdk/openai');
+          const openai = createOpenAI({ apiKey: decryptedKey });
+          languageModel = openai(modelId);
+        }
+      } catch (err) {
+        console.error(`[CHAT_ERROR] Failed to initialize BYOK model provider=${provider} model=${modelId}`, err instanceof Error ? err.message : String(err));
+        return new NextResponse(`Failed to initialize ${provider} model. Your API key might be invalid.`, { status: 400 });
+      }
+    } else {
+      return new NextResponse(`Unsupported provider: ${provider}`, { status: 400 });
+    }
+
     const result = streamText({
-      model: google('gemini-3.5-flash'),
+      model: languageModel,
       system: systemPrompt,
       messages: modelMessages,
       async onFinish({ text, usage }) {

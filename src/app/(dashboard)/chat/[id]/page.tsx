@@ -10,8 +10,11 @@ import { ChatInput } from "@/components/chat/ChatInput";
 import { useMessages, useConversation } from "@/lib/queries/conversations";
 import { toInitialMessages, getMessageText } from "@/lib/chat-utils";
 import { TokenBadge } from "@/components/chat/TokenBadge";
+import { ModelSwitcher } from "@/components/chat/ModelSwitcher";
 import type { UploadedAttachment, PersistedAttachment } from "@/lib/attachment-types";
 import { isImageMimeType } from "@/lib/attachment-types";
+import { useApiKeys } from "@/lib/queries/api-keys";
+import { Provider } from "@/lib/models";
 
 export default function DynamicChatPage({ params }: { params: Promise<{ id: string }> }) {
   // Unwrap the Promise params for Client Components in Next.js 15+
@@ -51,10 +54,10 @@ function ChatContainer({ conversationId, persistedMessages }: { conversationId: 
   // Maps a "send index" to the attachments for that send
   const pendingAttachmentsRef = useRef<PersistedAttachment[]>([]);
 
-  // @ts-ignore - The ai/react vs @ai-sdk/react type definitions conflict in this setup
   const { messages, setMessages, sendMessage, stop, status, error } = useChat({
     transport,
-    messages: initMsgs,
+    // @ts-ignore - The ai/react vs @ai-sdk/react type definitions conflict in this setup
+    initialMessages: initMsgs,
   });
 
   // Sync useChat's internal state with the DB when not streaming.
@@ -177,15 +180,27 @@ function ChatContainer({ conversationId, persistedMessages }: { conversationId: 
 
 function ChatHeader({ conversationId }: { conversationId: string }) {
   const { data: conversation } = useConversation(conversationId);
+  const { data: apiKeys } = useApiKeys();
   
   if (!conversation) return null;
 
+  const availableProviders = (apiKeys?.map((k: { provider: string }) => k.provider) || []) as Provider[];
+
   return (
     <header className="flex items-center justify-between px-4 py-3 border-b bg-background/50 backdrop-blur-sm shrink-0 z-10">
-      <h2 className="text-sm font-semibold text-foreground truncate mr-4">
-        {conversation.title || 'New Conversation'}
-      </h2>
-      <TokenBadge conversationId={conversationId} />
+      <div className="flex items-center">
+        <h2 className="text-sm font-semibold text-foreground truncate mr-4">
+          {conversation.title || 'New Conversation'}
+        </h2>
+      </div>
+      <div className="flex items-center">
+        <ModelSwitcher 
+          conversationId={conversationId} 
+          currentModel={conversation.model} 
+          availableProviders={availableProviders} 
+        />
+        <TokenBadge conversationId={conversationId} />
+      </div>
     </header>
   );
 }

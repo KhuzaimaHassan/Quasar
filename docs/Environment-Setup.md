@@ -156,6 +156,10 @@ GOOGLE_GENERATIVE_AI_API_KEY=AIzaSy...
 ANTHROPIC_API_KEY=sk-ant-...
 OPENAI_API_KEY=sk-...
 
+# Security
+# Generate this via: openssl rand -base64 32 (Backup securely, losing this permanently breaks all stored API keys)
+ENCRYPTION_KEY=your_base64_encryption_key_here
+
 # FastAPI service
 FASTAPI_SERVICE_URL=http://localhost:8000
 

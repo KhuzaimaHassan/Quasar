@@ -173,3 +173,21 @@ Each decision is recorded here with the context, options considered, and rationa
 - Google's free tier rate limits are lower than paid tiers.
 - Google's free tier terms permit using inputs/outputs to improve their products, which should be disclosed to users eventually.
 - BYOK requires secure key storage, which is deferred to Issue #13.
+
+---
+
+## ADR-010: BYOK Key Storage — Application-Level Encryption
+
+**Status**: Accepted  
+**Date**: M2 implementation
+
+**Context**: For BYOK, we must store user-provided billing credentials (API keys for Claude, OpenAI, etc.). A breach could result in severe financial loss for users.
+
+**Decision**: Use application-level AES-256-GCM encryption with an `ENCRYPTION_KEY` environment variable.
+
+**Rationale**: Disk-level database encryption (like AWS RDS encryption at rest) only protects against physical theft of the hard drive. If an attacker gains SQL access or dumps the database, disk-level encryption is transparent and useless. Application-level encryption ensures the database only ever sees ciphertext. We use AES-256-GCM because it provides authenticated encryption (verifying data wasn't tampered with) along with confidentiality.
+
+**Consequences**:
+- The plaintext `ENCRYPTION_KEY` must be securely injected into the application environment.
+- If `ENCRYPTION_KEY` is lost or rotated without re-encrypting data, all stored user API keys become permanently unrecoverable.
+- API keys are only decrypted in-memory per-request and never returned to the client in plaintext.

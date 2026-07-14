@@ -1,5 +1,6 @@
 import { Settings as SettingsIcon } from "lucide-react";
-import { PageHeader, EmptyState } from "@/components/layout/PageHeader";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { ApiKeysSection } from "@/components/settings/ApiKeysSection";
 
 export default function SettingsPage() {
   return (
@@ -9,11 +10,10 @@ export default function SettingsPage() {
         description="Manage your account, billing, and API integrations."
         icon={SettingsIcon}
       />
-      <EmptyState 
-        icon={SettingsIcon}
-        title="Coming Soon"
-        description="User settings and workspace configuration will be available in Phase 2."
-      />
+      
+      <div className="max-w-2xl w-full">
+        <ApiKeysSection />
+      </div>
     </div>
   );
 }

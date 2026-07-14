@@ -4,6 +4,9 @@ export function getMessageText(message: any): string {
   if (typeof message.content === 'string' && message.content.length > 0) {
     return message.content
   }
+  if (typeof message.text === 'string' && message.text.length > 0) {
+    return message.text
+  }
   if (Array.isArray(message.parts)) {
     return message.parts
       .map((part: any) => {
@@ -27,19 +30,15 @@ export async function convertToModelMessages(messages: any[]): Promise<any[]> {
   return messages
     .filter(m => ['system', 'user', 'assistant', 'tool'].includes(m.role))
     .filter(m => {
-      if (typeof m.content === 'string' && m.content.trim().length > 0) return true;
-      if (Array.isArray(m.content) && m.content.length > 0) return true;
+      const text = getMessageText(m);
+      if (text.trim().length > 0) return true;
       if (Array.isArray(m.experimental_attachments) && m.experimental_attachments.length > 0) return true;
       if (Array.isArray(m.parts) && m.parts.length > 0) return true;
       return false;
     })
     .map(m => {
       if (m.role === 'user') {
-        // If content is already an array, use it directly
-        if (Array.isArray(m.content) && m.content.length > 0) {
-          return { role: 'user', content: m.content };
-        }
-
+        const textContent = getMessageText(m);
         const imageParts: any[] = [];
 
         // 2. Add experimental_attachments
@@ -64,7 +63,7 @@ export async function convertToModelMessages(messages: any[]): Promise<any[]> {
         }
 
         if (imageParts.length > 0) {
-          const textPart = { type: 'text', text: (typeof m.content === 'string' && m.content.trim().length > 0) ? m.content : ' ' };
+          const textPart = { type: 'text', text: textContent.trim().length > 0 ? textContent : ' ' };
           return {
             role: 'user',
             content: [textPart, ...imageParts]
@@ -73,13 +72,13 @@ export async function convertToModelMessages(messages: any[]): Promise<any[]> {
 
         return {
           role: 'user',
-          content: m.content || ' '
+          content: textContent || ' '
         };
       }
 
       return {
         role: m.role as 'system' | 'user' | 'assistant' | 'tool',
-        content: m.content
+        content: getMessageText(m) || m.content
       };
     });
 }
