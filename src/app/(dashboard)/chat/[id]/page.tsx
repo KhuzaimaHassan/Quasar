@@ -15,6 +15,8 @@ import type { UploadedAttachment, PersistedAttachment } from "@/lib/attachment-t
 import { isImageMimeType } from "@/lib/attachment-types";
 import { useApiKeys } from "@/lib/queries/api-keys";
 import { Provider } from "@/lib/models";
+import { useWorkspace } from "@/components/providers/workspace-provider";
+import { useWorkspaces } from "@/lib/queries/workspaces";
 
 export default function DynamicChatPage({ params }: { params: Promise<{ id: string }> }) {
   // Unwrap the Promise params for Client Components in Next.js 15+
@@ -181,7 +183,22 @@ function ChatContainer({ conversationId, persistedMessages }: { conversationId: 
 function ChatHeader({ conversationId }: { conversationId: string }) {
   const { data: conversation } = useConversation(conversationId);
   const { data: apiKeys } = useApiKeys();
+  const { activeWorkspace, setActiveWorkspace } = useWorkspace();
+  const { data: workspaces } = useWorkspaces();
   
+  // Force workspace synchronization on direct navigation or refresh
+  // This absolutely guarantees that the global workspace matches the conversation being viewed
+  useEffect(() => {
+    if (conversation?.workspaceId && workspaces?.length) {
+      if (activeWorkspace?.id !== conversation.workspaceId) {
+        const correctWorkspace = workspaces.find((w: any) => w.id === conversation.workspaceId);
+        if (correctWorkspace) {
+          setActiveWorkspace(correctWorkspace);
+        }
+      }
+    }
+  }, [conversation?.workspaceId, workspaces, activeWorkspace?.id, setActiveWorkspace]);
+
   if (!conversation) return null;
 
   const availableProviders = (apiKeys?.map((k: { provider: string }) => k.provider) || []) as Provider[];
