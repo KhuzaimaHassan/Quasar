@@ -15,24 +15,19 @@ import { cn, formatRelativeTime } from "@/lib/utils";
 import { ConversationCard } from "./ConversationCard";
 import { useWorkspace } from "@/components/providers/workspace-provider";
 import { useConversations, useCreateConversation } from "@/lib/queries/conversations";
+import { MODEL_CATALOG } from "@/lib/models";
 
 export function ConversationList() {
   const router = useRouter();
   const params = useParams();
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedModel, setSelectedModel] = useState("claude-sonnet-4-5");
+  const [selectedModel, setSelectedModel] = useState("gemini-3.5-flash");
   
   const { activeWorkspace } = useWorkspace();
   const { data: conversations = [], isLoading } = useConversations(activeWorkspace?.id);
   const { mutate: createConversation, isPending: isCreating } = useCreateConversation();
 
-  const models = [
-    { id: "claude-sonnet-4-5", name: "Claude 4.5 Sonnet" },
-    { id: "gpt-4o", name: "GPT-4o" },
-    { id: "gemini-1.5-pro", name: "Gemini 1.5 Pro" }
-  ];
-
-  const currentModelName = models.find(m => m.id === selectedModel)?.name || "Claude 4.5 Sonnet";
+  const currentModelName = MODEL_CATALOG.find(m => m.id === selectedModel)?.label || MODEL_CATALOG[0]?.label;
 
   const handleNewChat = () => {
     createConversation(
@@ -70,13 +65,13 @@ export function ConversationList() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-48">
-              {models.map(model => (
+              {MODEL_CATALOG.map(model => (
                 <DropdownMenuItem 
                   key={model.id} 
                   onClick={() => setSelectedModel(model.id)}
                   className={cn("cursor-pointer", selectedModel === model.id && "bg-accent text-accent-foreground font-medium")}
                 >
-                  {model.name}
+                  {model.label}
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
@@ -121,7 +116,7 @@ export function ConversationList() {
               <ConversationCard 
                 title={chat.title}
                 time={formatRelativeTime(chat.updatedAt)}
-                model={models.find(m => m.id === chat.model)?.name || chat.model}
+                model={MODEL_CATALOG.find(m => m.id === chat.model)?.label || chat.model}
                 files={0}
                 isActive={params?.id === chat.id}
               />
