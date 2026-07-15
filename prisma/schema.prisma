@@ -47,6 +47,7 @@ model Workspace {
   createdAt DateTime @default(now())
   updatedAt     DateTime @updatedAt
   conversations Conversation[]
+  documents     Document[]
 
   @@index([userId])
   @@map("workspaces")
@@ -82,4 +83,35 @@ model Message {
 
   @@index([conversationId, createdAt])
   @@map("messages")
+}
+
+model Document {
+  id           String    @id @default(uuid())
+  workspaceId  String
+  workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  filename     String
+  storagePath  String
+  mimeType     String
+  sizeBytes    Int
+  status       String    @default("pending")
+  errorMessage String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  chunks       Chunk[]
+
+  @@index([workspaceId])
+  @@index([status])
+}
+
+model Chunk {
+  id         String   @id @default(uuid())
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  chunkIndex Int
+  content    String
+  embedding  Unsupported("vector(768)")?
+  metadata   Json     @default("{}")
+  createdAt  DateTime @default(now())
+
+  @@index([documentId])
 }

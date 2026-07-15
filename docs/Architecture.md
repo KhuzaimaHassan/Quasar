@@ -69,6 +69,7 @@ Introduced in M3. Handles:
 - MCP gateway endpoints
 
 FastAPI is chosen here because Python has the richest ecosystem for document parsing (`unstructured`), embeddings (`sentence-transformers`, `openai`), and LangGraph.
+It connects directly to the shared PostgreSQL database using the `asyncpg` driver for maximum asynchronous performance, and relies heavily on the `pgvector` extension for efficient vector similarity search on document embeddings.
 
 ### MCP Gateway
 

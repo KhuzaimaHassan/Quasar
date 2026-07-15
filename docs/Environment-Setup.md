@@ -162,6 +162,7 @@ ENCRYPTION_KEY=your_base64_encryption_key_here
 
 # FastAPI service
 FASTAPI_SERVICE_URL=http://localhost:8000
+INTERNAL_SERVICE_SECRET=your_internal_secret_here
 
 # Redis
 REDIS_URL=redis://...
@@ -183,6 +184,7 @@ Edit `backend/.env`:
 
 ```env
 DATABASE_URL=postgresql://postgres:[password]@db.[ref].supabase.co:5432/postgres
+INTERNAL_SERVICE_SECRET=your_internal_secret_here
 OPENAI_API_KEY=sk-...
 ANTHROPIC_API_KEY=sk-ant-...
 REDIS_URL=redis://...
