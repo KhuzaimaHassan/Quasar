@@ -191,6 +191,18 @@ After finishing each milestone (or whenever something significant happens), add 
 
 ### M3 — RAG
 
+**Issue #110: FastAPI Service Foundation & Prisma pgvector**
+
+- **Prisma pgvector Extension Setup**:
+  - *What happened*: Running `prisma migrate dev` with `postgresqlExtensions` failed on Supabase.
+  - *Why it happened*: Prisma creates a temporary shadow database to calculate schema diffs. The `CREATE EXTENSION vector` command failed on the shadow DB because the Supabase `postgres` user doesn't have superuser rights over dynamically created shadow databases.
+  - *How we solved it*: We manually created the shadow database in the Supabase dashboard (`quasar_shadow`) and provided its connection string directly to Prisma using `shadowDatabaseUrl` in our `.env` file. This bypassed Prisma's dynamic shadow database creation and allowed the migration to succeed.
+  
+- **Anaconda and Local Python Environments**:
+  - *What happened*: We struggled to test the FastAPI app within the internal Windows sandbox due to a corrupted Anaconda environment throwing `init_fs_encoding` errors.
+  - *Why it happened*: The terminal had a broken base Anaconda setup that crashed Python on startup.
+  - *How we solved it*: We located the host machine's native Python installation at `AppData\Local\Programs\Python\Python313\python.exe` and used that absolute path to bypass the corrupted environment, successfully creating a `venv` and launching the server.
+
 > Fill this in after completing Milestone 3.
 
 **Topics to reflect on:**
