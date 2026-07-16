@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from core.db import init_db_pool, close_db_pool
-from routers import health
+from routers import health, ingest
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -15,3 +15,4 @@ app = FastAPI(title="Quasar Backend Service", lifespan=lifespan)
 
 # Include routers
 app.include_router(health.router)
+app.include_router(ingest.router)

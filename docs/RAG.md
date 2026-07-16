@@ -52,20 +52,18 @@ Start with PDF and DOCX. Add code file support in M5 (needed for codebase RAG).
 
 ### Algorithm
 
-Use `RecursiveCharacterTextSplitter` from LangChain (or implement manually):
+We implement a manual recursive paragraph and sentence splitter:
 
 ```python
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from google.genai import local_tokenizer
 
-splitter = RecursiveCharacterTextSplitter(
-    chunk_size=512,
-    chunk_overlap=64,
-    separators=["\n\n", "\n", ". ", " ", ""],
-    length_function=count_tokens,  # Use tiktoken, not character count
-)
+tokenizer = local_tokenizer.LocalTokenizer("gemini-2.5-flash")
+
+def count_tokens(text: str) -> int:
+    return tokenizer.count_tokens(text).total_tokens
 ```
 
-Always split by **tokens**, not characters. Character-based splitting produces inconsistent chunk sizes across languages and code.
+Always split by **tokens**, not characters. We first split by double newlines (`\n\n`) to preserve paragraphs, and if a single paragraph exceeds the token limit, we recursively break it down by sentence boundaries (`.!?`). We greedily accumulate these units until the target token size is met.
 
 ### Metadata per chunk
 
@@ -89,28 +87,33 @@ This metadata is used for citation display in the UI ("Source: technical_spec.pd
 
 | Model | Provider | Dimensions | Cost |
 |-------|----------|-----------|------|
-| `text-embedding-3-small` | OpenAI | 1536 | $0.02 / 1M tokens |
-| `text-embedding-3-large` | OpenAI | 3072 | $0.13 / 1M tokens |
+| `gemini-embedding-001` | Google Gemini | 768 | Generous Free Tier |
 | `embed-english-v3.0` | Cohere | 1024 | $0.10 / 1M tokens |
 
-**Start with `text-embedding-3-small`** — good quality, lowest cost. If retrieval quality is poor on technical content, evaluate `embed-english-v3.0`.
+**Start with `gemini-embedding-001`** — excellent quality and cost-effective.
+> **Privacy Note**: Because we are utilizing the free-tier Gemini API, Google may use the uploaded document content to improve their models. Users should be aware of this, especially since documents may contain more sensitive material than typed chat messages.
 
-The dimension must match the pgvector column definition. **Do not change embedding models after creating chunks** — you would need to re-embed all existing documents.
+The dimension must match the pgvector column definition (768). **Do not change embedding models after creating chunks** — you would need to re-embed all existing documents.
 
 ```python
-from openai import AsyncOpenAI
+from google import genai
+from google.genai import types
 
-client = AsyncOpenAI()
+client = genai.Client()
 
-async def embed(text: str) -> list[float]:
-    response = await client.embeddings.create(
-        model="text-embedding-3-small",
-        input=text,
+def embed(text: str) -> list[float]:
+    response = client.models.embed_content(
+        model="gemini-embedding-001",
+        contents=text,
+        config=types.EmbedContentConfig(
+            output_dimensionality=768,
+            task_type="RETRIEVAL_DOCUMENT" # Use RETRIEVAL_DOCUMENT for indexing, RETRIEVAL_QUERY for searching
+        )
     )
-    return response.data[0].embedding
+    return response.embeddings[0].values
 ```
 
-Batch embedding requests — embed up to 100 chunks per API call, not one at a time.
+Batch embedding requests — embed up to 20 chunks per API call using a single batch request, and implement exponential backoff to handle free-tier rate limits gracefully.
 
 ---
 
@@ -118,7 +121,7 @@ Batch embedding requests — embed up to 100 chunks per API call, not one at a t
 
 ```sql
 -- Schema (already in Database.md, repeated here for context)
-ALTER TABLE chunks ADD COLUMN embedding vector(1536);
+ALTER TABLE chunks ADD COLUMN embedding vector(768);
 
 -- Insert
 INSERT INTO chunks (document_id, chunk_index, content, embedding, metadata)

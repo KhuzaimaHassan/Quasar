@@ -141,13 +141,9 @@ Or open them manually through the GitHub UI.
 - Label: `ux`
 - Body: Documents page in workspace. Drag-and-drop zone (react-dropzone) accepting PDF and DOCX. Upload progress bar via Supabase Storage's upload progress callback. Document list with status badge.
 
-**#15** — FastAPI ingestion service (parse → chunk → store)
+**#15 & #16** — FastAPI ingestion service & Embed chunks (Gemini)
 - Label: `ai`
-- Body: Set up FastAPI project structure in `/backend`. Install `fastapi`, `uvicorn`, `pymupdf`, `python-docx`, `langchain`. Implement `POST /ingest` endpoint. Parse file, split with RecursiveCharacterTextSplitter (512 tokens, 64 overlap), store chunks to DB.
-
-**#16** — Embed chunks (OpenAI text-embedding-3-small → pgvector)
-- Label: `ai`
-- Body: After chunking, embed each chunk using `openai.embeddings.create`. Enable `pgvector` extension on PostgreSQL. Add `embedding vector(1536)` column to `chunks`. Batch embed (100 chunks/call max).
+- Body: Set up FastAPI project structure in `/backend`. Install `fastapi`, `uvicorn`, `pymupdf`, `python-docx`, `google-genai`. Implement a combined `POST /ingest` endpoint. Parse file, split paragraphs/sentences with `LocalTokenizer`, embed using `gemini-embedding-001`, and store chunks + 768-dim embeddings in `pgvector`. (Note: Issues #15 and #16 were implemented together as one endpoint since they form a single causal pipeline).
 
 **#17** — Semantic retrieval (cosine similarity via pgvector)
 - Label: `ai`
@@ -320,7 +316,7 @@ about: New feature or task
 | 13 | Model switcher | M2 | feat |
 | 14 | Document upload UI | M3 | ux |
 | 15 | FastAPI ingestion service | M3 | ai |
-| 16 | Embed chunks → pgvector | M3 | ai |
+| 16 | Embed chunks (Gemini) → pgvector | M3 | ai |
 | 17 | Semantic retrieval | M3 | ai |
 | 18 | RAG context injection + citations | M3 | ai |
 | 19 | Document library UI | M3 | ux |

@@ -2,3 +2,9 @@ fastapi
 uvicorn[standard]
 asyncpg
 pydantic-settings
+pymupdf
+python-docx
+google-genai
+supabase
+sentencepiece
+protobuf
