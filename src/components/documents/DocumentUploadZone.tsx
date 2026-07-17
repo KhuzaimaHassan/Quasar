@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback } from "react";
 import { UploadCloud } from "lucide-react";
 import { useWorkspace } from "@/components/providers/workspace-provider";
 import { useUploadDocument } from "@/lib/queries/documents";

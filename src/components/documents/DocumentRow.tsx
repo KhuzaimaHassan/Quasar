@@ -1,4 +1,4 @@
-import React from "react";
+
 import { FileText, Loader2, CheckCircle, AlertCircle } from "lucide-react";
 import { Document } from "@/lib/queries/documents";
 
