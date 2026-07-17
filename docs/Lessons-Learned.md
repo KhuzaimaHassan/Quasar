@@ -203,7 +203,22 @@ After finishing each milestone (or whenever something significant happens), add 
   - *Why it happened*: The terminal had a broken base Anaconda setup that crashed Python on startup.
   - *How we solved it*: We located the host machine's native Python installation at `AppData\Local\Programs\Python\Python313\python.exe` and used that absolute path to bypass the corrupted environment, successfully creating a `venv` and launching the server.
 
-> Fill this in after completing Milestone 3.
+**Issue #85: Document Upload & Ingestion Pipeline**
+
+- **Prisma Client Windows File Locks**:
+  - *What happened*: Running `npx prisma generate` failed with `EPERM: operation not permitted` renaming the `query_engine-windows.dll.node` file.
+  - *Why it happened*: We added new Prisma models (`Document`, `Chunk`) but ran the generator while the Next.js dev server was active. Windows places strict file locks on compiled `.node` binaries while the server process uses them.
+  - *How we solved it*: We learned the hard way that stopping the Next.js dev server entirely is required before generating Prisma clients on Windows machines to avoid frustrating file permission errors.
+
+- **Supabase PgBouncer and asyncpg Caching**:
+  - *What happened*: The FastAPI ingestion endpoint threw `InvalidSQLStatementNameError: prepared statement "__asyncpg_stmt_1__" does not exist`.
+  - *Why it happened*: Supabase's connection pooler (PgBouncer) runs in "transaction mode". `asyncpg` natively tries to optimize queries using prepared statements, but transaction poolers shuffle underlying server connections, causing prepared statements to be lost mid-session.
+  - *How we solved it*: We passed `statement_cache_size=0` explicitly into `asyncpg.create_pool()`, disabling prepared statements and allowing it to work seamlessly behind PgBouncer.
+
+- **Postgres Datetime Timezone Strictness via asyncpg**:
+  - *What happened*: Inserting `datetime.now(timezone.utc)` into the `createdAt` column crashed `asyncpg` with a `TypeError: can't subtract offset-naive and offset-aware datetimes`.
+  - *Why it happened*: Prisma generated the column as `timestamp(3)` (which means `timestamp without time zone` in Postgres defaults), but our Python code explicitly passed a timezone-aware object, causing `asyncpg`'s strict type encoder to fail when mapping types.
+  - *How we solved it*: We stripped the Python `datetime` injection entirely and instead used Postgres's native `now()` function inside the raw SQL `INSERT` string. This delegated the responsibility of generating the correct timestamp to Postgres directly, matching Prisma's behavior perfectly and completely bypassing Python's timezone offset headaches.
 
 **Topics to reflect on:**
 - What chunking strategy worked best, and how did you evaluate it?

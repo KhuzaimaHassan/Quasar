@@ -53,14 +53,13 @@ async def process_document(document_id: str):
                     # Convert list of floats to pgvector string format '[1.1, 2.2, ...]'
                     emb_str = "[" + ",".join(map(str, emb)) + "]"
                     metadata_str = "{}"
-                    created_at = datetime.now(timezone.utc)
                     
                     await conn.execute(
                         '''
                         INSERT INTO "Chunk" (id, "documentId", "chunkIndex", content, embedding, metadata, "createdAt")
-                        VALUES ($1, $2, $3, $4, $5::vector, $6, $7)
+                        VALUES ($1, $2, $3, $4, $5::vector, $6, now())
                         ''',
-                        chunk_id, document_id, i, chunk, emb_str, metadata_str, created_at
+                        chunk_id, document_id, i, chunk, emb_str, metadata_str
                     )
                     
                 # 7. Update status to 'ready'

@@ -137,9 +137,9 @@ Or open them manually through the GitHub UI.
 
 ### Milestone 3 — RAG
 
-**#14** — Document upload UI (drag-and-drop, progress bar)
+**#14** — Document upload UI (drag-and-drop, progress bar) [IMPLEMENTED]
 - Label: `ux`
-- Body: Documents page in workspace. Drag-and-drop zone (react-dropzone) accepting PDF and DOCX. Upload progress bar via Supabase Storage's upload progress callback. Document list with status badge.
+- Body: Documents page in workspace. Drag-and-drop zone accepting PDF and DOCX. Uses a two-step upload-then-confirm-ingest design via presigned URL. Document list with status badge. (Note: Delete/library management is explicitly deferred to #19).
 
 **#15 & #16** — FastAPI ingestion service & Embed chunks (Gemini)
 - Label: `ai`

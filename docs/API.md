@@ -201,7 +201,7 @@ Request a presigned Supabase Storage upload URL. The client uploads directly to 
 {
   "uploadUrl": "https://supabase.co/storage/v1/object/...",
   "documentId": "uuid",
-  "storagePath": "workspaces/uuid/spec.pdf"
+  "storagePath": "documents/uuid/uuid-spec.pdf"
 }
 ```
 
@@ -218,7 +218,7 @@ Get document status (for polling after upload).
 
 ```json
 // Response 200
-{ "id": "uuid", "status": "ready", "chunkCount": 42 }
+{ "id": "uuid", "workspaceId": "uuid", "filename": "spec.pdf", "mimeType": "application/pdf", "sizeBytes": 204800, "status": "ready", "errorMessage": null, "createdAt": "...", "updatedAt": "..." }
 ```
 
 #### `DELETE /api/documents/:id`
