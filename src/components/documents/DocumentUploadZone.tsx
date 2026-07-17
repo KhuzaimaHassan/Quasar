@@ -13,7 +13,7 @@ const ALLOWED_TYPES = [
 
 export function DocumentUploadZone() {
   const { activeWorkspace } = useWorkspace();
-  const { mutate: uploadDocument, isPending } = useUploadDocument();
+  const { mutate: uploadDocument } = useUploadDocument();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [isDragging, setIsDragging] = useState(false);
