@@ -11,7 +11,7 @@ export const createDocumentUploadSchema = z.object({
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     ],
     {
-      errorMap: () => ({ message: "Only PDF and DOCX files are supported" }),
+      invalid_type_error: "Only PDF and DOCX files are supported",
     }
   ),
   sizeBytes: z
