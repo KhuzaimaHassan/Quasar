@@ -213,12 +213,25 @@ After finishing each milestone (or whenever something significant happens), add 
 - **Supabase PgBouncer and asyncpg Caching**:
   - *What happened*: The FastAPI ingestion endpoint threw `InvalidSQLStatementNameError: prepared statement "__asyncpg_stmt_1__" does not exist`.
   - *Why it happened*: Supabase's connection pooler (PgBouncer) runs in "transaction mode". `asyncpg` natively tries to optimize queries using prepared statements, but transaction poolers shuffle underlying server connections, causing prepared statements to be lost mid-session.
+  - *What happened*: Supabase's connection pooler (PgBouncer) runs in "transaction mode". `asyncpg` natively tries to optimize queries using prepared statements, but transaction poolers shuffle underlying server connections, causing prepared statements to be lost mid-session.
   - *How we solved it*: We passed `statement_cache_size=0` explicitly into `asyncpg.create_pool()`, disabling prepared statements and allowing it to work seamlessly behind PgBouncer.
 
 - **Postgres Datetime Timezone Strictness via asyncpg**:
   - *What happened*: Inserting `datetime.now(timezone.utc)` into the `createdAt` column crashed `asyncpg` with a `TypeError: can't subtract offset-naive and offset-aware datetimes`.
-  - *Why it happened*: Prisma generated the column as `timestamp(3)` (which means `timestamp without time zone` in Postgres defaults), but our Python code explicitly passed a timezone-aware object, causing `asyncpg`'s strict type encoder to fail when mapping types.
+  - *What happened*: Prisma generated the column as `timestamp(3)` (which means `timestamp without time zone` in Postgres defaults), but our Python code explicitly passed a timezone-aware object, causing `asyncpg`'s strict type encoder to fail when mapping types.
   - *How we solved it*: We stripped the Python `datetime` injection entirely and instead used Postgres's native `now()` function inside the raw SQL `INSERT` string. This delegated the responsibility of generating the correct timestamp to Postgres directly, matching Prisma's behavior perfectly and completely bypassing Python's timezone offset headaches.
+
+**Issue #88: Semantic Retrieval & pgvector Thresholds**
+
+- **Similarity Threshold Tuning with Gemini Embeddings**:
+  - *What happened*: Retrieving chunks with `gemini-embedding-001` yielded similarity scores (e.g., `0.719`) that were dangerously close to our theoretical `0.7` cutoff, even for highly relevant chunks.
+  - *What happened*: Different embedding models cluster vectors differently in high-dimensional space. Gemini tends to group even disparate texts somewhat closely compared to other models, meaning a generic `0.7` cosine distance threshold is actually very strict for this specific model.
+  - *How we solved it*: We logged the exact similarity scores during retrieval (`1 - (embedding <=> query)`) to empirically validate our cutoffs. We kept `0.7` for now, but documented that it might need lowering to `0.6` or `0.65` if users experience missing context, proving that embedding thresholds cannot be blindly inherited from other projects.
+  
+- **PowerShell vs curl JSON Escaping**:
+  - *What happened*: Testing the FastAPI `/retrieve` endpoint manually via the PowerShell terminal failed with JSON decode errors and malformed URL errors.
+  - *What happened*: Windows PowerShell's native `curl` is an alias for `Invoke-WebRequest`, which breaks standard `curl` syntax. Even when using `curl.exe`, PowerShell aggressively mangles double-quotes inside single-quoted strings (e.g., `-d '{"key": "value"}'`), stripping the quotes before the JSON reaches the API.
+  - *How we solved it*: Instead of fighting shell escaping rules, we wrote a tiny, throwaway Python script (`urllib.request`) to programmatically hit the endpoint, ensuring the JSON body and custom `X-Internal-Secret` headers were transmitted perfectly.
 
 **Topics to reflect on:**
 - What chunking strategy worked best, and how did you evaluate it?

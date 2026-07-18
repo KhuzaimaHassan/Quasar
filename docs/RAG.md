@@ -144,24 +144,33 @@ await prisma.$executeRaw`
 ### Query Flow
 
 ```python
-async def retrieve(query: str, workspace_id: str, top_k: int = 5) -> list[Chunk]:
-    # 1. Embed the query
-    query_embedding = await embed(query)
+from core.embeddings import embed_query
+from core.db import db
+
+async def retrieve(query: str, workspace_id: str, top_k: int = 5) -> list[dict]:
+    # 1. Embed the query (uses task_type="RETRIEVAL_QUERY" for Gemini)
+    query_embedding = embed_query(query)
+    emb_str = "[" + ",".join(map(str, query_embedding)) + "]"
 
     # 2. Cosine similarity search, scoped to workspace
-    chunks = await db.execute("""
-        SELECT c.*, 1 - (c.embedding <=> $1::vector) AS similarity
-        FROM chunks c
-        JOIN documents d ON c.document_id = d.id
-        WHERE d.workspace_id = $2
+    sql = '''
+        SELECT c.id, c.content, c."chunkIndex", c.metadata,
+               d.filename,
+               1 - (c.embedding <=> $1::vector) AS similarity
+        FROM "Chunk" c
+        JOIN "Document" d ON c."documentId" = d.id
+        WHERE d."workspaceId" = $2
           AND d.status = 'ready'
-          AND 1 - (c.embedding <=> $1::vector) > 0.7
-        ORDER BY similarity DESC
-        LIMIT $3
-    """, query_embedding, workspace_id, top_k * 2)  # Fetch 2x for re-ranking
+          AND 1 - (c.embedding <=> $1::vector) > $3
+        ORDER BY c.embedding <=> $1::vector ASC
+        LIMIT $4
+    '''
+    
+    async with db.pool.acquire() as conn:
+        rows = await conn.fetch(sql, emb_str, workspace_id, 0.7, top_k * 2)
 
     # 3. Re-rank
-    return rerank(query, chunks)[:top_k]
+    return rerank(query, [dict(r) for r in rows])[:top_k]
 ```
 
 ### Similarity Threshold
@@ -169,6 +178,8 @@ async def retrieve(query: str, workspace_id: str, top_k: int = 5) -> list[Chunk]
 The `> 0.7` threshold filters out low-relevance chunks. Tune this:
 - Too high (> 0.85): misses relevant but paraphrased content.
 - Too low (< 0.6): injects irrelevant noise into the prompt.
+
+**Note:** The `0.7` default was inherited from planning done before `gemini-embedding-001` was chosen as the embedding model. It should be validated against real logged scores rather than trusted blindly, as Gemini's embeddings tend to cluster differently.
 
 Log similarity scores per query so you can tune empirically.
 

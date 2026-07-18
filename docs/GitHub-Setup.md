@@ -145,9 +145,9 @@ Or open them manually through the GitHub UI.
 - Label: `ai`
 - Body: Set up FastAPI project structure in `/backend`. Install `fastapi`, `uvicorn`, `pymupdf`, `python-docx`, `google-genai`. Implement a combined `POST /ingest` endpoint. Parse file, split paragraphs/sentences with `LocalTokenizer`, embed using `gemini-embedding-001`, and store chunks + 768-dim embeddings in `pgvector`. (Note: Issues #15 and #16 were implemented together as one endpoint since they form a single causal pipeline).
 
-**#17** — Semantic retrieval (cosine similarity via pgvector)
+**#17** — Semantic retrieval (cosine similarity via pgvector) [IMPLEMENTED]
 - Label: `ai`
-- Body: Implement `POST /retrieve` in FastAPI. Embed the query. Run `ORDER BY embedding <=> $query_vector LIMIT 10`. Filter by workspace and similarity threshold (> 0.7). Return top-5 chunks with similarity scores.
+- Body: Implement `POST /retrieve` in FastAPI. Embed the query. Run `ORDER BY embedding <=> $query_vector LIMIT 10`. Filter by workspace and similarity threshold (> 0.7). Return top-5 chunks with similarity scores. (Note: Implemented as a FastAPI-only endpoint without Next.js integration yet. Page-level metadata for citations is explicitly deferred).
 
 **#18** — Inject retrieved chunks into chat context (with citations)
 - Label: `ai`

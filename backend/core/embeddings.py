@@ -22,33 +22,40 @@ def embed_chunks(chunks: List[str]) -> List[List[float]]:
         
     return all_embeddings
 
-def _embed_batch_with_retry(batch: List[str], max_retries: int = 3) -> List[List[float]]:
+def _call_embed_api_with_retry(contents: List[str], task_type: str, max_retries: int = 3):
     retries = 0
     delay = 2  # start with 2 seconds
     
     while True:
         try:
-            response = client.models.embed_content(
+            return client.models.embed_content(
                 model='gemini-embedding-001',
-                contents=batch,
+                contents=contents,
                 config=types.EmbedContentConfig(
                     output_dimensionality=768,
-                    task_type="RETRIEVAL_DOCUMENT"
+                    task_type=task_type
                 )
             )
-            # response.embeddings is a list of objects, each having a `.values` attribute (List[float])
-            return [emb.values for emb in response.embeddings]
-            
         except Exception as e:
             error_str = str(e).lower()
             if "429" in error_str or "quota" in error_str or "rate" in error_str:
                 if retries >= max_retries:
-                    raise Exception(f"Failed to embed batch after {max_retries} retries: {e}") from e
+                    raise Exception(f"Failed to embed after {max_retries} retries: {e}") from e
                 
                 print(f"Rate limit hit during embedding. Retrying in {delay} seconds...")
                 time.sleep(delay)
                 retries += 1
                 delay *= 2
             else:
-                # If it's a completely different error, fail immediately
                 raise
+
+def _embed_batch_with_retry(batch: List[str], max_retries: int = 3) -> List[List[float]]:
+    response = _call_embed_api_with_retry(batch, task_type="RETRIEVAL_DOCUMENT", max_retries=max_retries)
+    return [emb.values for emb in response.embeddings]
+
+def embed_query(text: str) -> List[float]:
+    """
+    Embeds a single query string for semantic retrieval using the RETRIEVAL_QUERY task type.
+    """
+    response = _call_embed_api_with_retry([text], task_type="RETRIEVAL_QUERY")
+    return response.embeddings[0].values
