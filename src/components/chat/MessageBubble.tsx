@@ -4,6 +4,7 @@ import { Streamdown } from "streamdown";
 import { code } from "@streamdown/code";
 import type { PersistedAttachment } from "@/lib/attachment-types";
 import { AttachmentChip } from "./AttachmentChip";
+import { CitationChip, type CitationProps } from "./CitationChip";
 
 export interface MessageProps {
   id: string;
@@ -12,6 +13,7 @@ export interface MessageProps {
   createdAt: string | Date;
   attachments?: PersistedAttachment[];
   tokenCount?: number;
+  citations?: CitationProps[];
 }
 
 interface MessageBubbleProps {
@@ -91,6 +93,15 @@ export function MessageBubble({ message, isPending, isStreaming }: MessageBubble
                 {message.content}
               </Streamdown>
             )}
+          </div>
+        )}
+
+        {/* Render citations below the text for assistant messages */}
+        {!isUser && message.citations && message.citations.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-3">
+            {message.citations.map((citation, i) => (
+              <CitationChip key={`${citation.documentId}-${i}`} {...citation} />
+            ))}
           </div>
         )}
 

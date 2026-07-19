@@ -4,6 +4,7 @@ import { db } from '@/lib/db'
 import { streamText, createUIMessageStreamResponse, toUIMessageStream } from 'ai'
 import { google } from '@ai-sdk/google'
 import { convertToModelMessages } from '@/lib/chat-utils'
+import { retrieveContext, buildSystemPrompt, resolveCitations } from '@/lib/rag'
 import { MODEL_CATALOG } from '@/lib/models'
 import { decrypt } from '@/lib/encryption'
 
@@ -65,8 +66,14 @@ export async function POST(req: Request) {
       },
     })
 
-    // TODO: Context assembly (Memory / RAG context) arrives in later milestones
-    const systemPrompt = "You are Quasar, an AI developer workspace assistant. Be concise and specific. Focus ONLY on answering the user's latest message. Do not repeat or re-answer previous questions from the chat history."
+    // RAG Context Assembly
+    const chunks = conversation.workspaceId 
+      ? await retrieveContext(conversation.workspaceId, userMessageContent)
+      : [];
+    const systemPrompt = buildSystemPrompt(chunks);
+    
+    // Resolve citations for display
+    const citations = await resolveCitations(chunks);
 
     const modelMessages = await convertToModelMessages(messages);
     console.log('[CHAT] Final Model Messages:', JSON.stringify(modelMessages.map(m => ({ role: m.role, len: m.content?.length, isArray: Array.isArray(m.content) })), null, 2));
@@ -131,6 +138,7 @@ export async function POST(req: Request) {
             role: 'assistant',
             content: text,
             tokenCount: usage.totalTokens,
+            metadata: (citations.length > 0 ? { citations } : {}) as any,
           },
         })
 

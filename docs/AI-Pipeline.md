@@ -103,9 +103,10 @@ Update this as you discover what produces the best outputs.
 ### API Route (`/api/chat`)
 
 ```typescript
-import { streamText } from 'ai';
+import { streamText, StreamData, createUIMessageStreamResponse, toUIMessageStream } from 'ai';
 import { NextRequest } from 'next/server';
 import { auth } from '@clerk/nextjs';
+import { retrieveContext, buildSystemPrompt, resolveCitations } from '@/lib/rag';
 
 export async function POST(req: NextRequest) {
   const { userId } = auth();
@@ -113,21 +114,31 @@ export async function POST(req: NextRequest) {
 
   const { messages, conversationId, model } = await req.json();
 
-  // 1. Load context (memory + RAG chunks) — see RAG.md
-  const context = await assembleContext(userId, conversationId, messages);
+  // 1. Load context (RAG chunks)
+  const chunks = await retrieveContext(conversationId, messages[messages.length - 1].content);
+  const citations = await resolveCitations(chunks);
 
-  // 2. Stream
+  // 2. Stream Setup
+  const data = new StreamData();
+  if (citations.length > 0) {
+    data.appendMessageAnnotation({ type: 'data-citations', citations });
+  }
+
   const result = await streamText({
     model: modelMap[model],
-    system: buildSystemPrompt(context),
+    system: buildSystemPrompt(chunks),
     messages,
     onFinish: async ({ text, usage }) => {
       // 3. Persist after stream ends
-      await saveMessage({ conversationId, role: 'assistant', content: text, tokens: usage.totalTokens });
+      await saveMessage({ conversationId, role: 'assistant', content: text, tokens: usage.totalTokens, metadata: { citations } });
+      data.close();
     },
   });
 
-  return result.toDataStreamResponse();
+  return createUIMessageStreamResponse({
+    stream: toUIMessageStream({ stream: result.stream }),
+    data
+  });
 }
 ```
 

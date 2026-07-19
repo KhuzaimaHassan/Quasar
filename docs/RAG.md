@@ -243,16 +243,25 @@ Key rules:
 
 ---
 
+## Chat Integration
+
+The chat integration (Issue #89) ties the FastAPI retrieval backend with the Next.js chat API route (`/api/chat/route.ts`).
+
+1. **Context Retrieval**: We call the helper `retrieveContext(workspaceId, userMessageText)`. It first does a cheap check in Postgres to ensure the workspace has at least one document in `ready` status. If so, it calls the internal FastAPI `/retrieve` endpoint using the `INTERNAL_SERVICE_SECRET`.
+2. **System Prompt Construction**: `buildSystemPrompt` converts the retrieved chunks into a `<context>` block with source filenames. If no chunks are found or the request fails, it falls back to the base system prompt.
+3. **Citation Resolution**: We map the returned `documentId`s to fresh, 1-hour presigned URLs via `supabaseAdmin`.
+4. **Streaming Citations**: We use the Vercel AI SDK's `StreamData` class to append a non-transient custom data part (`type: 'data-citations'`) into the UI message stream. This ensures the frontend receives the citations concurrently with the text stream.
+5. **Persistence**: In the `onFinish` callback, the citations array is saved to the newly created assistant Message's `metadata` field, ensuring it survives page refreshes.
+
 ## Citation UI
 
-After the stream ends, the assistant message includes source references. The `message_sources` table links each message to the chunks it used. The UI displays:
+The UI displays citations as subtle pill-shaped chips below the assistant's message:
 
 ```
-📄 technical_spec.pdf, page 3  (similarity: 0.89)
-📄 architecture.pdf, page 7    (similarity: 0.82)
+[📄 technical_spec.pdf] [📄 architecture.pdf]
 ```
 
-Clicking a source opens a document preview panel at the relevant page.
+Clicking a source opens the presigned URL in a new tab.
 
 ---
 

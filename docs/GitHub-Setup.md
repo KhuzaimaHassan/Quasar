@@ -149,7 +149,7 @@ Or open them manually through the GitHub UI.
 - Label: `ai`
 - Body: Implement `POST /retrieve` in FastAPI. Embed the query. Run `ORDER BY embedding <=> $query_vector LIMIT 10`. Filter by workspace and similarity threshold (> 0.7). Return top-5 chunks with similarity scores. (Note: Implemented as a FastAPI-only endpoint without Next.js integration yet. Page-level metadata for citations is explicitly deferred).
 
-**#18** — Inject retrieved chunks into chat context (with citations)
+- [x] Issue #89: Chat Integration (Inject retrieved chunks into chat context, show citations in UI)
 - Label: `ai`
 - Body: Before calling Claude, call `POST /retrieve` with the user's message. Build `<context>` block from top chunks. After stream ends, save chunk IDs to `message_sources` table. Render citation pills below assistant message in UI.
 

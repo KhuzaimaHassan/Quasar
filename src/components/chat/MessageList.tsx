@@ -17,12 +17,24 @@ export function MessageList({ draftMessages, persistedMessages = [] }: MessageLi
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isUserScrolledUp, setIsUserScrolledUp] = useState(false);
 
-  // Combine persisted and local draft messages, extracting attachments from metadata
+  // Combine persisted and local draft messages, extracting attachments and citations
   const mappedPersisted = persistedMessages.map((msg) => ({
     ...msg,
     attachments: msg.metadata?.attachments || undefined,
+    citations: msg.metadata?.citations || undefined,
   }));
-  const allMessages = [...mappedPersisted, ...draftMessages];
+
+  const mappedDrafts = draftMessages.map((msg: any) => {
+    // Extract citations from AI SDK annotations (data parts)
+    const citationAnnotations = msg.annotations?.filter((a: any) => a.type === 'data-citations') || [];
+    const citations = citationAnnotations.flatMap((a: any) => a.citations || []);
+    return {
+      ...msg,
+      citations: citations.length > 0 ? citations : undefined,
+    };
+  });
+
+  const allMessages = [...mappedPersisted, ...mappedDrafts];
 
   // Auto-scroll logic
   useEffect(() => {

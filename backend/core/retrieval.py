@@ -22,7 +22,7 @@ async def retrieve_chunks(
 
     query = '''
         SELECT c.id, c.content, c."chunkIndex", c.metadata,
-               d.filename,
+               d.filename, d.id AS "documentId",
                1 - (c.embedding <=> $1::vector) AS similarity
         FROM "Chunk" c
         JOIN "Document" d ON c."documentId" = d.id
