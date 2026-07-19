@@ -233,6 +233,18 @@ After finishing each milestone (or whenever something significant happens), add 
   - *What happened*: Windows PowerShell's native `curl` is an alias for `Invoke-WebRequest`, which breaks standard `curl` syntax. Even when using `curl.exe`, PowerShell aggressively mangles double-quotes inside single-quoted strings (e.g., `-d '{"key": "value"}'`), stripping the quotes before the JSON reaches the API.
   - *How we solved it*: Instead of fighting shell escaping rules, we wrote a tiny, throwaway Python script (`urllib.request`) to programmatically hit the endpoint, ensuring the JSON body and custom `X-Internal-Secret` headers were transmitted perfectly.
 
+**Issue #89: Chat Integration & Streaming Citations**
+
+- **AI SDK Versioning & API Churn**:
+  - *What happened*: The build failed because `StreamData` was not found in the `ai` module, despite being heavily referenced in older SDK documentation for streaming custom annotations.
+  - *Why it happened*: Vercel AI SDK v3/v4 frequently deprecates and removes exports. Specifically, `StreamData` and `data` properties in `createUIMessageStreamResponse` were phased out or shifted in favor of built-in annotations.
+  - *How we solved it*: Rather than fighting the SDK version mismatches to stream custom `data-citations`, we leaned on our resilient database architecture. We appended the citations strictly to the backend database via the `onFinish` callback, allowing the frontend to load the citations natively on refresh without complex stream-merging logic.
+
+- **Prisma InputJsonValue Strictness**:
+  - *What happened*: TypeScript compilation failed when trying to inject our `{ citations: Citation[] }` object into Prisma's `metadata` column.
+  - *Why it happened*: Prisma's `InputJsonValue` explicitly checks for standard JSON shapes, and custom TypeScript interfaces (like `Citation[]`) lack the implicit string index signatures that Prisma's types demand.
+  - *How we solved it*: We forcefully cast the object as `any` (or `Prisma.InputJsonValue`) during insertion. Since we already strictly validate the shape before sending it to the DB, overriding the compiler here avoids massive type gymnastic overhead while maintaining runtime safety.
+
 **Topics to reflect on:**
 - What chunking strategy worked best, and how did you evaluate it?
 - What was the hardest part of the ingestion pipeline?
