@@ -153,9 +153,9 @@ Or open them manually through the GitHub UI.
 - Label: `ai`
 - Body: Before calling Claude, call `POST /retrieve` with the user's message. Build `<context>` block from top chunks. After stream ends, save chunk IDs to `message_sources` table. Render citation pills below assistant message in UI.
 
-**#19** — Document library UI (list, status badge, delete)
+**#19** — Document library UI (list, status badge, delete) [IMPLEMENTED]
 - Label: `ux`
-- Body: Documents page shows list of workspace documents: filename, size, status badge (pending/processing/ready/failed), date. Poll status every 3s while status is pending/processing. Delete button with confirmation dialog.
+- Body: Documents page shows list of workspace documents: filename, size, status badge (pending/processing/ready/failed), date. Poll status every 3s while status is pending/processing. Delete button with confirmation dialog. (Note: List and status badge built in #85, this issue added delete with storage-cleanup and processing-state guard details).
 
 **#20** — Re-rank retrieved chunks (Reciprocal Rank Fusion)
 - Label: `ai`

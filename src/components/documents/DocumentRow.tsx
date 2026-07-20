@@ -1,6 +1,18 @@
-
-import { FileText, Loader2, CheckCircle, AlertCircle } from "lucide-react";
-import { Document } from "@/lib/queries/documents";
+import { useState } from "react";
+import { FileText, Loader2, CheckCircle, AlertCircle, Trash2 } from "lucide-react";
+import { Document, useDeleteDocument } from "@/lib/queries/documents";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 
 function formatBytes(bytes: number, decimals = 2) {
   if (!+bytes) return "0 Bytes";
@@ -12,8 +24,13 @@ function formatBytes(bytes: number, decimals = 2) {
 }
 
 export function DocumentRow({ document }: { document: Document }) {
+  const { mutate: deleteDocument, isPending: isDeleting } = useDeleteDocument();
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
+  const isProcessing = document.status === "processing";
+
   return (
-    <div className="flex items-center justify-between p-4 border rounded-lg bg-card transition-colors">
+    <div className={`flex items-center justify-between p-4 border rounded-lg bg-card transition-colors ${isDeleting ? 'opacity-50 pointer-events-none' : ''}`}>
       <div className="flex items-center gap-4 overflow-hidden">
         <div className="p-2 rounded-md bg-muted text-muted-foreground shrink-0">
           <FileText className="w-5 h-5" />
@@ -55,6 +72,44 @@ export function DocumentRow({ document }: { document: Document }) {
             </span>
           </div>
         )}
+        
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialogTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="ml-2 h-8 w-8 text-muted-foreground hover:text-destructive"
+              disabled={isProcessing || isDeleting}
+              title={isProcessing ? "Cannot delete while processing" : "Delete document"}
+            >
+              {isDeleting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Trash2 className="w-4 h-4" />
+              )}
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will permanently delete the document "{document.filename}" from the workspace. 
+                Any associated chunks and vectors will also be removed. This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  deleteDocument({ documentId: document.id });
+                }}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );

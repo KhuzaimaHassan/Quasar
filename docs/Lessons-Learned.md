@@ -245,6 +245,18 @@ After finishing each milestone (or whenever something significant happens), add 
   - *Why it happened*: Prisma's `InputJsonValue` explicitly checks for standard JSON shapes, and custom TypeScript interfaces (like `Citation[]`) lack the implicit string index signatures that Prisma's types demand.
   - *How we solved it*: We forcefully cast the object as `any` (or `Prisma.InputJsonValue`) during insertion. Since we already strictly validate the shape before sending it to the DB, overriding the compiler here avoids massive type gymnastic overhead while maintaining runtime safety.
 
+**Issue #90: Document Deletion & Race Conditions**
+
+- **Supabase Storage Cleanup & Race Conditions**:
+  - *What happened*: Deleting a document required both removing the DB record and deleting the physical file from the Supabase `uploads` bucket, but doing so while ingestion was running could corrupt the state.
+  - *Why it happened*: If a document is currently `processing`, the FastAPI backend might be actively reading from the DB or pushing chunks. Deleting the DB row out from under it causes catastrophic failures.
+  - *How we solved it*: We implemented a strict API-level guard that returns a `409 Conflict` if the document status is `processing`. We also leveraged Prisma's `onDelete: Cascade` so that wiping the parent Document natively flushes all associated Chunks without requiring manual chunk cleanup logic.
+
+- **Handling Pending Mutations in UI**:
+  - *What happened*: Users could double-click the delete button while the request was in flight, triggering duplicate API calls and UI glitches.
+  - *Why it happened*: Destructive actions without UI locks are inherently unsafe.
+  - *How we solved it*: We tied the delete button's `disabled` state directly to the `isPending` flag from the React Query mutation, instantly freezing the button and rendering a spinner the millisecond the action starts.
+
 **Topics to reflect on:**
 - What chunking strategy worked best, and how did you evaluate it?
 - What was the hardest part of the ingestion pipeline?

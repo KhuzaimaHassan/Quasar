@@ -93,3 +93,37 @@ export function useUploadDocument() {
     },
   })
 }
+
+export function useDeleteDocument() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ documentId }: { documentId: string }) => {
+      const res = await fetch(`/api/documents/${documentId}`, {
+        method: 'DELETE',
+      })
+
+      if (!res.ok) {
+        let errMessage = 'Failed to delete document'
+        try {
+          const errData = await res.json()
+          if (res.status === 409) {
+            errMessage = errData.message || 'Document is still processing.'
+          } else {
+            errMessage = errData.message || errMessage
+          }
+        } catch {
+          // fallback if json parsing fails
+        }
+        throw new Error(errMessage)
+      }
+      return { documentId }
+    },
+    onSuccess: () => {
+      // We don't have workspaceId in the variables for delete, but we can invalidate all documents
+      // or invalidate generally to refresh the list. Let's invalidate the documents queries.
+      queryClient.invalidateQueries({ queryKey: ['documents'] })
+    },
+  })
+}
+
