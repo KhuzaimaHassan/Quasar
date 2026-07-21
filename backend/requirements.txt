@@ -8,3 +8,4 @@ google-genai
 supabase
 sentencepiece
 protobuf
+rank-bm25

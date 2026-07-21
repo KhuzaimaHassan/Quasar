@@ -257,6 +257,13 @@ After finishing each milestone (or whenever something significant happens), add 
   - *Why it happened*: Destructive actions without UI locks are inherently unsafe.
   - *How we solved it*: We tied the delete button's `disabled` state directly to the `isPending` flag from the React Query mutation, instantly freezing the button and rendering a spinner the millisecond the action starts.
 
+**Issue #91: Re-ranking (Reciprocal Rank Fusion)**
+
+- **Isolating the Re-ranking Algorithm**:
+  - *What happened*: We needed to verify that the RRF algorithm correctly bumped chunks with exact keyword matches, but standing up the entire FastAPI/Database ingestion pipeline just to test math felt extremely heavy.
+  - *Why it happened*: True end-to-end RAG pipelines are complex state machines. Re-ranking sits precisely in the middle and expects a perfectly formatted candidate pool from the DB.
+  - *How we solved it*: We wrote a completely isolated `test_rerank.py` script that fed hardcoded dummy chunks directly into the `rerank_chunks` function. This let us prove mathematically that the RRF formula `1/(60 + vector_rank) + 1/(60 + bm25_rank)` correctly pulled a poorly-vector-ranked chunk to the top strictly based on its exact BM25 keyword match, giving us 100% confidence before wiring it into the live `/retrieve` endpoint.
+
 **Topics to reflect on:**
 - What chunking strategy worked best, and how did you evaluate it?
 - What was the hardest part of the ingestion pipeline?

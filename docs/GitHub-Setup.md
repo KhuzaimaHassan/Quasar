@@ -135,7 +135,9 @@ Or open them manually through the GitHub UI.
 
 ---
 
-### Milestone 3 — RAG
+### Milestone 3 — RAG [FULLY COMPLETE]
+
+*(Note: All issues for this milestone, including #85 through #91, are now fully implemented and tested.)*
 
 **#14** — Document upload UI (drag-and-drop, progress bar) [IMPLEMENTED]
 - Label: `ux`
@@ -157,7 +159,7 @@ Or open them manually through the GitHub UI.
 - Label: `ux`
 - Body: Documents page shows list of workspace documents: filename, size, status badge (pending/processing/ready/failed), date. Poll status every 3s while status is pending/processing. Delete button with confirmation dialog. (Note: List and status badge built in #85, this issue added delete with storage-cleanup and processing-state guard details).
 
-**#20** — Re-rank retrieved chunks (Reciprocal Rank Fusion)
+**#20** — Re-rank retrieved chunks (Reciprocal Rank Fusion) [IMPLEMENTED]
 - Label: `ai`
 - Body: After vector retrieval (top-10), apply RRF scoring combining vector similarity and BM25 keyword score (rank-bm25 library). Return top-5 after re-ranking. Log pre/post rerank positions for evaluation.
 

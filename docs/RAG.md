@@ -195,28 +195,13 @@ Log similarity scores per query so you can tune empirically.
 
 ## Re-ranking
 
-After vector retrieval, re-rank using a cross-encoder for better precision.
+After vector retrieval, results are re-ranked using **Reciprocal Rank Fusion (RRF)** to combine vector similarity with BM25 keyword matching for optimal precision.
 
-**Simple option** — Reciprocal Rank Fusion (no extra model):
-```python
-def rerank(query: str, chunks: list) -> list:
-    # Combine vector similarity with BM25 keyword score
-    # RRF formula: score = sum(1 / (k + rank_i)) for each ranking
-    pass  # Implement or use rank_bm25 library
-```
-
-**Better option** — Cross-encoder re-ranking (requires model inference):
-```python
-from sentence_transformers import CrossEncoder
-
-reranker = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
-
-scores = reranker.predict([(query, chunk.content) for chunk in chunks])
-ranked = sorted(zip(chunks, scores), key=lambda x: x[1], reverse=True)
-return [chunk for chunk, _ in ranked]
-```
-
-Start with RRF. Add the cross-encoder when you have enough test cases to evaluate the improvement.
+Implementation details:
+- **Candidate Pool**: The vector search retrieves a `2x` candidate pool (e.g., requests 10 chunks if `top_k` is 5) to give the re-ranker a meaningful set to sort.
+- **BM25**: Uses the lightweight, pure Python `rank-bm25` library for fast, on-the-fly keyword scoring of the candidates.
+- **RRF Formula**: `rrf_score = 1/(60 + vector_rank) + 1/(60 + bm25_rank)` (using 1-indexed ranks and k=60).
+- **Execution**: The candidates are scored, re-ranked by RRF, and trimmed down to the final `top_k` before returning.
 
 ---
 

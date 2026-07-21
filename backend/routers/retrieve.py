@@ -5,6 +5,7 @@ import traceback
 from core.security import verify_internal_secret
 from core.embeddings import embed_query
 from core.retrieval import retrieve_chunks
+from core.reranking import rerank_chunks
 
 router = APIRouter()
 
@@ -22,15 +23,18 @@ async def retrieve_documents(req: RetrieveRequest):
         # 1. Embed the user's query
         query_embedding = embed_query(req.query)
         
-        # 2. Retrieve relevant chunks from the database
+        # 2. Retrieve relevant chunks from the database (requesting 2x for reranking candidates)
         chunks = await retrieve_chunks(
             workspace_id=req.workspace_id,
             query_embedding=query_embedding,
-            top_k=req.top_k
+            top_k=req.top_k * 2
         )
         
-        # 3. Return the chunks
-        return {"chunks": chunks}
+        # 3. Rerank chunks using Reciprocal Rank Fusion
+        final_chunks = rerank_chunks(req.query, chunks, req.top_k)
+        
+        # 4. Return the chunks
+        return {"chunks": final_chunks}
         
     except HTTPException:
         raise
