@@ -35,6 +35,13 @@ export async function retrieveContext(workspaceId: string, query: string): Promi
       return [];
     }
 
+    // Add a ~6 second timeout using AbortController.
+    // Deliberate tradeoff: Render's free tier sleeps after 15 minutes, causing a 30-60s cold start.
+    // We don't want to stall the user's active chat for a minute while waiting for the RAG service to wake up.
+    // If it times out, we catch it, log it explicitly, and gracefully degrade so the chat proceeds without RAG context.
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 6000);
+
     const response = await fetch(`${fastApiUrl}/retrieve`, {
       method: "POST",
       headers: {
@@ -42,7 +49,10 @@ export async function retrieveContext(workspaceId: string, query: string): Promi
         "X-Internal-Secret": internalSecret
       },
       body: JSON.stringify({ workspace_id: workspaceId, query, top_k: 5 }),
+      signal: controller.signal
     });
+
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       console.error("FastAPI /retrieve failed:", response.status, await response.text());
@@ -51,8 +61,12 @@ export async function retrieveContext(workspaceId: string, query: string): Promi
 
     const data = await response.json();
     return data.chunks || [];
-  } catch (error) {
-    console.error("Error during retrieveContext:", error);
+  } catch (error: any) {
+    if (error.name === "AbortError") {
+      console.warn("FastAPI /retrieve timed out (likely a cold start). Gracefully degrading RAG context for this message.");
+    } else {
+      console.error("Error during retrieveContext:", error);
+    }
     return [];
   }
 }

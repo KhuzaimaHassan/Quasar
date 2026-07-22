@@ -2,6 +2,9 @@ import { auth } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
+export const maxDuration = 60 // Vercel hobby plan max, needed to outlast Render cold starts
+
+
 export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id: documentId } = await params

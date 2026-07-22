@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: quasar-backend
+    env: docker
+    rootDir: backend
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: INTERNAL_SERVICE_SECRET
+        sync: false
+      - key: GOOGLE_API_KEY
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
