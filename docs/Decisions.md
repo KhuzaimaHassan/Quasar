@@ -117,12 +117,12 @@ Each decision is recorded here with the context, options considered, and rationa
 
 ---
 
-## ADR-007: Railway for FastAPI Hosting
+## ADR-007: Render Free Tier for FastAPI Hosting
 
-**Status**: Proposed  
-**Date**: M6 planning
+**Status**: Accepted  
+**Date**: M3 deployment
 
-**Context**: Need to host the FastAPI Docker container in production.
+**Context**: Need to host the FastAPI Docker container in production for free (portfolio project).
 
 **Options considered**:
 1. Railway
@@ -130,11 +130,11 @@ Each decision is recorded here with the context, options considered, and rationa
 3. Render
 4. AWS ECS (overkill for this project)
 
-**Decision**: Railway (proposed — validate in M6).
+**Decision**: Render free tier.
 
-**Rationale**: Railway has the best DX for Docker deployments, a clean UI for viewing logs and metrics, and a free tier that covers early usage. Fly.io is a strong alternative with better global distribution but more complex CLI. Render is simpler but slower cold starts.
+**Rationale**: Both Railway and Fly.io dropped their free tiers since this ADR was originally written. Render provides a completely free tier for Docker containers. We knowingly accepted Render's cold-start tradeoff (service sleeps after 15 minutes of inactivity, causing a 30-60 second cold start on the next request) because this is a portfolio project and cost-efficiency is the priority. We mitigated the UX impact by adding a 6-second timeout with graceful degradation on the frontend chat retrieval call, while giving the ingestion endpoint a generous 60-second budget to outlast cold starts.
 
-**When to revisit**: If Railway's pricing becomes a problem at scale, migrate to Fly.io.
+**When to revisit**: If the cold starts become unacceptable for real users, migrate to a paid tier on Render or Railway.
 
 ---
 

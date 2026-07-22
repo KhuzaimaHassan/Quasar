@@ -7,7 +7,7 @@ Quasar uses a split deployment:
 | Service | Platform | Trigger |
 |---------|----------|---------|
 | Next.js frontend + API routes | Vercel | Push to `main` |
-| FastAPI backend (RAG + agents) | Docker → Railway or Fly.io | GitHub Actions on push to `main` |
+| FastAPI backend (RAG + agents) | Docker → Render (Free Tier) | Push to `main` (Render auto-deploy) |
 | PostgreSQL + pgvector | Supabase | Managed |
 | Redis | Upstash (serverless Redis) | Managed |
 | File storage | Supabase Storage | Managed |
@@ -48,7 +48,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
 SUPABASE_SERVICE_ROLE_KEY=eyJ...
 
 # FastAPI service (internal)
-FASTAPI_SERVICE_URL=http://localhost:8000   # or Railway URL in production
+FASTAPI_SERVICE_URL=http://localhost:8000   # or Render URL in production
 
 # Redis
 REDIS_URL=redis://...
@@ -169,7 +169,7 @@ COPY . .
 
 EXPOSE 8000
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port $PORT"]
 ```
 
 Build and test locally:
@@ -226,47 +226,16 @@ jobs:
       - run: cd backend && pytest
 ```
 
-### Deploy (`deploy.yml`)
-
-```yaml
-name: Deploy
-
-on:
-  push:
-    branches: [main]
-
-jobs:
-  deploy-backend:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./backend
-          push: true
-          tags: ghcr.io/${{ github.repository }}/backend:latest
-        env:
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Deploy to Railway
-        run: railway up --service backend
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-
-  migrate:
-    runs-on: ubuntu-latest
-    needs: deploy-backend
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: '20' }
-      - run: npm ci
-      - run: npx prisma migrate deploy
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
 ```
+
+### Deploy to Render (Backend)
+
+The backend is deployed using Render's Infrastructure-as-Code (IaC) with `render.yaml`. 
+
+1. **`render.yaml`**: Defined in the root directory. It configures the Docker runtime, root directory (`backend`), health check path (`/health`), and required environment variables.
+2. **PORT Binding**: Render injects a `$PORT` environment variable. The Dockerfile `CMD` uses `sh -c` to ensure this variable is expanded at runtime so the container binds to the correct port.
+3. **Deployment**: Connect the GitHub repository in the Render Dashboard via the "Blueprint" flow. Render will auto-detect `render.yaml` and deploy on every push to `main`.
+4. **Cold Starts**: Render's free tier sleeps after 15 minutes of inactivity. We handle this explicitly in the Next.js API routes with a 6-second timeout for retrieval (graceful degradation) and a 60-second execution limit for ingestion (to outlast the 30-60s cold start).
 
 Vercel deployment is automatic — Vercel's GitHub integration handles it. No extra workflow needed for the frontend.
 
@@ -304,7 +273,7 @@ Access traces at `https://smith.langchain.com/projects/quasar`.
 | LangSmith | LLM call latency, token usage, agent step traces |
 | OpenTelemetry + Uptrace | HTTP request latency, error rates, DB query times |
 | Vercel Analytics | Frontend page load, Core Web Vitals |
-| Railway Metrics | CPU, memory, restart count for FastAPI container |
+| Render Metrics | CPU, memory, and logs for FastAPI container |
 
 ### OpenTelemetry setup (FastAPI)
 
@@ -322,5 +291,5 @@ SQLAlchemyInstrumentor().instrument()
 ## Rollback Plan
 
 - **Frontend**: Vercel keeps previous deployment — instant rollback from dashboard.
-- **Backend**: Railway keeps previous image — redeploy the previous tag via `railway rollback`.
+- **Backend**: Render keeps previous builds — trigger a rollback from the Render dashboard (Manual Deploy -> Deploy a previous commit).
 - **Database**: Never run destructive migrations without a prior backup. Supabase provides daily automatic backups.

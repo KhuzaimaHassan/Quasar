@@ -64,6 +64,7 @@ You need accounts with these services before starting:
 | [Clerk](https://clerk.com) | Free | Authentication |
 | [Supabase](https://supabase.com) | Free | PostgreSQL + pgvector + Storage |
 | [Upstash](https://upstash.com) | Free | Redis |
+| [Render](https://render.com) | Free | FastAPI backend hosting |
 | [LangSmith](https://smith.langchain.com) | Free | LLM tracing (M6) |
 | [Vercel](https://vercel.com) | Free | Frontend hosting |
 | [GitHub](https://github.com) | Free | Code + CI/CD |
