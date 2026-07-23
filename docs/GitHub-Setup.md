@@ -77,7 +77,7 @@ Or open them manually through the GitHub UI.
 
 ### Milestone 1 — Foundation
 
-**#1** — Init Next.js 14 project with TypeScript + ESLint + Prettier
+**#1** — Init Next.js 16 project with TypeScript + ESLint + Prettier [COMPLETE]
 - Label: `infra`
 - Body: `npx create-next-app@latest quasar --typescript --tailwind --app --src-dir`. Configure ESLint, Prettier, and `@typescript-eslint`. Add `lint`, `type-check` scripts to package.json.
 
@@ -135,7 +135,7 @@ Or open them manually through the GitHub UI.
 
 ---
 
-### Milestone 3 — RAG [FULLY COMPLETE]
+### Milestone 3 — RAG [FULLY COMPLETE ✅]
 
 *(Note: All issues for this milestone, including #85 through #91, are now fully implemented and tested.)*
 

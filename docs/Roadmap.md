@@ -5,8 +5,8 @@
 | Milestone | Status | Target |
 |-----------|--------|--------|
 | M1 — Foundation (auth, DB, UI) | ✅ Done | Week 2 |
-| M2 — Chat (streaming, history) | 🔄 In progress | Week 4 |
-| M3 — RAG (ingestion, retrieval) | 🔲 Not started | Week 7 |
+| M2 — Chat (streaming, BYOK, attachments, history) | ✅ Done | Week 4 |
+| M3 — RAG (ingestion, embeddings, retrieval, citations) | ✅ Done | Week 7 |
 | M4 — Memory (short + long-term) | 🔲 Not started | Week 9 |
 | M5 — Agents (MCP + LangGraph) | 🔲 Not started | Week 12 |
 | M6 — Production (evals, CI/CD) | 🔲 Not started | Week 14 |
@@ -21,14 +21,14 @@ The following features are **in scope for v1.0**. Everything else goes below in 
 
 - [x] Workspace-based project organisation
 - [x] Streaming chat with Gemini as the default free model (optional user-provided Claude/GPT-4 keys via BYOK)
-- [x] Document upload + RAG retrieval
-- [x] Short-term conversation memory
-- [x] Long-term user preference memory
-- [x] MCP tool integrations (GitHub, filesystem)
-- [x] LangGraph multi-agent pipeline
-- [x] Token cost dashboard
-- [x] LangSmith tracing
-- [x] Docker + GitHub Actions deployment
+- [x] Document upload + RAG retrieval (PDF, DOCX → pgvector + BM25 re-ranking + citations)
+- [ ] Short-term conversation memory (M4 — planned)
+- [ ] Long-term user preference memory (M4 — planned)
+- [ ] MCP tool integrations (GitHub, filesystem) (M5 — planned)
+- [ ] LangGraph multi-agent pipeline (M5 — planned)
+- [ ] Token cost dashboard (M6 — planned)
+- [ ] LangSmith tracing (M6 — planned)
+- [ ] Docker + GitHub Actions CI/CD (M6 — planned)
 
 ---
 
@@ -38,11 +38,12 @@ These are improvements to existing features. Pick from this list once v1.0 is sh
 
 ### RAG Improvements
 - [ ] Codebase ingestion — parse and chunk code files by AST boundaries (function/class level)
-- [ ] Hybrid search — combine vector similarity with BM25 keyword search (better for exact term matching)
-- [ ] Cross-encoder re-ranking (replace RRF with sentence-transformers cross-encoder)
+- [x] Hybrid search — vector similarity + BM25 re-ranking via Reciprocal Rank Fusion (RRF) implemented in M3
+- [ ] Cross-encoder re-ranking — replace RRF with sentence-transformers cross-encoder for higher precision
 - [ ] Document preview panel — show source document at the cited page when user clicks a citation
 - [ ] Incremental re-ingestion — update only changed chunks when a document is re-uploaded
 - [ ] Support for PPTX, XLSX, HTML, Markdown file types
+- [ ] Codebase ingestion — parse and chunk code files by AST boundaries (function/class level)
 
 ### Chat
 - [ ] Conversation branching — fork a conversation from any message
@@ -63,7 +64,7 @@ These are improvements to existing features. Pick from this list once v1.0 is sh
 - [ ] Agent templates — pre-built agent workflows (e.g., "PR review agent", "doc generation agent")
 
 ### Developer Experience
-- [ ] API key management UI — let users bring their own Anthropic/OpenAI keys
+- [x] API key management UI — implemented in M2 as BYOK (Settings page, AES-256-GCM encrypted)
 - [ ] Prompt playground — test prompts with different models and parameters side-by-side
 - [ ] Cost alerts — notify user when monthly spend exceeds a threshold
 

@@ -1,115 +1,130 @@
 # Quasar
 
-> AI-powered developer workspace.
+> AI-powered developer workspace — streaming chat, document RAG, and multi-model support.
 
-**Live Demo:** [https://quasar.vercel.app](https://qausar.vercel.app/)
+**Live Demo:** [https://quasar-ai.vercel.app](https://quasar-ai.vercel.app/)
+
+> **Note on the document ingestion service:** The RAG backend runs on Render's free tier, which spins down after 15 minutes of inactivity. The first document upload or retrieval call after an idle period may take 30–60 seconds to respond. This is expected and not a bug — subsequent calls are fast.
 
 [![Next.js](https://img.shields.io/badge/Next.js-16.2-black?logo=next.js)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19-blue?logo=react)](https://react.dev/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind-4.0-38B2AC?logo=tailwind-css)](https://tailwindcss.com/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript)](https://www.typescriptlang.org/)
 [![Clerk](https://img.shields.io/badge/Auth-Clerk-6C47FF?logo=clerk)](https://clerk.com/)
+[![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688?logo=fastapi)](https://fastapi.tiangolo.com/)
 
 ---
 
-## Overview
+## What Quasar Does
 
-Quasar is a modern, AI-first developer workspace designed to streamline workflows, manage context intelligently, and assist in deep technical problem-solving. 
+Quasar is a production-deployed AI developer workspace. It lets you:
 
-It exists to bridge the gap between traditional development environments and next-generation AI assistants by providing a unified interface where code, documentation, architecture discussions, and AI agents seamlessly interact. 
-
-**Target Users:** Software Engineers, System Architects, and Technical Product Managers.  
-**Current Maturity:** Development
+- **Chat with multiple AI models** — Gemini (free, default), Claude Sonnet, and GPT-4o (via your own API key)
+- **Upload documents and ask questions about them** — full retrieval-augmented generation (RAG): upload a PDF or DOCX, watch it get ingested and embedded, then ask questions and receive responses with cited sources
+- **Organise conversations into workspaces** — multi-workspace support with per-workspace document libraries and conversation history
+- **Track token usage** — per-message and running conversation totals
+- **Attach images to messages** — inline image uploads understood directly by the model
 
 ---
 
 ## Key Features
 
-### ✅ Implemented
-- **Frontend UI Shell:** Responsive Sidebar, dashboard layout, mobile navigation, and page shells.
-- **Authentication:** Clerk integration with secure sign-in/sign-up flows.
-- **Route Protection:** Next.js middleware securing internal workspace routes.
-- **Dynamic Profile Integration:** Custom User Menu synced with Clerk.
-- **Auth Webhooks:** API route with `svix` verification for handling user creation events.
-- **Database Foundation:** Integrating PostgreSQL via Prisma.
-- **Workspace Data Model:** Core schema for users, documents, and chat history.
+### ✅ Fully Implemented
+
+- **Streaming Chat** — real-time token streaming with Gemini 3.5 Flash (free default) or Gemini 2.5 Pro
+- **Bring Your Own Key (BYOK)** — Claude Sonnet 5 and GPT-4o unlocked by adding your own Anthropic/OpenAI API key in Settings; keys are encrypted at rest with AES-256-GCM
+- **Full RAG Pipeline** — upload PDF/DOCX → parse (PyMuPDF / python-docx) → chunk (500-token target, 60-token overlap) → embed (Gemini embedding-001, 768 dims) → store in pgvector → retrieve (cosine similarity + BM25 re-ranking via RRF) → inject as context → cite sources in responses
+- **Document Library** — per-workspace document management with live status polling (pending → processing → ready / failed), delete with Supabase Storage cleanup
+- **Multi-Workspace** — create and switch between workspaces; each workspace has its own conversations and documents
+- **Token Tracking** — per-message token counts stored in the database; running total shown in the chat header
+- **File and Image Attachments** — paperclip upload with presigned Supabase URLs; images are passed directly to the model as multimodal input; PDFs/DOCX go through the RAG pipeline
+- **Model Switcher** — per-conversation model selection; changes are persisted immediately to the database
+- **Authentication** — Clerk with email/password and OAuth; webhook-driven database sync on sign-up; secure route protection
+- **Markdown Rendering** — streaming-aware markdown with syntax highlighting and copy buttons via `streamdown`
+- **Responsive Layout** — desktop sidebar, mobile hamburger drawer, accessible at any viewport
 
 ### 🔮 Planned
-- **AI-Powered Chat Workspace:** Streaming LLM responses and multi-agent conversations.
-- **Memory & RAG:** Context-aware retrieval for specific codebases.
-- **Document Management:** Organizing technical documentation within workspaces.
-- **Production Deployment:** CI/CD pipeline and highly available infrastructure.
 
----
-
-## Technology Stack
-
-**Frontend**
-- Next.js (App Router)
-- React
-- Tailwind CSS
-- Shadcn UI
-- Lucide React
-
-**Backend**
-- Next.js API Routes (Serverless)
-
-**Infrastructure / Auth**
-- Clerk Authentication
-- Svix (Webhook Verification)
-
-*(Note: AI components are planned for upcoming milestones and will be added to the stack as they are implemented.)*
-
----
-
-## System Architecture
-
-Quasar uses a modular, serverless architecture centered around Next.js App Router. The frontend leverages React Server Components for performance, while client-side state is kept minimal. Authentication is handled entirely by Clerk at the edge (via middleware).
-
-For a detailed breakdown of the system components, data flow, and upcoming AI integrations, please refer to the [Architecture Documentation](docs/Architecture.md).
-
----
-
-## Project Structure
-
-```
-src/
-├── app/                  # Next.js App Router pages, layouts, and API routes
-├── components/           # Reusable UI components (Shadcn, Layout, etc.)
-├── lib/                  # Utility functions and shared logic
-docs/                     # Comprehensive technical documentation
-public/                   # Static assets
-```
-
----
-
-## Documentation
-
-Quasar maintains detailed, markdown-based documentation in the `/docs` directory. 
-
-| Document | Purpose | When to Read |
-|-----------|---------|--------------|
-| [Architecture.md](docs/Architecture.md) | Overall system design | Understanding high-level data flow and app structure |
-| [Database.md](docs/Database.md) | Database schema and queries | Working with Prisma or modifying data models |
-| [API.md](docs/API.md) | Backend endpoints | Integrating front-end features with the backend |
-| [RAG.md](docs/RAG.md) | Retrieval-Augmented Generation | Developing context-aware AI features |
-| [Memory.md](docs/Memory.md) | Long-term AI memory | Understanding how context is persisted |
-| [Agents.md](docs/Agents.md) | AI Agent design | Extending or modifying agentic capabilities |
-| [AI-Pipeline.md](docs/AI-Pipeline.md) | AI workflow execution | Understanding prompt engineering and token handling |
-| [Deployment.md](docs/Deployment.md) | Hosting and CI/CD | Preparing for staging or production releases |
-| [Decisions.md](docs/Decisions.md) | Architecture Decision Records | Reviewing *why* specific engineering choices were made |
-| [Roadmap.md](docs/Roadmap.md) | Long-term project planning | Looking at future milestones and epics |
-| [Lessons-Learned.md](docs/Lessons-Learned.md) | Engineering notes | Avoiding past mistakes and understanding edge cases |
-| [GitHub-Setup.md](docs/GitHub-Setup.md) | Repository config | Setting up PR templates, actions, and issue tracking |
+- **Memory** (M4) — short-term conversation buffer (Redis) + long-term preference extraction
+- **Agents** (M5) — LangGraph state machine, MCP tool integrations (GitHub, filesystem)
+- **Production Evals** (M6) — LangSmith tracing, prompt eval suite, cost dashboard
 
 ---
 
 ## Screenshots
 
-*Landing Page [Placeholder]*  
-*Dashboard [Placeholder]*  
-*Chat Workspace [Placeholder]*  
-*Documents [Placeholder]*  
-*Settings [Placeholder]*  
+[screenshot: chat interface with streaming response]
+
+[screenshot: documents page showing upload zone and document list with status badges]
+
+[screenshot: settings page — BYOK API key management]
+
+[screenshot: mobile view — hamburger nav open]
+
+---
+
+## Technology Stack
+
+### Frontend
+- **Next.js 16** (App Router, Turbopack)
+- **React 19** with TypeScript
+- **Tailwind CSS v4** with Shadcn UI component primitives
+- **Vercel AI SDK** (`useChat`, `streamText`, `DefaultChatTransport`) for streaming
+- **TanStack Query** for data fetching and cache invalidation
+- **Clerk** for authentication
+- **Supabase JS** (Storage for file uploads)
+
+### Backend — Next.js API Routes
+- **Prisma** ORM with PostgreSQL (Supabase)
+- **pgvector** extension for semantic search
+- Clerk webhook integration (user.created / user.deleted)
+- AES-256-GCM BYOK key encryption
+
+### Backend — FastAPI (RAG Service)
+- **Python 3.11** / **FastAPI** with asyncpg connection pool
+- **PyMuPDF** (PDF parsing) + **python-docx** (DOCX parsing)
+- **Google Gemini** embedding-001 (768-dimensional embeddings)
+- **rank-bm25** for BM25 keyword scoring
+- **asyncpg** raw SQL for pgvector operations
+
+### Infrastructure
+- **Vercel** — Next.js hosting (production)
+- **Render** — FastAPI Docker container (free tier)
+- **Supabase** — PostgreSQL + pgvector + Storage
+- **Docker / Docker Compose** — local FastAPI development
+- **Clerk** — authentication SaaS
+
+---
+
+## Architecture
+
+```
+Browser → Clerk (Auth) → Next.js (Vercel)
+                              │
+              ┌───────────────┼───────────────┐
+              │               │               │
+         Supabase         Prisma/Supabase    Clerk Webhooks
+         Storage          PostgreSQL          (user sync)
+              │               │
+              └───────────────┤
+                              │  (chat retrieval / doc ingest)
+                        FastAPI (Render)
+                              │
+                        Supabase pgvector
+```
+
+For a detailed breakdown of the architecture, data flow, and every design decision, see the [`docs/`](docs/) folder:
+
+| Document | Purpose |
+|----------|---------|
+| [Architecture.md](docs/Architecture.md) | System design and data flow |
+| [RAG.md](docs/RAG.md) | Full RAG pipeline: parsing → chunking → embedding → retrieval → citation |
+| [Decisions.md](docs/Decisions.md) | Architecture Decision Records (ADRs) — the *why* behind every major choice |
+| [Database.md](docs/Database.md) | Prisma schema, pgvector setup, query patterns |
+| [API.md](docs/API.md) | All API endpoints (Next.js routes + FastAPI) |
+| [Security.md](docs/Security.md) | BYOK encryption, route protection, ownership model |
+| [Deployment.md](docs/Deployment.md) | Vercel + Render deployment guide |
+| [Roadmap.md](docs/Roadmap.md) | Milestone plan and backlog |
+| [Lessons-Learned.md](docs/Lessons-Learned.md) | Hard-won engineering notes |
 
 ---
 
@@ -118,26 +133,24 @@ Quasar maintains detailed, markdown-based documentation in the `/docs` directory
 ### Prerequisites
 - Node.js >= 20
 - npm >= 10
-- A Clerk Account (for Authentication)
+- A [Clerk](https://clerk.com) account (free)
+- A [Supabase](https://supabase.com) project with the `pgvector` extension enabled (free)
+- A Google AI Studio API key for Gemini (free tier available)
 
-### Installation
+### Clone & Install
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/KhuzaimaHassan/Quasar.git
-   cd Quasar
-   ```
-
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
+```bash
+git clone https://github.com/KhuzaimaHassan/Quasar.git
+cd Quasar
+npm install
+```
 
 ### Environment Variables
 
-Create a `.env.local` file in the root directory and add your Clerk credentials:
+Create `.env.local` in the project root. See [docs/Environment-Setup.md](docs/Environment-Setup.md) for the full setup guide.
 
 ```bash
+# Clerk
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
 CLERK_SECRET_KEY=sk_test_...
 CLERK_WEBHOOK_SECRET=whsec_...
@@ -145,71 +158,114 @@ NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
 NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
 NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL=/chat
 NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL=/chat
+
+# Supabase / PostgreSQL
+DATABASE_URL="postgresql://..."           # Pooled connection (pgbouncer)
+DIRECT_URL="postgresql://..."             # Direct connection (migrations only)
+NEXT_PUBLIC_SUPABASE_URL="https://..."
+SUPABASE_SERVICE_ROLE_KEY="eyJ..."
+
+# Gemini (free tier sufficient)
+GOOGLE_GENERATIVE_AI_API_KEY="..."
+
+# BYOK Encryption — generate with: node -e "require('crypto').randomBytes(32).toString('base64').then(k => console.log(k))"
+# Or: openssl rand -base64 32
+ENCRYPTION_KEY="<32-byte-base64-key>"
+
+# FastAPI service (local dev)
+INTERNAL_SERVICE_SECRET="dev_internal_secret"
+FASTAPI_SERVICE_URL="http://localhost:8000"
 ```
 
-### Development
+> **Important:** `ENCRYPTION_KEY` must decode to exactly 32 bytes when base64-decoded. Use `openssl rand -base64 32` or the Node.js snippet above to generate a valid key.
 
-Run the Next.js development server:
+### Run Locally
 
+**Next.js frontend:**
 ```bash
 npm run dev
 ```
 
-The application will be available at `http://localhost:3000`.
-
-### Build
-
-Create a production build:
-
+**FastAPI RAG service (requires Docker):**
 ```bash
-npm run build
-npm run start
+docker compose up
+```
+
+Or run directly with uvicorn:
+```bash
+cd backend
+pip install -r requirements.txt
+uvicorn main:app --reload --port 8000
+```
+
+The app will be available at `http://localhost:3000`.
+
+---
+
+## Project Structure
+
+```
+src/
+├── app/
+│   ├── (auth)/               # Sign-in / sign-up pages (Clerk)
+│   ├── (dashboard)/          # Protected workspace pages
+│   │   ├── chat/             # Chat UI and conversation list
+│   │   ├── documents/        # Document library and upload
+│   │   └── settings/         # BYOK API key management
+│   └── api/                  # Next.js API routes
+│       ├── chat/             # Streaming chat handler (Vercel AI SDK)
+│       ├── conversations/    # Conversation CRUD + messages + attachments
+│       ├── workspaces/       # Workspace CRUD
+│       ├── api-keys/         # BYOK key storage (AES-256-GCM)
+│       └── webhooks/clerk/   # Clerk user.created / user.deleted sync
+├── components/               # Reusable UI (layout, chat, documents)
+└── lib/                      # Utilities, queries, models, encryption
+
+backend/                      # FastAPI RAG service
+├── main.py
+├── routers/
+│   ├── ingest.py             # POST /ingest — full ingestion pipeline
+│   └── health.py
+└── core/
+    ├── parsing.py            # PDF + DOCX text extraction
+    ├── chunking.py           # Token-aware chunking
+    ├── embeddings.py         # Gemini embedding-001
+    └── db.py                 # asyncpg pool management
+
+docs/                         # Architecture docs and ADRs
+prisma/                       # Prisma schema and migrations
 ```
 
 ---
 
 ## Current Status
 
-- ✅ Frontend Foundation
-- ✅ Authentication
-- ✅ Backend Foundation
-- ⬜ Chat Streaming
-- ⬜ RAG
-- ⬜ Memory
-- ⬜ Agents
-- ✅ Production Deployment
+| Milestone | Status |
+|-----------|--------|
+| M1 — Foundation (auth, DB, UI shell) | ✅ Complete |
+| M2 — Chat (streaming, BYOK, history, attachments) | ✅ Complete |
+| M3 — RAG (ingestion, retrieval, citations) | ✅ Complete |
+| M4 — Memory | 🔲 Planned |
+| M5 — Agents (MCP + LangGraph) | 🔲 Planned |
+| M6 — Production evals and monitoring | 🔲 Planned |
 
 ---
 
 ## Engineering Principles
 
-- **Clean Architecture:** Strict separation of concerns between UI, business logic, and data access.
-- **Type Safety:** End-to-end TypeScript enforcement to catch errors at compile-time.
-- **Modular Design:** Reusable UI using Tailwind CSS and Radix primitives (Shadcn).
-- **AI-First Architecture:** Architecture built specifically to support streaming LLMs and autonomous agents.
-- **Security by Design:** Edge-level route protection and strict webhook verification.
-
----
-
-## Known Limitations
-
-- The Chat, Documents, Memory, and Settings views are currently static frontend shells without backend state.
-- Notifications and Dark Mode toggles are placeholders and not yet functional.
-
----
-
-## Roadmap
-
-This is a high-level overview. For detailed epics and tasks, refer to [Roadmap.md](docs/Roadmap.md).
+- **Type Safety** — end-to-end TypeScript from API routes to UI components
+- **Security by Design** — application-level AES-256-GCM encryption for BYOK keys; 404-masking for all resource ownership checks; Clerk at the proxy layer plus per-route auth guards
+- **Single Source of Truth** — all conversation state (model, tokens, messages) is DB-authoritative; the UI derives from it
+- **Graceful Degradation** — RAG cold-start handled with timeout + fallback; streaming errors surface in-UI rather than hanging
 
 ---
 
 ## Contributing
 
-We welcome contributions! Please ensure all code passes `npm run lint` and `npm run type-check` before submitting Pull Requests.
+This is a portfolio project but contributions and feedback are welcome. Please ensure all code passes `npm run lint` and `npm run type-check` before opening a pull request.
 
 ---
 
 ## License
 
-This project is licensed under the MIT License.
+MIT License

@@ -136,6 +136,8 @@ Each decision is recorded here with the context, options considered, and rationa
 
 **When to revisit**: If the cold starts become unacceptable for real users, migrate to a paid tier on Render or Railway.
 
+**Mitigation implemented**: Chat retrieval has a 6-second timeout with graceful degradation (missing context is non-fatal). The `/ingest` endpoint has a 60-second budget, which comfortably outlasts Render's cold-start window. A banner in the README warns users about the first-request latency.
+
 ---
 
 ## ADR-008: LangSmith Over Custom Logging
@@ -165,7 +167,9 @@ Each decision is recorded here with the context, options considered, and rationa
 2. Free Gemini tier
 3. BYOK-only from day one
 
-**Decision**: Default to the free Gemini tier (Gemini 3.5 Flash), and implement Bring Your Own Key (BYOK) for premium models later (Issue #13).
+**Decision**: Default to the free Gemini tier (Gemini 3.5 Flash), and implement Bring Your Own Key (BYOK) for premium models later.
+
+**Status update (M2)**: BYOK is now implemented. Users can add Anthropic (Claude Sonnet 5) or OpenAI (GPT-4o) API keys in Settings. Keys are encrypted at rest per ADR-010.
 
 **Rationale**: The free Gemini tier allows users to experience the application immediately without setup friction or me absorbing high costs. BYOK-only from day one adds too much onboarding friction for a portfolio project.
 
