@@ -2,7 +2,7 @@
 
 > AI-powered developer workspace — streaming chat, document RAG, and multi-model support.
 
-**Live Demo:** [https://quasar-ai.vercel.app](https://quasar-ai.vercel.app/)
+**Live Demo:** [https://quasar.vercel.app](https://quasar.vercel.app/)
 
 > **Note on the document ingestion service:** The RAG backend runs on Render's free tier, which spins down after 15 minutes of inactivity. The first document upload or retrieval call after an idle period may take 30–60 seconds to respond. This is expected and not a bug — subsequent calls are fast.
 
