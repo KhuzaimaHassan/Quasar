@@ -19,6 +19,7 @@ model User {
   workspaces    Workspace[]
   conversations Conversation[]
   apiKeys       ApiKey[]
+  memories      Memory[]
 
   @@map("users")
 }
@@ -114,4 +115,19 @@ model Chunk {
   createdAt  DateTime @default(now())
 
   @@index([documentId])
+}
+
+model Memory {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scope       String
+  key         String
+  value       String
+  confidence  Float
+  createdAt   DateTime @default(now())
+  lastUpdated DateTime @updatedAt
+
+  @@unique([userId, scope, key])
+  @@index([userId])
 }
