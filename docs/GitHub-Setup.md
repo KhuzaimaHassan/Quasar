@@ -167,23 +167,23 @@ Or open them manually through the GitHub UI.
 
 ### Milestone 4 — Memory
 
-**#21** — Redis setup with sliding window conversation buffer
+**#21** — Redis setup with sliding window conversation buffer [NOT BUILT]
 - Label: `infra`
-- Body: Add Upstash Redis to the stack. Install `ioredis`. Implement `get_conversation_context(conversation_id)` — stores last N messages in `conv:{id}:buffer` with 24h TTL. Used in `POST /api/chat` context assembly.
+- Body: *Deliberately not built per [ADR-011](./Decisions.md#adr-011-no-redis-for-short-term-memory). We implemented a simpler message-count cap instead.*
 
-**#22** — Memory extraction and conversation compression
+**#22** — Memory extraction and conversation compression [PARTIALLY BUILT]
 - Label: `ai`
-- Body: When buffer exceeds 5000 tokens, compress oldest half into a summary using Claude. Store summary in `conv:{id}:summary` (7d TTL). Prepend summary to context on next request. Test that key details survive compression.
+- Body: *Compression half was deliberately not built per [ADR-011](./Decisions.md#adr-011-no-redis-for-short-term-memory).* Memory extraction (preference capture) was implemented in #24 instead.
 
-**#23** — Long-term memory DB (memories table)
+**#23** — Long-term memory DB (memories table) [IMPLEMENTED]
 - Label: `infra`
 - Body: Add `memories` table to Prisma schema. Add composite unique constraint `(user_id, scope, key)`. Implement `POST /api/memory`, `GET /api/memory`, `PATCH /api/memory/:id`, `DELETE /api/memory/:id`, `DELETE /api/memory`.
 
-**#24** — Preference capture from conversations
+**#24** — Preference capture from conversations [IMPLEMENTED]
 - Label: `ai`
 - Body: After each conversation session (or on a schedule), run memory extraction prompt over last N messages. Parse JSON output. Upsert into memories table. Only persist confidence ≥ 0.7. Test with 5 different conversation types.
 
-**#25** — Memory panel UI
+**#25** — Memory panel UI [IMPLEMENTED]
 - Label: `ux`
 - Body: Memory page accessible from sidebar. Group memories by scope (Preferences, Projects, Style, Facts). Inline editing of value field. Delete button per memory. "Clear all" button with confirmation. "Add manually" form.
 

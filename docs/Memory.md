@@ -17,66 +17,20 @@ Short-term memory is the conversation's sliding window — it prevents the conte
 
 ### Problem
 
-LLMs have a fixed context window. A long conversation will eventually exceed it. Naive solutions (truncate oldest messages, summarise everything) both lose important context.
+LLMs have a fixed context window. While modern models (like Gemini 1.5) have massive context windows (1M+ tokens), sending the entire history of a very long conversation on every turn wastes tokens and increases latency.
 
-### Solution: Sliding Window + Compression
+### Solution: Message-Count Cap
 
-Keep the last N tokens of the conversation in Redis. When messages age out of the window, run a compression step that summarises them and prepends the summary to the context.
+Instead of complex Redis-based compression (as originally considered in ADR-006), we implemented a simple, robust message-count cap. The application retains only the last 30 messages in the context window.
 
-```
-Full conversation:
-  [msg 1] [msg 2] [msg 3] ... [msg 40] [msg 41] [msg 42]
-
-After window compression:
-  [summary of msgs 1-35] [msg 36] [msg 37] ... [msg 42]
+```typescript
+// src/app/api/chat/route.ts
+const historyCap = modelMessages.slice(-30);
 ```
 
-### Redis Keys
+### Rationale
 
-```
-conv:{conversation_id}:buffer    → JSON array of message objects (last N)
-conv:{conversation_id}:summary   → Compressed summary of older messages
-```
-
-Both keys have TTL of 24 hours (refreshed on each new message).
-
-### Implementation
-
-```python
-MAX_BUFFER_TOKENS = 4000
-SUMMARY_TRIGGER = 5000  # Compress when buffer exceeds this
-
-async def get_conversation_context(conversation_id: str) -> list[Message]:
-    buffer = await redis.get(f"conv:{conversation_id}:buffer")
-    summary = await redis.get(f"conv:{conversation_id}:summary")
-
-    messages = json.loads(buffer) if buffer else []
-    total_tokens = sum(count_tokens(m["content"]) for m in messages)
-
-    if total_tokens > SUMMARY_TRIGGER:
-        # Compress oldest half
-        to_compress = messages[:len(messages)//2]
-        new_summary = await compress(to_compress, existing_summary=summary)
-        messages = messages[len(messages)//2:]
-        await redis.setex(f"conv:{conversation_id}:summary", 604800, new_summary)
-        await redis.setex(f"conv:{conversation_id}:buffer", 86400, json.dumps(messages))
-
-    # Prepend summary if it exists
-    if summary:
-        return [{"role": "system", "content": f"Summary of earlier conversation:\n{summary}"}] + messages
-
-    return messages
-```
-
-### Compression Prompt
-
-```
-The following messages are from an earlier part of a conversation.
-Summarise the key points, decisions made, code written, and any open questions.
-Be concise — aim for under 300 tokens.
-
-[messages]
-```
+Given Gemini 1.5's large context window, 30 messages comfortably fit without approaching limits. This approach avoids the infrastructure overhead of Redis and the LLM cost/latency of running background compression prompts. It is simple, stateless, and effective for this project's scale.
 
 ---
 
@@ -84,87 +38,79 @@ Be concise — aim for under 300 tokens.
 
 ### What Gets Stored
 
-The memory extraction step runs after each conversation session (or on a schedule). It identifies durable facts worth remembering:
+The memory extraction step identifies durable facts worth remembering:
 
 | Scope | Key examples |
 |-------|-------------|
-| `preference` | `preferred_language: TypeScript`, `preferred_test_framework: vitest` |
-| `project` | `current_project: Quasar`, `project_stack: Next.js + FastAPI` |
-| `style` | `code_style: functional, no classes`, `comment_style: minimal` |
+| `preference` | `language: TypeScript`, `test_framework: vitest` |
+| `project` | `current: Quasar`, `stack: Next.js + FastAPI` |
+| `style` | `code: functional`, `comments: minimal` |
 | `fact` | `company: SIEHS`, `role: Data Engineer` |
 
-### Extraction Prompt
+### Extraction Mechanism
 
-```
-Review this conversation and extract any durable facts about the user.
-Output a JSON array. Each item: { scope, key, value, confidence }.
-Confidence is 0.0–1.0. Only include facts with confidence > 0.6.
-Only extract facts explicitly stated or strongly implied — do not infer.
+We run a background extraction step every 5th user message in a conversation. It uses Vercel's `generateObject` with a strict Zod schema.
 
-[conversation summary or last N messages]
+```typescript
+const { object } = await generateObject({
+  model: google('gemini-1.5-flash'), // Always uses server default key, never BYOK
+  schema: z.object({
+    memories: z.array(z.object({
+      scope: z.enum(['preference', 'project', 'style', 'fact']),
+      key: z.string(),
+      value: z.string(),
+      confidence: z.number().min(0).max(1)
+    }))
+  }),
+  // ...
+});
 ```
+*Note: Extraction always uses the server's default Gemini key, even if the user is employing a BYOK model for the chat itself. This protects user credits from background processing costs.*
 
 ### Storage
 
 ```typescript
 // Upsert — update value if key exists, insert if not
-await prisma.memory.upsert({
-  where: { userId_scope_key: { userId, scope, key } },
-  update: { value, confidence, lastUpdated: new Date() },
-  create: { userId, scope, key, value, confidence },
+await db.memory.upsert({
+  where: { userId_scope_key: { userId: user.id, scope: mem.scope, key: mem.key } },
+  update: { value: mem.value, confidence: mem.confidence },
+  create: { userId: user.id, scope: mem.scope, key: mem.key, value: mem.value, confidence: mem.confidence },
 });
 ```
 
 ### Retrieval at Prompt Time
 
-At the start of every request, fetch the top memories for the user and inject them into the system prompt:
+At the start of every request, fetch the top memories (confidence >= 0.7) for the user and inject them into the system prompt:
 
 ```typescript
-const memories = await prisma.memory.findMany({
-  where: { userId, confidence: { gte: 0.7 } },
-  orderBy: { lastUpdated: 'desc' },
+const memories = await db.memory.findMany({
+  where: { userId: user.id, confidence: { gte: 0.7 } },
+  orderBy: { lastUpdated: "desc" },
   take: 10,
 });
-
-const memoryBlock = memories
-  .map(m => `- ${m.key}: ${m.value}`)
-  .join('\n');
 ```
 
 Injected as:
 ```
 Known about the user:
-- preferred_language: TypeScript
-- current_project: Quasar
-- preferred_test_framework: vitest
+- preference | language: TypeScript
+- project | current: Quasar
 ```
 
 ---
 
 ## Memory UI
 
-The memory panel (accessible from the workspace sidebar) shows:
-
-```
-┌─────────────────────────────────┐
-│  Your memory                    │
-│                                 │
-│  Preferences                    │
-│  ● preferred_language: TypeScript│
-│  ● test_framework: vitest       │
-│                                 │
-│  Projects                       │
-│  ● current_project: Quasar      │
-│                                 │
-│  [+ Add manually]  [Clear all]  │
-└─────────────────────────────────┘
-```
+The `/memory` page provides a complete dashboard to manage long-term memories.
 
 Users can:
-- View all stored memories grouped by scope.
-- Edit individual memory values inline.
-- Delete any memory.
-- Add memories manually (e.g., "Always use async/await, never .then()").
+- View all stored memories grouped by scope (Preferences, Projects, Style, Facts).
+- Edit individual memory values inline by clicking them.
+- Delete any memory via a trash icon.
+- Add memories manually via an inline form (e.g., "Always use async/await").
+- Clear all memories entirely.
+
+The UI is built using React Query hooks (`useMemories`, `useUpdateMemory`, etc.) for instant optimistic UI updates without page reloads.
 
 ---
 

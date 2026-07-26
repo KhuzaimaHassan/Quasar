@@ -275,12 +275,31 @@ After finishing each milestone (or whenever something significant happens), add 
 
 ### M4 — Memory
 
-> Fill this in after completing Milestone 4.
+**Issue #92 & #93: Rethinking Short-Term Memory**
 
-**Topics to reflect on:**
-- How accurate was the memory extraction prompt? Many false positives?
-- Did users (you, as a user) find the memory panel useful?
-- When did the short-term compression trigger, and did it lose important context?
+- **Dropping Redis for Message-Count Caps**:
+  - *What happened*: We originally planned to use Redis to store conversation buffers and run LLM-based summary compression when the buffer got too large. We discarded this entirely.
+  - *Why it happened*: Modern LLMs (specifically Gemini 1.5 Flash, our default) have enormous context windows (1M+ tokens). The theoretical fear of overflowing the context window in a standard web chat session is effectively obsolete.
+  - *How we solved it*: We implemented a simple, stateless array slice (`modelMessages.slice(-30)`) in the Next.js API route. This caps the context to the last 30 messages, completely avoiding the infrastructure overhead of Redis and the latency/cost of running background summarization prompts.
+
+**Issue #94 & #95: Long-Term Memory Extraction**
+
+- **Protecting User BYOK Credits**:
+  - *What happened*: We needed to run a background LLM prompt to extract durable facts from the conversation every 5 messages, but users might be using expensive BYOK models (Claude 3.5 Sonnet / GPT-4o) for the main chat.
+  - *Why it happened*: Burning a user's personal API credits on silent background system tasks is a poor user experience and creates billing anxiety.
+  - *How we solved it*: We hardcoded the memory extraction pipeline to *always* use the server's default `GOOGLE_GENERATIVE_AI_API_KEY` with `gemini-1.5-flash`. This protects the user's credits and guarantees we have a model that natively supports structured JSON output (`generateObject` with Zod) for reliable extraction.
+
+- **Strict Zod Schemas for LLM Output**:
+  - *What happened*: We needed the LLM to return exactly the enum values our Prisma database expected for the `scope` column (`preference`, `project`, `style`, `fact`).
+  - *Why it happened*: LLMs are prone to hallucinating categories (e.g., returning `framework` instead of `preference`).
+  - *How we solved it*: We used Vercel AI SDK's `generateObject` and enforced `z.enum(['preference', 'project', 'style', 'fact'])` directly in the schema. The SDK automatically handles retries and prompt shaping to ensure the LLM strictly adheres to our database constraints.
+
+**Issue #96: Memory Management UI**
+
+- **React Query Optimistic Updates & Inline Editing**:
+  - *What happened*: We wanted the Memory panel to feel instantaneous when users update their preferences.
+  - *Why it happened*: Traditional form submissions or page reloads feel too heavy for tweaking a single memory value.
+  - *How we solved it*: We built an inline editing mode into the `MemoryRow` component (clicking the value turns it into an input). We paired this with React Query mutations that instantly invalidate the `['memories']` cache key on success, causing the UI to seamlessly refresh the data in the background without any loading spinners disrupting the user flow.
 
 ---
 

@@ -7,7 +7,7 @@
 | M1 — Foundation (auth, DB, UI) | ✅ Done | Week 2 |
 | M2 — Chat (streaming, BYOK, attachments, history) | ✅ Done | Week 4 |
 | M3 — RAG (ingestion, embeddings, retrieval, citations) | ✅ Done | Week 7 |
-| M4 — Memory (short + long-term) | 🔲 Not started | Week 9 |
+| M4 — Memory (short + long-term) | ✅ Done | Week 9 |
 | M5 — Agents (MCP + LangGraph) | 🔲 Not started | Week 12 |
 | M6 — Production (evals, CI/CD) | 🔲 Not started | Week 14 |
 
@@ -22,8 +22,8 @@ The following features are **in scope for v1.0**. Everything else goes below in 
 - [x] Workspace-based project organisation
 - [x] Streaming chat with Gemini as the default free model (optional user-provided Claude/GPT-4 keys via BYOK)
 - [x] Document upload + RAG retrieval (PDF, DOCX → pgvector + BM25 re-ranking + citations)
-- [ ] Short-term conversation memory (M4 — planned)
-- [ ] Long-term user preference memory (M4 — planned)
+- [x] Short-term conversation memory (M4 — planned)
+- [x] Long-term user preference memory (M4 — planned)
 - [ ] MCP tool integrations (GitHub, filesystem) (M5 — planned)
 - [ ] LangGraph multi-agent pipeline (M5 — planned)
 - [ ] Token cost dashboard (M6 — planned)

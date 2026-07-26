@@ -195,3 +195,35 @@ Each decision is recorded here with the context, options considered, and rationa
 - The plaintext `ENCRYPTION_KEY` must be securely injected into the application environment.
 - If `ENCRYPTION_KEY` is lost or rotated without re-encrypting data, all stored user API keys become permanently unrecoverable.
 - API keys are only decrypted in-memory per-request and never returned to the client in plaintext.
+
+---
+
+## ADR-011: No Redis for Short-Term Memory
+
+**Status**: Accepted  
+**Date**: M4 implementation
+
+**Context**: ADR-006 deferred Redis for short-term memory until polling overhead became an issue. In M4, we had to decide whether to implement Redis, build an LLM-based summary compression pipeline, or do something simpler.
+
+**Decision**: Implement short-term memory as a simple message-count cap (last 30 messages). No Redis, no LLM summary compression.
+
+**Rationale**: Modern LLMs (like Gemini 1.5) have massive context windows (1M+ tokens). The original fear of overflowing the context window in a standard session is no longer a primary concern. Capping the history at 30 messages comfortably controls token costs and latency without the infrastructural complexity of Redis or the added latency/cost of running background compression prompts.
+
+**Consequences**: Long-running conversations simply "forget" things said more than 30 messages ago unless those facts were extracted into Long-Term Memory (see ADR-012).
+
+---
+
+## ADR-012: Long-Term Memory Extraction Always Uses Server Key
+
+**Status**: Accepted  
+**Date**: M4 implementation
+
+**Context**: Long-Term memory requires a background LLM call to extract facts from the conversation. The app supports BYOK (Bring Your Own Key) for the primary chat.
+
+**Decision**: The background memory extraction process always uses the server's default `GOOGLE_GENERATIVE_AI_API_KEY` with the `gemini-1.5-flash` model, regardless of which model/provider the user selected for their conversation.
+
+**Rationale**: 
+1. **Cost Protection**: We do not want to burn users' personal API credits (Claude/GPT-4) on background system tasks they didn't explicitly request.
+2. **Reliability**: We need to guarantee structured output (JSON schema). Gemini 1.5 Flash supports structured output natively and is extremely fast/cheap for the server to run.
+
+**Consequences**: The extraction step relies entirely on the server's Gemini quota. If the server hits rate limits, extraction fails silently (which is acceptable as a graceful degradation).
