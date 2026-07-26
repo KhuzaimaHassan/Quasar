@@ -71,18 +71,25 @@ export async function retrieveContext(workspaceId: string, query: string): Promi
   }
 }
 
-export function buildSystemPrompt(chunks: RetrievedChunk[]): string {
+export function buildSystemPrompt(chunks: RetrievedChunk[], memories?: { key: string, value: string }[]): string {
   const basePrompt = "You are Quasar, an AI developer workspace assistant. Be concise and specific.";
   
-  if (!chunks || chunks.length === 0) {
-    return basePrompt;
-  }
+  let prompt = basePrompt;
 
-  let prompt = basePrompt + "\n\n<context>\n";
-  for (const chunk of chunks) {
-    prompt += `Source: ${chunk.filename}\n${chunk.content}\n\n`;
+  if (memories && memories.length > 0) {
+    prompt += "\n\nKnown about the user:\n";
+    for (const mem of memories) {
+      prompt += `- ${mem.key}: ${mem.value}\n`;
+    }
   }
-  prompt += "</context>\n\nWhen answering, always mention which file your information came from based on the context above.";
+  
+  if (chunks && chunks.length > 0) {
+    prompt += "\n\n<context>\n";
+    for (const chunk of chunks) {
+      prompt += `Source: ${chunk.filename}\n${chunk.content}\n\n`;
+    }
+    prompt += "</context>\n\nWhen answering, always mention which file your information came from based on the context above.";
+  }
 
   return prompt;
 }

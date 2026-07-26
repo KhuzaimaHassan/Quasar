@@ -5,6 +5,7 @@ import { streamText, createUIMessageStreamResponse, toUIMessageStream } from 'ai
 import { google } from '@ai-sdk/google'
 import { convertToModelMessages } from '@/lib/chat-utils'
 import { retrieveContext, buildSystemPrompt, resolveCitations } from '@/lib/rag'
+import { extractMemories } from '@/lib/memory-extraction'
 import { MODEL_CATALOG } from '@/lib/models'
 import { decrypt } from '@/lib/encryption'
 
@@ -70,12 +71,33 @@ export async function POST(req: Request) {
     const chunks = conversation.workspaceId 
       ? await retrieveContext(conversation.workspaceId, userMessageContent)
       : [];
-    const systemPrompt = buildSystemPrompt(chunks);
+      
+    // Fetch top memories (Issue #95, Step 4)
+    const topMemories = await db.memory.findMany({
+      where: {
+        userId: user.id,
+        confidence: { gte: 0.7 }
+      },
+      orderBy: { lastUpdated: 'desc' },
+      take: 10,
+      select: { key: true, value: true }
+    });
+
+    const systemPrompt = buildSystemPrompt(chunks, topMemories);
     
     // Resolve citations for display
     const citations = await resolveCitations(chunks);
 
-    const modelMessages = await convertToModelMessages(messages);
+    let modelMessages = await convertToModelMessages(messages);
+
+    // Short-term history cap (Issue #95, Step 1)
+    // We only keep the last 30 messages. For a portfolio project, this simple array slice 
+    // is entirely sufficient and avoids the overhead of Redis or token-based compression (per ADR-006).
+    // The models we use (like Gemini 1.5 Flash) have massive context windows, so 30 messages is well within limits.
+    if (modelMessages.length > 30) {
+      modelMessages = modelMessages.slice(-30);
+    }
+    
     console.log('[CHAT] Final Model Messages:', JSON.stringify(modelMessages.map(m => ({ role: m.role, len: m.content?.length, isArray: Array.isArray(m.content) })), null, 2));
 
     // Look up the conversation's model provider
@@ -151,6 +173,41 @@ export async function POST(req: Request) {
             },
           },
         })
+
+        // Background memory extraction (Issue #95, Step 3)
+        // Trigger every 5th message (using the request's messages array length)
+        if (messages.length % 5 === 0) {
+          extractMemories(messages).then(async (facts) => {
+            for (const fact of facts) {
+              try {
+                await db.memory.upsert({
+                  where: {
+                    userId_scope_key: {
+                      userId: user.id,
+                      scope: fact.scope,
+                      key: fact.key,
+                    }
+                  },
+                  update: {
+                    value: fact.value,
+                    confidence: fact.confidence,
+                  },
+                  create: {
+                    userId: user.id,
+                    scope: fact.scope,
+                    key: fact.key,
+                    value: fact.value,
+                    confidence: fact.confidence,
+                  }
+                });
+              } catch (err) {
+                console.error('[MEMORY_UPSERT_ERROR] Failed to upsert fact:', err);
+              }
+            }
+          }).catch((err) => {
+            console.error('[MEMORY_EXTRACTION_FATAL]', err);
+          });
+        }
       },
     })
 
