@@ -305,14 +305,22 @@ After finishing each milestone (or whenever something significant happens), add 
 
 ### M5 — Agents
 
-> Fill this in after completing Milestone 5.
+**Issue #123: LangGraph Proof-of-Life & State Persistence**
 
-**Topics to reflect on:**
-- How often did the agent produce wrong code that the reviewer caught?
-- What was the most surprising thing LangGraph did?
-- How did you handle agent runs that timed out or got stuck in a loop?
-- What MCP tool was hardest to implement? Why?
-- Did the Planner produce sensible plans, or did it need heavy prompt engineering?
+- **LangGraph vs Prisma State Management**:
+  - *What happened*: We abandoned Prisma JSON columns for LangGraph state in favor of LangGraph's native `PostgresSaver`.
+  - *Why it happened*: Managing complex conversational graphs with human-in-the-loop (`interrupt()`) required deep state-diffing, threading, and native resumability that manually updating a JSON column could not robustly handle without reinventing the wheel.
+  - *How we solved it*: We restricted Prisma's `AgentRun` model to be a lightweight status index (`running`, `completed`, `cancelled`) and let `langgraph-checkpoint-postgres` manage its own internal tables side-by-side using raw `asyncpg`.
+
+- **Supabase PgBouncer and psycopg3 (PostgresSaver)**:
+  - *What happened*: LangGraph's `PostgresSaver` relies on `psycopg3`, which natively attempts to use prepared statements. This crashed instantly with `DuplicatePreparedStatement` errors on Supabase.
+  - *Why it happened*: Supabase's PgBouncer runs in "transaction mode", which shuffles underlying server connections and destroys prepared statement continuity.
+  - *How we solved it*: We explicitly disabled prepared statements in `psycopg_pool.ConnectionPool` by passing `prepare_threshold=None` into the kwargs, allowing `PostgresSaver` to work flawlessly behind the transaction pooler.
+
+- **LangGraph Dynamic Routing (`Command`)**:
+  - *What happened*: The graph continued executing the `finalize` node even when the user explicitly rejected approval (`approve: False`) during the `interrupt()`.
+  - *Why it happened*: We had originally defined a static edge: `builder.add_edge("await_approval", "finalize")`. In modern LangGraph, static edges can aggressively override or conflict with dynamic routing returned by `Command(goto=...)` inside a node.
+  - *How we solved it*: We removed the static edge entirely. We updated the `await_approval` node to explicitly return `Command(goto="finalize")` on approval and `Command(goto=END)` on rejection, cleanly embracing dynamic routing for human-in-the-loop decisions.
 
 ---
 

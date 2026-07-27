@@ -32,7 +32,7 @@ Result streamed back to chat
 
 ## LangGraph State
 
-The state object is passed through every node and persisted to `agent_runs.state_graph` after each step (enables resumability):
+The state object is passed through every node and persisted by LangGraph's internal checkpointer after each step (enables resumability):
 
 ```python
 from typing import TypedDict, Annotated
@@ -222,7 +222,7 @@ Read-only. Useful for "implement this Figma component" tasks.
 | `failed` | Error in a node, run halted |
 | `cancelled` | User cancelled mid-run |
 
-State is saved to `agent_runs.state_graph` after each node completes. If the service crashes mid-run, the run can be resumed from the last saved state.
+State is natively managed by LangGraph's `PostgresSaver` checkpointer using the `threadId`. The `AgentRun` table in our database acts as a lightweight index, not a state-snapshot table. If the service crashes mid-run, or if the graph hits an `interrupt()` to await human approval, the run can be seamlessly resumed from the exact node where it left off.
 
 ---
 
@@ -257,7 +257,7 @@ GitHub commit: feat/todo-app-scaffold → main
 
 ## Safety Constraints
 
-- **Human-in-the-loop for destructive actions** — before Executor commits to `main` or deletes files, prompt the user for confirmation.
+- **Human-in-the-loop for destructive actions** — before Executor commits to `main` or deletes files, the graph utilizes LangGraph's native `interrupt()` primitive to pause execution and prompt the user. The UI then resumes the graph using `Command(resume=...)` to either approve or reject the action.
 - **Max steps**: Hard cap at 8 plan steps per run to prevent runaway agents.
 - **Max tool calls**: Hard cap at 20 MCP calls per run.
 - **Timeout**: Entire agent run must complete within 5 minutes. Surface a timeout error if exceeded.

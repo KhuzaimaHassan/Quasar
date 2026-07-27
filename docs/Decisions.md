@@ -227,3 +227,18 @@ Each decision is recorded here with the context, options considered, and rationa
 2. **Reliability**: We need to guarantee structured output (JSON schema). Gemini 1.5 Flash supports structured output natively and is extremely fast/cheap for the server to run.
 
 **Consequences**: The extraction step relies entirely on the server's Gemini quota. If the server hits rate limits, extraction fails silently (which is acceptable as a graceful degradation).
+
+---
+
+## ADR-013: LangGraph's Own Checkpointer Over Manual State Persistence
+
+**Status**: Accepted  
+**Date**: M5 implementation
+
+**Context**: For the Agent Pipeline, we need a way to persist step-by-step state so that long-running agents can survive server restarts or pause for human approval. The original plan (docs/Agents.md) was to manually serialize the state and save it to a `state_graph` JSON column in the `AgentRun` table using Prisma.
+
+**Decision**: Discard the manual `state_graph` JSON column approach. Instead, use LangGraph's native `PostgresSaver` checkpointer (`langgraph-checkpoint-postgres`) to handle all step-by-step state persistence. The `AgentRun` table will act solely as a lightweight index (storing `threadId`, `status`, `startedAt`, etc.) rather than owning the state.
+
+**Rationale**: LangGraph's checkpointers are purpose-built for its state machines. They automatically handle state diffing, history tracking, and the `interrupt()` / `Command(resume=...)` human-in-the-loop primitives. Rebuilding this resumability manually via Prisma would be error-prone and reinvent the wheel. 
+
+**Consequences**: This creates a conscious exception to our rule that "Prisma owns all database schema." The `langgraph-checkpoint-postgres` library creates and manages its own internal checkpoint tables (`checkpoints`, `checkpoint_writes`, etc.) in the PostgreSQL database. Nothing else in the application should ever query these tables directly.
