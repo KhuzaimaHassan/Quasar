@@ -39,7 +39,7 @@ Return 404 (not 403) when a resource belongs to another user — this avoids lea
 
 ### How keys are stored
 - **Anthropic and OpenAI API keys**: Environment variables only (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`). Never stored in the database. Never sent to the client.
-- **User's GitHub OAuth token**: Stored in `users.preferences` jsonb column (encrypted at rest via Supabase's encryption). Only the authenticated user can access it.
+- **User's GitHub OAuth token**: Never stored in Quasar's database. It is resolved fresh from Clerk per use via the `@clerk/nextjs` SDK.
 
 ### BYOK Key Storage
 User-provided API keys for premium models are stored using application-level AES-256-GCM encryption. They are decrypted exclusively in-memory per-request, and are never returned to the client in plaintext. The frontend only receives masked previews (e.g., `sk-...wxyz`) for display.

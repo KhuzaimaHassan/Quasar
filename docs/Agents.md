@@ -176,6 +176,8 @@ app = workflow.compile()
 
 ### GitHub (`tools/github.py`)
 
+*(Implemented ✅)* This standalone module provides six core GitHub API actions. Safety, validation, and human-in-the-loop approval logic is deliberately excluded from this module—those constraints are strictly enforced by the LangGraph orchestrator layer (#99).
+
 | Tool | Description |
 |------|-------------|
 | `list_repos` | List user's repositories |
@@ -185,7 +187,7 @@ app = workflow.compile()
 | `list_open_prs` | List open pull requests |
 | `create_branch` | Create a new branch |
 
-Auth: GitHub OAuth token stored per user in `users.preferences`.
+Auth: GitHub OAuth tokens are never stored in our database. They are resolved fresh from Clerk for every tool invocation.
 
 ### Filesystem (`tools/filesystem.py`)
 

@@ -98,10 +98,20 @@ cd quasar
 
 ---
 
-## Step 3: Set Up Clerk
+## Step 3: Set Up GitHub & Clerk
 
+### GitHub OAuth App
+1. Go to your GitHub account -> **Settings -> Developer settings -> OAuth Apps -> New OAuth App**.
+2. Name the app, set the homepage to your deployment URL (or `http://localhost:3000`), and set the **Authorization callback URL** to the URL provided by Clerk in the next step.
+3. Generate and copy the **Client ID** and **Client Secret**.
+
+### Clerk Application
 1. Create a new application at [clerk.com](https://clerk.com).
 2. Enable **GitHub** and **Google** as social login providers.
+3. For GitHub, toggle on **Use custom credentials**:
+   - Enter your GitHub **Client ID** and **Client Secret**.
+   - Copy the Authorization Callback URL back into your GitHub OAuth App settings.
+   - Add the `repo` scope to the Scopes field.
 3. Go to **API Keys** and copy:
    - **Publishable key** → `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
    - **Secret key** → `CLERK_SECRET_KEY`
