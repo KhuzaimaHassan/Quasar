@@ -322,6 +322,17 @@ After finishing each milestone (or whenever something significant happens), add 
   - *Why it happened*: We had originally defined a static edge: `builder.add_edge("await_approval", "finalize")`. In modern LangGraph, static edges can aggressively override or conflict with dynamic routing returned by `Command(goto=...)` inside a node.
   - *How we solved it*: We removed the static edge entirely. We updated the `await_approval` node to explicitly return `Command(goto="finalize")` on approval and `Command(goto=END)` on rejection, cleanly embracing dynamic routing for human-in-the-loop decisions.
 
+**Issue #97: GitHub Tool & Token Resolution**
+
+- **Resolving Third-Party OAuth Tokens via Clerk**:
+  - *What happened*: We needed to act on behalf of the user on GitHub, but storing OAuth tokens in our database introduces significant security and lifecycle management risks.
+  - *Why it happened*: Traditional apps store tokens in the DB, but this means you have to manually handle token expiration, refresh flows, and revocation.
+  - *How we solved it*: We utilized Clerk's `Use custom credentials` feature to hook into our own GitHub OAuth App. We then wrote a Next.js helper `getGithubToken` that dynamically calls `clerkClient().users.getUserOauthAccessToken()`. This safely fetches a fresh token per request natively from Clerk, completely eliminating the need to store or rotate GitHub tokens in our PostgreSQL database.
+  
+- **Handling API Error Granularity in Tools**:
+  - *What happened*: The standalone Python GitHub tool originally surfaced raw HTTP errors.
+  - *Why it happened*: Basic `httpx` logic throws generic exceptions on failures. If the user misconfigured their GitHub scopes (e.g., forgot the `repo` scope), the LangGraph agent would just see a raw 403 or 401.
+  - *How we solved it*: We implemented a `_handle_response_errors` wrapper that intercepts all `httpx` errors and parses the response JSON to raise specific `GitHubAPIError` exceptions. This ensures that when scopes are missing, the exact granular failure reason is logged and passed up to the LangGraph layer, making debugging OAuth configurations trivial.
 ---
 
 ### M6 — Production
