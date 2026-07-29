@@ -333,6 +333,18 @@ After finishing each milestone (or whenever something significant happens), add 
   - *What happened*: The standalone Python GitHub tool originally surfaced raw HTTP errors.
   - *Why it happened*: Basic `httpx` logic throws generic exceptions on failures. If the user misconfigured their GitHub scopes (e.g., forgot the `repo` scope), the LangGraph agent would just see a raw 403 or 401.
   - *How we solved it*: We implemented a `_handle_response_errors` wrapper that intercepts all `httpx` errors and parses the response JSON to raise specific `GitHubAPIError` exceptions. This ensures that when scopes are missing, the exact granular failure reason is logged and passed up to the LangGraph layer, making debugging OAuth configurations trivial.
+
+**Issue #98: Filesystem Tool & Sandboxing**
+
+- **Abandoning Local Disk for Cloud Storage**:
+  - *What happened*: We completely redesigned the filesystem tool to use Supabase Storage instead of the local `/tmp` directory.
+  - *Why it happened*: Free-tier cloud deployments (like Render) spin down containers when idle. If an agent writes a file to the local disk, and the container sleeps before the user checks it, the disk is wiped and the file is permanently lost.
+  - *How we solved it*: We built the filesystem primitives (`read_file`, `write_file`) directly over `supabase.storage`. This perfectly mirrors the LangGraph `PostgresSaver` philosophy: anything that needs to survive a container restart must be pushed to a durable remote store.
+
+- **Accepting Infeasibility Over Security Regressions**:
+  - *What happened*: We formally abandoned the `run_command` tool (executing arbitrary shell commands).
+  - *Why it happened*: Real sandboxing requires launching an isolated Docker container with strict network blocks. A FastAPI service running inside a restrictive Render container cannot natively launch sibling Docker containers.
+  - *How we solved it*: Rather than compromising security by executing commands natively in the shared FastAPI process (a severe security regression), we chose to honestly document the architectural constraint and omit the feature entirely via ADR-015.
 ---
 
 ### M6 — Production

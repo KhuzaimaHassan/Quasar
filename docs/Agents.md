@@ -191,7 +191,7 @@ Auth: GitHub OAuth tokens are never stored in our database. They are resolved fr
 
 ### Filesystem (`tools/filesystem.py`)
 
-Sandboxed read/write within a per-workspace directory at `/tmp/quasar/{workspace_id}/`.
+Sandboxed read/write within a per-workspace directory backed by Supabase Storage (`agent-sandbox/{workspace_id}/`).
 
 | Tool | Description |
 |------|-------------|
@@ -199,9 +199,9 @@ Sandboxed read/write within a per-workspace directory at `/tmp/quasar/{workspace
 | `write_file` | Write/create a file in sandbox |
 | `list_files` | List files in a directory |
 | `delete_file` | Delete a file |
-| `run_command` | Run a shell command in sandbox (Docker-isolated) |
+| `run_command` | *(Not Implemented 🚫)* Deliberately excluded. See Decisions.md. |
 
-> `run_command` is dangerous. Sandbox all execution in a Docker container with no network access and a timeout.
+> `run_command` was originally planned but judged unachievable for this deployment. Real Docker isolation isn't achievable from inside a FastAPI service that is itself just one process in one shared container on Render's free tier. Building an unisolated version instead would be a real security regression, not an acceptable shortcut.
 
 ### Figma (`tools/figma.py`)
 

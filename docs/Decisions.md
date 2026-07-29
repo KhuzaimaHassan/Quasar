@@ -242,3 +242,29 @@ Each decision is recorded here with the context, options considered, and rationa
 **Rationale**: LangGraph's checkpointers are purpose-built for its state machines. They automatically handle state diffing, history tracking, and the `interrupt()` / `Command(resume=...)` human-in-the-loop primitives. Rebuilding this resumability manually via Prisma would be error-prone and reinvent the wheel. 
 
 **Consequences**: This creates a conscious exception to our rule that "Prisma owns all database schema." The `langgraph-checkpoint-postgres` library creates and manages its own internal checkpoint tables (`checkpoints`, `checkpoint_writes`, etc.) in the PostgreSQL database. Nothing else in the application should ever query these tables directly.
+
+---
+
+## ADR-014: Filesystem Tool Backed by Storage, Not Local Disk
+
+**Status**: Accepted  
+**Date**: M5 implementation
+
+**Context**: The original plan for the Filesystem MCP tool was to use the local `/tmp/quasar/{workspace_id}/` disk.
+
+**Decision**: The Filesystem tool uses Supabase Storage instead of local disk.
+
+**Rationale**: Render's free tier (and most containerized cloud platforms) cannot guarantee that the local disk survives a container restart. Using Supabase Storage ensures that agent-generated files are durably persisted and available across deployments and cold starts.
+
+---
+
+## ADR-015: run_command Deliberately Not Implemented
+
+**Status**: Accepted  
+**Date**: M5 implementation
+
+**Context**: The original plan included a `run_command` tool isolated in a Docker container to let agents execute shell commands safely.
+
+**Decision**: The `run_command` tool is excluded from the project.
+
+**Rationale**: Achieving true Docker isolation (launching a sibling container with network restrictions) from inside a FastAPI service that is itself running within a shared, restricted container on Render's free tier is architecturally infeasible. Building an unisolated version instead (e.g., just running `subprocess` locally) would constitute a severe security regression. It was judged better to omit the feature entirely rather than implement it insecurely.
