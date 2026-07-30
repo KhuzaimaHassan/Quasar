@@ -15,13 +15,13 @@ Agent run created (agent_runs table, status: pending)
   ↓
 LangGraph state machine starts
   ↓
-┌────────────────────────────────────────────┐
-│  Planner     → breaks task into steps       │
-│  Researcher  → retrieves context (RAG + web)│
-│  Coder       → generates code files        │
-│  Reviewer    → validates, catches errors    │
-│  Executor    → calls MCP tools, runs code  │
-└────────────────────────────────────────────┘
+┌─────────────────────────────────────────────┐
+│  Planner          → breaks task into steps  │
+│  Coder            → generates code files    │
+│  Reviewer         → validates, catches bugs │
+│  Human Approval   → interrupt() for consent │
+│  Executor         → calls MCP tools         │
+└─────────────────────────────────────────────┘
   ↓
 Agent run completed (status: completed)
   ↓
@@ -41,8 +41,7 @@ from langgraph.graph import StateGraph, END
 class AgentState(TypedDict):
     task: str                    # Original user instruction
     plan: list[str]              # Steps from Planner
-    current_step: int            # Which step we're on
-    research: str                # Context from Researcher
+    current_revision: int        # Counter for Coder/Reviewer loops (max 3)
     generated_files: dict        # filename → content
     review_notes: str            # Reviewer's feedback
     tool_calls: list[dict]       # Log of MCP calls made
@@ -56,118 +55,44 @@ class AgentState(TypedDict):
 
 ### Planner
 
-Decomposes the user's task into an ordered list of concrete steps.
-
-```python
-async def planner(state: AgentState) -> AgentState:
-    response = await llm.ainvoke([
-        SystemMessage("You are a technical planner. Break the task into clear, atomic steps."),
-        HumanMessage(f"Task: {state['task']}\nOutput a numbered list of steps. Max 8 steps.")
-    ])
-    state["plan"] = parse_steps(response.content)
-    return state
-```
-
-Planner runs once at the start. Its output is the roadmap for the rest of the run.
-
-### Researcher
-
-Gathers context needed for the current step — from the user's documents (RAG) and optionally from web search.
-
-```python
-async def researcher(state: AgentState) -> AgentState:
-    step = state["plan"][state["current_step"]]
-    chunks = await rag_retrieve(step, workspace_id=...)
-    state["research"] = format_chunks(chunks)
-    return state
-```
-
-Only runs when the current step requires external knowledge. Skip for purely generative steps (e.g., "write a utility function").
+Decomposes the user's task into an ordered list of concrete steps. *(Note: The originally planned 'Researcher' node was skipped; reasoning is handled entirely by the Planner and Coder with their native context.)*
 
 ### Coder
 
-Generates code files based on the plan step and research context.
-
-```python
-async def coder(state: AgentState) -> AgentState:
-    step = state["plan"][state["current_step"]]
-    response = await llm.ainvoke([
-        SystemMessage("You are a senior engineer. Write clean, typed, production-ready code."),
-        HumanMessage(f"""
-Step: {step}
-Research context: {state['research']}
-Existing files: {list(state['generated_files'].keys())}
-
-Output each file as:
-<file path="src/components/TodoList.tsx">
-...code...
-</file>
-""")
-    ])
-    files = parse_file_blocks(response.content)
-    state["generated_files"].update(files)
-    return state
-```
+Generates code files based on the plan steps and any previous reviewer notes. Merges output into `state["generated_files"]`.
 
 ### Reviewer
 
-Validates the generated files before execution.
+Validates the generated files before execution. If the reviewer identifies critical issues, the graph routes back to the Coder (incrementing `current_revision`). 
 
-```python
-async def reviewer(state: AgentState) -> AgentState:
-    files_summary = "\n".join(
-        f"{path}:\n{content[:500]}..." for path, content in state["generated_files"].items()
-    )
-    response = await llm.ainvoke([
-        SystemMessage("You are a code reviewer. Check for bugs, missing imports, and security issues."),
-        HumanMessage(f"Review these files:\n{files_summary}")
-    ])
-    state["review_notes"] = response.content
-    return state
-```
+**Safety Cap**: The Coder ↔ Reviewer loop is hard-capped at a maximum of 3 revisions. If the files are still rejected on the 3rd revision, the run fails immediately with a clear error rather than looping indefinitely.
 
-If the reviewer identifies critical issues, route back to Coder (conditional edge).
+### Human Approval & Executor
 
-### Executor
+On Reviewer approval, the graph hits a native `interrupt()` to pause execution and show the human exactly what files will be written.
 
-Calls MCP tools to perform real-world actions: commit files to GitHub, create issues, run shell commands.
-
-```python
-async def executor(state: AgentState) -> AgentState:
-    for path, content in state["generated_files"].items():
-        result = await mcp.github.create_or_update_file(
-            repo=state["target_repo"],
-            path=path,
-            content=content,
-            message=f"feat: {state['plan'][state['current_step']]}",
-        )
-        state["tool_calls"].append({"tool": "github.create_file", "path": path, "result": result})
-    return state
-```
+Upon resumption (`Command(resume={"approved": True})`), the Executor node runs. *(Note: Currently, the Executor only targets the `#98` Filesystem Sandbox. GitHub commit integration is deliberately deferred to `#102`.)*
 
 ---
 
 ## State Graph Definition
 
 ```python
-workflow = StateGraph(AgentState)
+builder = StateGraph(AgentState)
 
-workflow.add_node("planner", planner)
-workflow.add_node("researcher", researcher)
-workflow.add_node("coder", coder)
-workflow.add_node("reviewer", reviewer)
-workflow.add_node("executor", executor)
+builder.add_node("planner", planner)
+builder.add_node("coder", coder)
+builder.add_node("reviewer", reviewer)
+builder.add_node("human_approval", human_approval)
+builder.add_node("executor", executor)
 
-workflow.set_entry_point("planner")
-workflow.add_edge("planner", "researcher")
-workflow.add_edge("researcher", "coder")
-workflow.add_conditional_edges(
-    "reviewer",
-    lambda state: "coder" if needs_revision(state) else "executor",
-)
-workflow.add_edge("executor", END)
+builder.add_edge(START, "planner")
+builder.add_edge("planner", "coder")
+builder.add_edge("coder", "reviewer")
+# Reviewer and Human Approval use Command(goto=...) for dynamic routing
+builder.add_edge("executor", END)
 
-app = workflow.compile()
+graph = builder.compile(checkpointer=checkpointer)
 ```
 
 ---
@@ -259,8 +184,7 @@ GitHub commit: feat/todo-app-scaffold → main
 
 ## Safety Constraints
 
-- **Human-in-the-loop for destructive actions** — before Executor commits to `main` or deletes files, the graph utilizes LangGraph's native `interrupt()` primitive to pause execution and prompt the user. The UI then resumes the graph using `Command(resume=...)` to either approve or reject the action.
-- **Max steps**: Hard cap at 8 plan steps per run to prevent runaway agents.
+- **Human-in-the-loop for destructive actions** — before Executor writes files, the graph utilizes LangGraph's native `interrupt()` primitive to pause execution and prompt the user. The UI then resumes the graph using `Command(resume=...)` to either approve or reject the action.
+- **Max Planner Steps**: Hard cap at 8 plan steps per run to prevent runaway agents.
+- **Max Revisions**: Hard cap of 3 iterations for the Coder ↔ Reviewer loop to prevent infinite generation loops.
 - **Max tool calls**: Hard cap at 20 MCP calls per run.
-- **Timeout**: Entire agent run must complete within 5 minutes. Surface a timeout error if exceeded.
-- **No network in code execution sandbox** — prevents the agent from making external requests during `run_command`.

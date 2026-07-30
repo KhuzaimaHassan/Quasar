@@ -268,3 +268,16 @@ Each decision is recorded here with the context, options considered, and rationa
 **Decision**: The `run_command` tool is excluded from the project.
 
 **Rationale**: Achieving true Docker isolation (launching a sibling container with network restrictions) from inside a FastAPI service that is itself running within a shared, restricted container on Render's free tier is architecturally infeasible. Building an unisolated version instead (e.g., just running `subprocess` locally) would constitute a severe security regression. It was judged better to omit the feature entirely rather than implement it insecurely.
+
+---
+
+## ADR-016: Structured Output via Pydantic Schemas, Not Free-Text Parsing
+
+**Status**: Accepted  
+**Date**: M5 implementation
+
+**Context**: Building the Planner, Coder, and Reviewer nodes required a reliable way to extract typed data (e.g. lists of steps, arrays of files with paths and contents, validation flags) from the LLM responses.
+
+**Decision**: The nodes strictly use the `google-genai` SDK's native `response_schema` parameter by directly passing in rigidly defined Pydantic BaseModel schemas (e.g. `PlanOutput`, `CodeOutput`, `ReviewOutput`) along with `response_mime_type="application/json"`.
+
+**Rationale**: Free-text XML/markdown parsing using regex or string splitting is extremely brittle and frequently crashes LLM pipelines. By utilizing the SDK's native structured JSON enforcement, we guarantee that `response.parsed` automatically returns a deeply validated Python object. This pushes the burden of strict schema adherence directly onto the model and eliminates downstream parsing errors in our application logic.

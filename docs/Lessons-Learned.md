@@ -345,6 +345,18 @@ After finishing each milestone (or whenever something significant happens), add 
   - *What happened*: We formally abandoned the `run_command` tool (executing arbitrary shell commands).
   - *Why it happened*: Real sandboxing requires launching an isolated Docker container with strict network blocks. A FastAPI service running inside a restrictive Render container cannot natively launch sibling Docker containers.
   - *How we solved it*: Rather than compromising security by executing commands natively in the shared FastAPI process (a severe security regression), we chose to honestly document the architectural constraint and omit the feature entirely via ADR-015.
+
+**Issue #99: LangGraph Orchestration & Testing**
+
+- **Structured Output Reliability over Free-Text Parsing**:
+  - *What happened*: Extracting lists of files and plans from standard Markdown or XML outputs often failed due to inconsistent LLM formatting.
+  - *Why it happened*: LLMs routinely add conversational filler or misformat code blocks, causing regex parsers to break mid-execution.
+  - *How we solved it*: We abandoned regex parsing entirely and utilized the `google-genai` SDK's native `response_schema` parameter by passing rigidly defined Pydantic `BaseModel` objects. This forces the model into strict JSON compliance and allows the SDK to return deeply validated Python objects directly via `response.parsed`.
+
+- **LLM Rate Limits in Multi-Agent Loops**:
+  - *What happened*: Our automated test to verify the 3-cycle Coder ↔ Reviewer rejection loop failed with a `503 UNAVAILABLE` and Quota Exceeded error.
+  - *Why it happened*: Multi-agent graphs can recursively call the LLM in tight loops. A 3-cycle rejection generated 7 API requests (1 Planner, 3 Coders, 3 Reviewers) in under 30 seconds, immediately tripping Gemini's Free Tier 5 RPM limit.
+  - *How we solved it*: We documented the limitation as an expected environmental constraint. In production environments with higher tier limits this won't crash, but it proves that un-capped automated agent loops are financially and operationally dangerous without hard-coded circuit breakers (like our `current_revision < 3` check).
 ---
 
 ### M6 — Production
