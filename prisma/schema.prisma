@@ -141,6 +141,7 @@ model AgentRun {
   status         String    @default("pending")
   toolCalls      Json      @default("[]")
   totalTokens    Int       @default(0)
+  pendingApproval Json?
   errorMessage   String?
   startedAt      DateTime  @default(now())
   endedAt        DateTime?

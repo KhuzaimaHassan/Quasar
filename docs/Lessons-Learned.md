@@ -357,6 +357,14 @@ After finishing each milestone (or whenever something significant happens), add 
   - *What happened*: Our automated test to verify the 3-cycle Coder ↔ Reviewer rejection loop failed with a `503 UNAVAILABLE` and Quota Exceeded error.
   - *Why it happened*: Multi-agent graphs can recursively call the LLM in tight loops. A 3-cycle rejection generated 7 API requests (1 Planner, 3 Coders, 3 Reviewers) in under 30 seconds, immediately tripping Gemini's Free Tier 5 RPM limit.
   - *How we solved it*: We documented the limitation as an expected environmental constraint. In production environments with higher tier limits this won't crash, but it proves that un-capped automated agent loops are financially and operationally dangerous without hard-coded circuit breakers (like our `current_revision < 3` check).
+
+**Issue #100: Permanent Agent Runs REST API**
+
+- **Graceful Failure in Synchronous Streaming**:
+  - *What happened*: The integration test for starting an agent run failed with a `502 Bad Gateway`.
+  - *Why it happened*: The backend LLM provider (Gemini) threw a `503 Service Unavailable` due to high demand. Because the FastAPI `start_run` endpoint executed `graph.stream(...)` synchronously without an explicit try/except block, the LLM exception bubbled up through LangGraph, causing FastAPI to crash and return a `500 Internal Server Error`, which Next.js caught and surfaced as `502`.
+  - *How we solved it*: We wrapped the `graph.stream` execution in a `try...except` block in the FastAPI endpoints. When an exception occurs, we execute a raw SQL update against the `AgentRun` table to instantly set the status to `failed` with the error message, and gracefully return a `200 OK` JSON response indicating failure, preventing total API crashes.
+
 ---
 
 ### M6 — Production

@@ -1,4 +1,5 @@
 import uuid
+import json
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from langgraph.types import Command
@@ -8,7 +9,7 @@ from core.security import verify_internal_secret
 from core.db import get_db
 from agents.main_graph import graph
 
-router = APIRouter(prefix="/agents/run-test", tags=["Agents Run Test"])
+router = APIRouter(prefix="/agents/run", tags=["Agents Run"])
 
 class StartRunRequest(BaseModel):
     conversation_id: str
@@ -18,7 +19,7 @@ class StartRunRequest(BaseModel):
 class ResumeRunRequest(BaseModel):
     approved: bool
 
-@router.post("/start", dependencies=[Depends(verify_internal_secret)])
+@router.post("/", dependencies=[Depends(verify_internal_secret)])
 async def start_run(req: StartRunRequest, db: asyncpg.Connection = Depends(get_db)):
     thread_id = str(uuid.uuid4())
     
@@ -32,8 +33,16 @@ async def start_run(req: StartRunRequest, db: asyncpg.Connection = Depends(get_d
     
     config = {"configurable": {"thread_id": thread_id}}
     
-    for event in graph.stream({"task": req.task, "conversation_id": req.conversation_id, "workspace_id": req.workspace_id}, config):
-        pass
+    try:
+        for event in graph.stream({"task": req.task, "conversation_id": req.conversation_id, "workspace_id": req.workspace_id}, config):
+            pass
+    except Exception as e:
+        await db.execute(
+            """
+            UPDATE "AgentRun" SET status = 'failed', "endedAt" = now() WHERE "threadId" = $1
+            """, thread_id
+        )
+        return {"status": "failed", "error": str(e)}
         
     state = graph.get_state(config)
     values = state.values
@@ -47,6 +56,12 @@ async def start_run(req: StartRunRequest, db: asyncpg.Connection = Depends(get_d
         return {"status": "failed", "error": values.get("error")}
         
     pending_files = list(values.get("generated_files", {}).keys())
+    
+    await db.execute(
+        """
+        UPDATE "AgentRun" SET status = 'awaiting_approval', "pendingApproval" = $1::jsonb WHERE "threadId" = $2
+        """, json.dumps(pending_files), thread_id
+    )
     
     return {
         "threadId": thread_id,
@@ -66,8 +81,16 @@ async def resume_run(thread_id: str, req: ResumeRunRequest, db: asyncpg.Connecti
     if not state or not state.next:
         raise HTTPException(status_code=400, detail="Graph is not currently paused")
         
-    for event in graph.stream(Command(resume={"approved": req.approved}), config):
-        pass
+    try:
+        for event in graph.stream(Command(resume={"approved": req.approved}), config):
+            pass
+    except Exception as e:
+        await db.execute(
+            """
+            UPDATE "AgentRun" SET status = 'failed', "endedAt" = now(), "pendingApproval" = NULL WHERE "threadId" = $1
+            """, thread_id
+        )
+        return {"status": "failed", "error": str(e)}
         
     final_state = graph.get_state(config)
     values = final_state.values
@@ -80,7 +103,7 @@ async def resume_run(thread_id: str, req: ResumeRunRequest, db: asyncpg.Connecti
         
     await db.execute(
         """
-        UPDATE "AgentRun" SET status = $1, "endedAt" = now() WHERE "threadId" = $2
+        UPDATE "AgentRun" SET status = $1, "endedAt" = now(), "pendingApproval" = NULL WHERE "threadId" = $2
         """, status, thread_id
     )
     

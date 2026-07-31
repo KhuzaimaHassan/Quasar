@@ -143,13 +143,16 @@ Read-only. Useful for "implement this Figma component" tasks.
 
 | Status | Meaning |
 |--------|---------|
-| `pending` | Run created, not yet started |
 | `running` | Currently executing |
+| `awaiting_approval` | Paused at the human-in-the-loop gate |
 | `completed` | All steps finished successfully |
 | `failed` | Error in a node, run halted |
-| `cancelled` | User cancelled mid-run |
+| `cancelled` | User explicitly rejected the execution |
 
-State is natively managed by LangGraph's `PostgresSaver` checkpointer using the `threadId`. The `AgentRun` table in our database acts as a lightweight index, not a state-snapshot table. If the service crashes mid-run, or if the graph hits an `interrupt()` to await human approval, the run can be seamlessly resumed from the exact node where it left off.
+State is natively managed by LangGraph's `PostgresSaver` checkpointer using the `threadId`. The `AgentRun` table in our database acts as a lightweight index, not a state-snapshot table, with one exception: `pendingApproval`. 
+When the run is interrupted for human approval, we write the proposed files to `pendingApproval` in the `AgentRun` row. This allows the Next.js polling endpoint (`GET /api/agents/run/:id`) to read the pending files without querying FastAPI, maintaining a single source of truth.
+
+> **Note on cancellation**: True mid-computation cancellation is not supported by this design. The `cancel` action is only meaningful while a run is paused at the approval gate (status `awaiting_approval`). It is effectively identical to resuming with `approved: false`, cleanly rejecting the run. If the service crashes mid-run, the run can be seamlessly resumed from the exact node where it left off.
 
 ---
 

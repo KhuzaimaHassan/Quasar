@@ -260,34 +260,65 @@ Delete all memories for the user.
 
 ### Agent Runs
 
+#### `GET /api/agents/run`
+List all agent runs for a conversation, ordered by `startedAt` desc.
+
+```json
+// Request query
+// ?conversationId=uuid
+
+// Response 200
+[
+  { "id": "uuid", "status": "completed", "task": "Build a Todo App", "startedAt": "..." },
+  ...
+]
+```
+
 #### `POST /api/agents/run`
-Start an agent run from a user task.
+Start a new agent run for a task.
 
 ```json
 // Request body
-{ "task": "Build a Todo App in Next.js", "conversationId": "uuid", "targetRepo": "my-org/my-repo" }
+{ "task": "Build a Todo App in Next.js", "conversationId": "uuid", "workspaceId": "uuid" }
 
 // Response 202
-{ "runId": "uuid", "status": "pending" }
+{ "threadId": "uuid" }
 ```
 
 #### `GET /api/agents/run/:id`
-Poll run status and step progress.
+Poll run status and retrieve `pendingApproval` state when the graph is interrupted.
 
 ```json
 // Response 200
 {
   "id": "uuid",
-  "status": "running",
-  "currentStep": "coder",
-  "plan": ["Set up Next.js project", "Create TodoList component", "..."],
-  "toolCalls": [...],
-  "startedAt": "..."
+  "status": "awaiting_approval",
+  "pendingApproval": [
+    { "path": "src/components/TodoList.tsx", "content": "...", "action": "create" }
+  ],
+  "startedAt": "...",
+  "updatedAt": "..."
 }
 ```
 
+#### `POST /api/agents/run/:id/resume`
+Resume a paused agent run with explicit human approval.
+
+```json
+// Request body
+{ "approved": true }
+
+// Response 200
+{ "status": "completed" }
+```
+
 #### `POST /api/agents/run/:id/cancel`
-Cancel a running agent run.
+Cancel an agent run explicitly when it is paused at the approval gate (equivalent to resuming with `approved: false`).
+
+```json
+// Response 200
+{ "status": "cancelled" }
+```
 
 ---
 

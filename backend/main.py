@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from core.db import init_db_pool, close_db_pool
-from routers import health, ingest, retrieve, agents_test, github_test, filesystem_test, agents_run_test
+from routers import health, ingest, retrieve, agents_test, github_test, filesystem_test, agents_run
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -20,4 +20,4 @@ app.include_router(retrieve.router)
 app.include_router(agents_test.router)
 app.include_router(github_test.router)
 app.include_router(filesystem_test.router)
-app.include_router(agents_run_test.router)
+app.include_router(agents_run.router)
