@@ -365,6 +365,13 @@ After finishing each milestone (or whenever something significant happens), add 
   - *Why it happened*: The backend LLM provider (Gemini) threw a `503 Service Unavailable` due to high demand. Because the FastAPI `start_run` endpoint executed `graph.stream(...)` synchronously without an explicit try/except block, the LLM exception bubbled up through LangGraph, causing FastAPI to crash and return a `500 Internal Server Error`, which Next.js caught and surfaced as `502`.
   - *How we solved it*: We wrapped the `graph.stream` execution in a `try...except` block in the FastAPI endpoints. When an exception occurs, we execute a raw SQL update against the `AgentRun` table to instantly set the status to `failed` with the error message, and gracefully return a `200 OK` JSON response indicating failure, preventing total API crashes.
 
+**Issue #101: Agent UI Integration**
+
+- **Honest Loading States over Fake Progress**:
+  - *What happened*: When designing the Agent UI, we faced the constraint that the LangGraph pipeline executes in a single, blocking synchronous request. There is no websocket or server-sent-event stream that emits "Planner started," "Coder finished" events.
+  - *Why it happened*: We deliberately chose a simpler, synchronous architecture for the FastAPI / LangGraph boundary (#99, #100) to prioritize reliability over complex streaming infrastructure.
+  - *How we solved it*: Rather than building a fake, time-based step tracker that misrepresents the system's actual execution, we opted for an "honest" loading state ("Planning and generating — this can take up to a minute"). This manages user expectations without introducing UI deception. Once interrupted, we render the exact `pendingApproval` state (plan + files) retrieved natively from the database.
+
 ---
 
 ### M6 — Production

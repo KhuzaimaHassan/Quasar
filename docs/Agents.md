@@ -158,30 +158,14 @@ When the run is interrupted for human approval, we write the proposed files to `
 
 ## UI
 
-The agent panel in the chat sidebar shows:
+The agent panel in the chat page is designed around a synchronous execution model. Because the LangGraph pipeline runs as a single blocking request to FastAPI without streaming live node transitions, the UI does NOT display an animated step tracker (which would incorrectly imply real-time progress).
 
-```
-🤖 Agent run #42
+Instead, the UI provides:
+1. **Honest Loading State**: While the graph executes synchronously (Planning, Coding, Reviewing), the UI shows a single clear loading spinner indicating "Planning and generating — this can take up to a minute".
+2. **Awaiting Approval**: When the graph pauses via LangGraph `interrupt()`, the UI displays the generated plan and syntax-highlighted code for the proposed files, with explicit "Approve & Write Files" and "Reject" actions.
+3. **Run Result**: Once approved and execution finishes, a success summary lists the files that were actually written to the workspace sandbox.
 
-✅ Planner   — 3 steps identified
-✅ Researcher — 2 chunks retrieved
-🔄 Coder     — generating files...
-⏸  Reviewer
-⏸  Executor
-
-[Cancel run]
-```
-
-After completion:
-```
-✅ All steps complete
-
-Files created:
-  src/components/TodoList.tsx
-  src/components/TodoItem.tsx
-
-GitHub commit: feat/todo-app-scaffold → main
-```
+*(Note: GitHub commit integration is deliberately deferred to #102)*
 
 ---
 

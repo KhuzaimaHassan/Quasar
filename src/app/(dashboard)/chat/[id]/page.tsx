@@ -17,6 +17,7 @@ import { useApiKeys } from "@/lib/queries/api-keys";
 import { Provider } from "@/lib/models";
 import { useWorkspace } from "@/components/providers/workspace-provider";
 import { useWorkspaces } from "@/lib/queries/workspaces";
+import { AgentPanel } from "@/components/agents/AgentPanel";
 
 export default function DynamicChatPage({ params }: { params: Promise<{ id: string }> }) {
   // Unwrap the Promise params for Client Components in Next.js 15+
@@ -204,13 +205,14 @@ function ChatHeader({ conversationId }: { conversationId: string }) {
   const availableProviders = (apiKeys?.map((k: { provider: string }) => k.provider) || []) as Provider[];
 
   return (
-    <header className="flex items-center justify-between px-4 py-3 border-b bg-background/50 backdrop-blur-sm shrink-0 z-10">
-      <div className="flex items-center">
-        <h2 className="text-sm font-semibold text-foreground truncate mr-4">
+    <header className="flex items-center justify-between px-4 py-3 border-b bg-background/50 backdrop-blur-sm shrink-0 z-10 relative">
+      <div className="flex items-center min-w-0 flex-1 mr-4">
+        <h2 className="text-sm font-semibold text-foreground truncate">
           {conversation.title || 'New Conversation'}
         </h2>
       </div>
-      <div className="flex items-center">
+      <div className="flex items-center gap-2 shrink-0">
+        <AgentPanel conversationId={conversationId} workspaceId={conversation.workspaceId} />
         <ModelSwitcher 
           conversationId={conversationId} 
           currentModel={conversation.model} 
