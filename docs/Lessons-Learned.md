@@ -372,6 +372,18 @@ After finishing each milestone (or whenever something significant happens), add 
   - *Why it happened*: We deliberately chose a simpler, synchronous architecture for the FastAPI / LangGraph boundary (#99, #100) to prioritize reliability over complex streaming infrastructure.
   - *How we solved it*: Rather than building a fake, time-based step tracker that misrepresents the system's actual execution, we opted for an "honest" loading state ("Planning and generating — this can take up to a minute"). This manages user expectations without introducing UI deception. Once interrupted, we render the exact `pendingApproval` state (plan + files) retrieved natively from the database.
 
+**Issue #102: GitHub Commit Integration**
+
+- **Clerk v7 OAuth Provider Naming**:
+  - *What happened*: The GitHub execution path immediately failed saying no GitHub account was connected, even when the user was fully logged in with GitHub.
+  - *Why it happened*: Clerk v7 deprecated the `oauth_github` string for the `getUserOauthAccessToken` method. We were querying the old provider string, so Clerk silently returned an empty array instead of the token.
+  - *How we solved it*: We updated the provider parameter to simply `github`, resolving the issue immediately and correctly fetching the user's token.
+
+- **Debugging Silent 404s in Next.js 15 Route Handlers**:
+  - *What happened*: Next.js API routes were returning opaque 404s when attempting to hit the `resume` endpoint from the UI.
+  - *Why it happened*: When multiple layers (Auth, DB Lookups, Authorization checks) can return 404, standard `Not Found` messages make debugging impossible, especially since Next.js 15's strict `await params` requirement can easily introduce bugs where DB queries run with unresolved objects.
+  - *How we solved it*: We injected verbose `DEBUG: ...` strings directly into the JSON response payloads for each failure point (e.g., `"DEBUG: AgentRun not found in DB with id..."`). This allowed us to instantly trace errors from the browser's Network tab without diving blindly into server logs.
+
 ---
 
 ### M6 — Production

@@ -16,7 +16,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
     const user = await db.user.findUnique({ where: { clerkId }, select: { id: true } })
     if (!user) {
-      return NextResponse.json({ error: 'Not Found', message: 'User not found', statusCode: 404 }, { status: 404 })
+      return NextResponse.json({ error: 'Not Found', message: 'DEBUG: User not found for clerkId ' + clerkId, statusCode: 404 }, { status: 404 })
     }
 
     const run = await db.agentRun.findUnique({
@@ -24,8 +24,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       include: { conversation: { select: { userId: true } } },
     })
 
-    if (!run || run.conversation.userId !== user.id) {
-      return NextResponse.json({ error: 'Not Found', message: 'AgentRun not found', statusCode: 404 }, { status: 404 })
+    if (!run) {
+      return NextResponse.json({ error: 'Not Found', message: 'DEBUG: AgentRun not found in DB with id ' + agentRunId, statusCode: 404 }, { status: 404 })
+    }
+    
+    if (run.conversation.userId !== user.id) {
+      return NextResponse.json({ error: 'Not Found', message: 'DEBUG: AgentRun conversation userId mismatch', statusCode: 404 }, { status: 404 })
     }
 
     const body = await req.json()

@@ -18,10 +18,15 @@ export function RunResult({ run }: { run: AgentRun }) {
 
   // Completed status
   const toolCalls = Array.isArray(run.toolCalls) ? run.toolCalls : [];
-  // Filter tool calls to only those that wrote files (if we want to be specific, or list all write_file tool calls)
+  const githubCalls = toolCalls.filter((call: any) => call.tool === 'github.create_or_update_file');
+  const isGithubRun = githubCalls.length > 0;
+  
   const writtenFiles = toolCalls
-    .filter((call: any) => call.tool === 'write_file' || call.tool === 'create_or_update_file')
-    .map((call: any) => call.args?.file_path || call.args?.path || 'Unknown file');
+    .filter((call: any) => call.tool === 'filesystem.write_file' || call.tool === 'github.create_or_update_file')
+    .map((call: any) => ({
+      path: call.args?.file_path || call.args?.path || call.path || 'Unknown file',
+      url: call.result?.commit?.html_url || call.result?.content?.html_url
+    }));
 
   return (
     <div className="space-y-4">
@@ -31,12 +36,21 @@ export function RunResult({ run }: { run: AgentRun }) {
           <p className="font-medium mb-2 text-emerald-700 dark:text-emerald-400">Run Completed Successfully</p>
           {writtenFiles.length > 0 ? (
             <div className="space-y-2">
-              <p className="text-xs text-muted-foreground">Files written:</p>
+              <p className="text-xs text-muted-foreground">
+                {isGithubRun ? "Committed files:" : "Files written:"}
+              </p>
               <div className="space-y-1">
-                {writtenFiles.map((file: string, i: number) => (
-                  <div key={i} className="flex items-center gap-2 text-xs font-mono bg-background/50 px-2 py-1 rounded border border-border/50 truncate">
-                    <FileCode className="h-3 w-3 shrink-0" />
-                    <span className="truncate">{file}</span>
+                {writtenFiles.map((file: any, i: number) => (
+                  <div key={i} className="flex items-center justify-between text-xs font-mono bg-background/50 px-2 py-1 rounded border border-border/50 truncate">
+                    <div className="flex items-center gap-2 truncate">
+                      <FileCode className="h-3 w-3 shrink-0" />
+                      <span className="truncate">{file.path}</span>
+                    </div>
+                    {isGithubRun && file.url && (
+                      <a href={file.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline shrink-0 ml-2">
+                        View Commit
+                      </a>
+                    )}
                   </div>
                 ))}
               </div>

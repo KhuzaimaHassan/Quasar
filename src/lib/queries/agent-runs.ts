@@ -51,11 +51,11 @@ export function useStartAgentRun() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ conversationId, workspaceId, task }: { conversationId: string, workspaceId: string, task: string }) => {
+    mutationFn: async ({ conversationId, workspaceId, task, executionTarget, targetRepo }: { conversationId: string, workspaceId: string, task: string, executionTarget?: 'sandbox' | 'github', targetRepo?: string }) => {
       const res = await fetch('/api/agents/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ conversationId, workspaceId, task }),
+        body: JSON.stringify({ conversationId, workspaceId, task, executionTarget, targetRepo }),
       })
 
       if (!res.ok) {

@@ -1,8 +1,6 @@
 import { useState } from 'react';
 import { AgentRun, useResumeAgentRun, useCancelAgentRun } from '@/lib/queries/agent-runs';
 import { Button } from '@/components/ui/button';
-import { Streamdown } from 'streamdown';
-import { code } from '@streamdown/code';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,26 +14,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Loader2, Check, X } from 'lucide-react';
 
-// Reuse Streamdown components similar to MessageBubble
-const streamdownComponents = {
-  table: ({ children, ...props }: any) => (
-    <div className="overflow-x-auto my-4 rounded-xl border border-border">
-      <table className="w-full text-sm text-left divide-y divide-border" {...props}>
-        {children}
-      </table>
-    </div>
-  ),
-  th: ({ children, ...props }: any) => (
-    <th className="bg-muted/50 px-4 py-2 font-semibold" {...props}>
-      {children}
-    </th>
-  ),
-  td: ({ children, ...props }: any) => (
-    <td className="px-4 py-2" {...props}>
-      {children}
-    </td>
-  ),
-};
+
 
 export function AwaitingApproval({ run }: { run: AgentRun }) {
   const resumeRun = useResumeAgentRun();
@@ -45,8 +24,8 @@ export function AwaitingApproval({ run }: { run: AgentRun }) {
   const pendingState = run.pendingApproval;
   if (!pendingState) return null;
 
-  const plan = pendingState.plan || [];
-  const files = pendingState.files || [];
+  const msg = pendingState.msg || "The following files will be written:";
+  const pendingFiles = pendingState.pendingFiles || [];
 
   const handleApprove = () => {
     resumeRun.mutate({ id: run.id, approved: true });
@@ -73,33 +52,18 @@ export function AwaitingApproval({ run }: { run: AgentRun }) {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-2">
-        <h3 className="font-semibold text-sm">Agent Plan</h3>
-        <ol className="list-decimal list-inside space-y-1 text-sm text-muted-foreground">
-          {plan.map((step: string, i: number) => (
-            <li key={i}>{step}</li>
-          ))}
-        </ol>
-      </div>
-
       <div className="space-y-4">
-        <h3 className="font-semibold text-sm">Files to Write</h3>
-        {files.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No files modified.</p>
-        ) : (
-          <div className="space-y-4">
-            {files.map((file: { path: string; content: string }, i: number) => (
-              <div key={i} className="border border-border rounded-lg overflow-hidden bg-muted/10">
-                <div className="bg-muted px-3 py-2 text-xs font-mono font-medium border-b border-border">
-                  {file.path}
-                </div>
-                <div className="p-3 text-sm max-h-60 overflow-y-auto [&_[data-streamdown='code-block']]:text-foreground [&_[data-streamdown='inline-code']]:text-foreground">
-                  <Streamdown mode="static" components={streamdownComponents} plugins={{ code }}>
-                    {file.content}
-                  </Streamdown>
-                </div>
-              </div>
-            ))}
+        <h3 className="font-semibold text-sm">Action Summary</h3>
+        <p className="text-sm text-muted-foreground whitespace-pre-wrap">{msg}</p>
+        
+        {pendingFiles.length > 0 && (
+          <div className="space-y-2 mt-4">
+            <h4 className="font-medium text-xs text-muted-foreground uppercase tracking-wider">Affected Files</h4>
+            <ul className="list-disc list-inside text-sm space-y-1">
+              {pendingFiles.map((file: string, i: number) => (
+                <li key={i} className="font-mono text-xs">{file}</li>
+              ))}
+            </ul>
           </div>
         )}
       </div>

@@ -2,6 +2,7 @@ import { auth } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { createAgentRunSchema } from '@/lib/validations/agent-run'
+import { getGithubToken } from '@/lib/github-token'
 
 export const maxDuration = 60
 
@@ -65,7 +66,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Bad Request', message: 'Invalid input', issues: validated.error.issues, statusCode: 400 }, { status: 400 })
     }
 
-    const { conversationId, workspaceId, task } = validated.data
+    const { conversationId, workspaceId, task, executionTarget, targetRepo } = validated.data
 
     // Verify BOTH conversationId and workspaceId belong to this user
     const [conversation, workspace] = await Promise.all([
@@ -75,6 +76,19 @@ export async function POST(req: Request) {
 
     if (!conversation || conversation.userId !== user.id || !workspace || workspace.userId !== user.id) {
       return NextResponse.json({ error: 'Not Found', message: 'Conversation or Workspace not found or unauthorized', statusCode: 404 }, { status: 404 })
+    }
+
+    let githubToken: string | undefined = undefined;
+    if (executionTarget === 'github') {
+      const token = await getGithubToken(clerkId);
+      if (!token) {
+        return NextResponse.json({ 
+          error: 'Bad Request', 
+          message: 'GitHub execution requested, but no GitHub account is connected or repo scope is missing. Please connect your GitHub account in Settings.', 
+          statusCode: 400 
+        }, { status: 400 })
+      }
+      githubToken = token;
     }
 
     const fastApiUrl = process.env.FASTAPI_SERVICE_URL
@@ -92,7 +106,14 @@ export async function POST(req: Request) {
           'Content-Type': 'application/json',
           'X-Internal-Secret': internalSecret,
         },
-        body: JSON.stringify({ conversation_id: conversationId, workspace_id: workspaceId, task }),
+        body: JSON.stringify({ 
+          conversation_id: conversationId, 
+          workspace_id: workspaceId, 
+          task,
+          execution_target: executionTarget,
+          target_repo: targetRepo ?? null,
+          github_token: githubToken ?? null
+        }),
       })
 
       if (!response.ok) {

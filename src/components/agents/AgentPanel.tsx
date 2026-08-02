@@ -12,6 +12,8 @@ export function AgentPanel({ conversationId, workspaceId }: { conversationId: st
   const startRun = useStartAgentRun();
   
   const [task, setTask] = useState('');
+  const [executionTarget, setExecutionTarget] = useState<'sandbox' | 'github'>('sandbox');
+  const [targetRepo, setTargetRepo] = useState('');
 
   // Find the most recent run
   const activeRun = runs.length > 0 ? runs[0] : null;
@@ -20,7 +22,14 @@ export function AgentPanel({ conversationId, workspaceId }: { conversationId: st
 
   const handleStart = () => {
     if (!task.trim()) return;
-    startRun.mutate({ conversationId, workspaceId, task });
+    if (executionTarget === 'github' && !targetRepo.trim()) return;
+    startRun.mutate({ 
+      conversationId, 
+      workspaceId, 
+      task,
+      executionTarget,
+      targetRepo: executionTarget === 'github' ? targetRepo.trim() : undefined
+    });
   };
 
   if (!isOpen) {
@@ -80,9 +89,53 @@ export function AgentPanel({ conversationId, workspaceId }: { conversationId: st
                 rows={3}
                 className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 resize-none"
               />
-              <Button onClick={handleStart} disabled={!task.trim()} className="w-full" size="sm">
+              
+              <div className="flex flex-col gap-2 pt-1 pb-2">
+                <div className="flex items-center gap-4 text-sm">
+                  <label className="flex items-center gap-1.5 cursor-pointer">
+                    <input 
+                      type="radio" 
+                      name="executionTarget" 
+                      value="sandbox"
+                      checked={executionTarget === 'sandbox'}
+                      onChange={() => setExecutionTarget('sandbox')}
+                      className="accent-primary"
+                    />
+                    Generate files only
+                  </label>
+                  <label className="flex items-center gap-1.5 cursor-pointer">
+                    <input 
+                      type="radio" 
+                      name="executionTarget" 
+                      value="github"
+                      checked={executionTarget === 'github'}
+                      onChange={() => setExecutionTarget('github')}
+                      className="accent-primary"
+                    />
+                    Commit to GitHub
+                  </label>
+                </div>
+                
+                {executionTarget === 'github' && (
+                  <input
+                    type="text"
+                    placeholder="owner/repo-name"
+                    value={targetRepo}
+                    onChange={(e) => setTargetRepo(e.target.value)}
+                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                  />
+                )}
+              </div>
+
+              <Button onClick={handleStart} disabled={!task.trim() || (executionTarget === 'github' && !targetRepo.trim())} className="w-full" size="sm">
                 Run Agent
               </Button>
+              {startRun.isError && (
+                <div className="p-3 mt-2 rounded-md bg-destructive/10 text-destructive text-sm flex items-start gap-2 border border-destructive/20">
+                  <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                  <p className="leading-tight">{startRun.error?.message || 'Failed to start agent'}</p>
+                </div>
+              )}
             </div>
           </div>
         )}

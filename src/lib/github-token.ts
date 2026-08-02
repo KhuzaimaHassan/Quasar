@@ -3,9 +3,11 @@ import { clerkClient } from '@clerk/nextjs/server';
 export async function getGithubToken(clerkUserId: string): Promise<string | null> {
   try {
     const client = await clerkClient();
-    // Clerk uses 'oauth_github' as the provider string
-    const response = await client.users.getUserOauthAccessToken(clerkUserId, 'oauth_github');
+    // Clerk 7 uses 'github' instead of 'oauth_github'
+    const response = await client.users.getUserOauthAccessToken(clerkUserId, 'github');
     
+    console.log("Clerk getGithubToken response:", JSON.stringify(response, null, 2));
+
     // In newer Clerk SDKs, response is an object containing a data array
     if (response && response.data && response.data.length > 0) {
       return response.data[0].token;

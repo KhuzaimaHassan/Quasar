@@ -71,7 +71,7 @@ Validates the generated files before execution. If the reviewer identifies criti
 
 On Reviewer approval, the graph hits a native `interrupt()` to pause execution and show the human exactly what files will be written.
 
-Upon resumption (`Command(resume={"approved": True})`), the Executor node runs. *(Note: Currently, the Executor only targets the `#98` Filesystem Sandbox. GitHub commit integration is deliberately deferred to `#102`.)*
+Upon resumption (`Command(resume={"approved": True})`), the Executor node runs. It parses the state to determine whether to write the files to the local Filesystem Sandbox or commit them to a target GitHub repository, then executes the corresponding MCP tool calls.
 
 ---
 
@@ -165,7 +165,7 @@ Instead, the UI provides:
 2. **Awaiting Approval**: When the graph pauses via LangGraph `interrupt()`, the UI displays the generated plan and syntax-highlighted code for the proposed files, with explicit "Approve & Write Files" and "Reject" actions.
 3. **Run Result**: Once approved and execution finishes, a success summary lists the files that were actually written to the workspace sandbox.
 
-*(Note: GitHub commit integration is deliberately deferred to #102)*
+*(Note: GitHub commit integration is fully implemented. The user can select their execution target (Sandbox vs GitHub) and provide a target repo when starting the run.)*
 
 ---
 

@@ -1,4 +1,4 @@
-from typing import TypedDict, Optional
+from typing import TypedDict, Optional, Literal
 import logging
 from google import genai
 
@@ -13,6 +13,9 @@ class AgentState(TypedDict, total=False):
     task: str
     conversation_id: str
     workspace_id: str
+    execution_target: Literal['sandbox', 'github']
+    target_repo: Optional[str]
+    github_token: Optional[str]
     plan: list[str]
     current_revision: int
     generated_files: dict[str, str]
@@ -135,13 +138,21 @@ def reviewer(state: AgentState):
 
 from langgraph.types import interrupt
 import tools.filesystem as fs
+import tools.github as gh
 from langgraph.graph import StateGraph, START
 from langgraph.checkpoint.postgres import PostgresSaver
 from psycopg_pool import ConnectionPool
 
 def human_approval(state: AgentState):
     generated_files = state.get("generated_files", {})
-    summary = "The following files will be written:\n\n"
+    execution_target = state.get("execution_target", "sandbox")
+    target_repo = state.get("target_repo")
+    
+    if execution_target == "github" and target_repo:
+        summary = f"{len(generated_files)} files will be committed to {target_repo}:\n\n"
+    else:
+        summary = f"{len(generated_files)} files will be written to your sandbox:\n\n"
+        
     for path, content in generated_files.items():
         summary += f"--- {path} ---\n{content}\n\n"
         
@@ -164,30 +175,66 @@ def executor(state: AgentState):
     workspace_id = state.get("workspace_id")
     generated_files = state.get("generated_files", {})
     tool_calls = state.get("tool_calls", []) or []
+    execution_target = state.get("execution_target", "sandbox")
+    target_repo = state.get("target_repo")
+    github_token = state.get("github_token")
+    task = state.get("task", "Automated commit by Quasar Agent")
     
     updated_tool_calls = list(tool_calls)
     
-    for path, content in generated_files.items():
-        if len(updated_tool_calls) >= 20:
-            logger.warning("Max tool calls (20) reached. Halting executor.")
-            break
+    if execution_target == "github":
+        if not target_repo or not github_token:
+            return {"error": "GitHub execution requested but target_repo or github_token is missing."}
             
-        try:
-            res = fs.write_file(workspace_id, path, content)
-            updated_tool_calls.append({
-                "tool": "filesystem.write_file",
-                "path": path,
-                "result": res
-            })
-        except Exception as e:
-            updated_tool_calls.append({
-                "tool": "filesystem.write_file",
-                "path": path,
-                "error": str(e)
-            })
-            return {"tool_calls": updated_tool_calls, "error": f"Tool execution failed on {path}: {str(e)}"}
-            
-    return {"tool_calls": updated_tool_calls, "final_output": f"Successfully wrote {len(generated_files)} files to sandbox."}
+        for path, content in generated_files.items():
+            if len(updated_tool_calls) >= 20:
+                logger.warning("Max tool calls (20) reached. Halting executor.")
+                break
+                
+            try:
+                res = gh.create_or_update_file(
+                    token=github_token, 
+                    repo=target_repo, 
+                    path=path, 
+                    content=content, 
+                    message=f"Agent: {task[:50]}..."
+                )
+                updated_tool_calls.append({
+                    "tool": "github.create_or_update_file",
+                    "path": path,
+                    "result": res
+                })
+            except Exception as e:
+                updated_tool_calls.append({
+                    "tool": "github.create_or_update_file",
+                    "path": path,
+                    "error": str(e)
+                })
+                return {"tool_calls": updated_tool_calls, "error": f"GitHub commit failed on {path}: {str(e)}"}
+                
+        return {"tool_calls": updated_tool_calls, "final_output": f"Successfully committed {len(generated_files)} files to {target_repo}."}
+    else:
+        for path, content in generated_files.items():
+            if len(updated_tool_calls) >= 20:
+                logger.warning("Max tool calls (20) reached. Halting executor.")
+                break
+                
+            try:
+                res = fs.write_file(workspace_id, path, content)
+                updated_tool_calls.append({
+                    "tool": "filesystem.write_file",
+                    "path": path,
+                    "result": res
+                })
+            except Exception as e:
+                updated_tool_calls.append({
+                    "tool": "filesystem.write_file",
+                    "path": path,
+                    "error": str(e)
+                })
+                return {"tool_calls": updated_tool_calls, "error": f"Tool execution failed on {path}: {str(e)}"}
+                
+        return {"tool_calls": updated_tool_calls, "final_output": f"Successfully wrote {len(generated_files)} files to sandbox."}
 
 db_url = settings.DATABASE_URL.replace("?pgbouncer=true", "").replace("&pgbouncer=true", "")
 pool = ConnectionPool(conninfo=db_url, kwargs={'autocommit': True, 'prepare_threshold': None})
