@@ -414,3 +414,10 @@ When using `@ai-sdk/react@4.0.17`, there is an internal type conflict regarding 
 | Resource | What it helped with |
 |----------|---------------------|
 | | |
+
+## 2026-08-03 - Agent Safety Check (Issue #102)
+
+**What happened**: Conducted a targeted adversarial security check to verify the boundary between agent plan generation and actual execution, ensuring agents cannot bypass human approval before taking external, hard-to-undo actions (like committing to GitHub).
+**What I tried**: Designed specialized test scripts interacting directly with the FASTAPI endpoint to simulate unauthorized repository access, revision-loop bypasses, XSS payloads in the approval UI, and DB spoofing on callback.
+**What worked**: The system effectively resisted execution boundaries. Loop caps (max 3 revisions) were strictly enforced in LangGraph via main_graph.py. React automatically mitigated XSS payloads via JSX standard rendering. Finally, the callback payload takes no target metadata, making spoofing impossible.
+**What I'd do differently**: Found that github_token is persistently stored in plain view inside LangGraph checkpoints tables because it is part of AgentState. Going forward, sensitive ephemeral tokens should NOT be stored in LangGraph state. They should be passed just-in-time via a separate secure transient cache or fetched immediately during execution.
