@@ -19,10 +19,14 @@ class StartRunRequest(BaseModel):
     task: str
     execution_target: Literal["sandbox", "github"] = "sandbox"
     target_repo: Optional[str] = None
-    github_token: Optional[str] = None
 
 class ResumeRunRequest(BaseModel):
     approved: bool
+    github_token: Optional[str] = None
+
+class CheckRepoAccessRequest(BaseModel):
+    github_token: str
+    target_repo: str
 
 @router.post("/", dependencies=[Depends(verify_internal_secret)])
 async def start_run(req: StartRunRequest, db: asyncpg.Connection = Depends(get_db)):
@@ -44,8 +48,7 @@ async def start_run(req: StartRunRequest, db: asyncpg.Connection = Depends(get_d
             "conversation_id": req.conversation_id, 
             "workspace_id": req.workspace_id,
             "execution_target": req.execution_target,
-            "target_repo": req.target_repo,
-            "github_token": req.github_token
+            "target_repo": req.target_repo
         }, config):
             pass
     except Exception as e:
@@ -95,7 +98,7 @@ async def resume_run(thread_id: str, req: ResumeRunRequest, db: asyncpg.Connecti
         raise HTTPException(status_code=400, detail="Graph is not currently paused")
         
     try:
-        for event in graph.stream(Command(resume={"approved": req.approved}), config):
+        for event in graph.stream(Command(resume={"approved": req.approved, "github_token": req.github_token}), config):
             pass
     except Exception as e:
         await db.execute(
@@ -121,3 +124,12 @@ async def resume_run(thread_id: str, req: ResumeRunRequest, db: asyncpg.Connecti
     )
     
     return values
+
+@router.post("/check-repo-access", dependencies=[Depends(verify_internal_secret)])
+async def check_repo_access(req: CheckRepoAccessRequest):
+    from tools.github import check_repo_write_access
+    try:
+        has_access = check_repo_write_access(req.github_token, req.target_repo)
+        return {"has_access": has_access}
+    except Exception as e:
+        return {"has_access": False, "error": str(e)}

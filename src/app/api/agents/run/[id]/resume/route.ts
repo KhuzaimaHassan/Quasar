@@ -2,6 +2,7 @@ import { auth } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { resumeAgentRunSchema } from '@/lib/validations/agent-run'
+import { getGithubToken } from '@/lib/github-token'
 
 export const maxDuration = 60
 
@@ -49,6 +50,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       return NextResponse.json({ error: 'Internal Server Error', message: 'Configuration error', statusCode: 500 }, { status: 500 })
     }
 
+    // Try to fetch GitHub token regardless of executionTarget, 
+    // since we don't have it easily available in this DB model, 
+    // and passing it doesn't hurt if it's unused by FastAPI.
+    const githubToken = await getGithubToken(clerkId) || undefined;
+
     try {
       const response = await fetch(`${fastApiUrl}/agents/run/${run.threadId}/resume`, {
         method: 'POST',
@@ -56,7 +62,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
           'Content-Type': 'application/json',
           'X-Internal-Secret': internalSecret,
         },
-        body: JSON.stringify({ approved }),
+        body: JSON.stringify({ 
+          approved,
+          github_token: githubToken ?? null
+        }),
       })
 
       if (!response.ok) {

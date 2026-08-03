@@ -42,6 +42,16 @@ def list_repos(token: str) -> list[str]:
         repos = response.json()
         return [repo["full_name"] for repo in repos]
 
+def check_repo_write_access(token: str, repo: str) -> bool:
+    with _get_client(token) as client:
+        response = client.get(f"/repos/{repo}")
+        if response.status_code == 404:
+            return False
+        _handle_response_errors(response)
+        data = response.json()
+        permissions = data.get("permissions", {})
+        return permissions.get("push", False)
+
 def get_file(token: str, repo: str, path: str) -> str:
     with _get_client(token) as client:
         response = client.get(f"/repos/{repo}/contents/{path}")

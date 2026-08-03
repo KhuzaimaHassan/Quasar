@@ -99,6 +99,39 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Internal Server Error', message: 'Configuration error', statusCode: 500 }, { status: 500 })
     }
 
+    if (executionTarget === 'github' && githubToken && targetRepo) {
+      try {
+        const checkRes = await fetch(`${fastApiUrl}/agents/run/check-repo-access`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Internal-Secret': internalSecret,
+          },
+          body: JSON.stringify({ 
+            github_token: githubToken,
+            target_repo: targetRepo
+          }),
+        })
+
+        if (!checkRes.ok) {
+          console.error('Failed to check repo access')
+          return NextResponse.json({ error: 'Bad Gateway', message: 'Failed to verify repository access', statusCode: 502 }, { status: 502 })
+        }
+
+        const checkData = await checkRes.json()
+        if (!checkData.has_access) {
+          return NextResponse.json({ 
+            error: 'Forbidden', 
+            message: `You do not have push access to the repository '${targetRepo}'.`, 
+            statusCode: 403 
+          }, { status: 403 })
+        }
+      } catch (err) {
+        console.error('Check repo access error:', err)
+        return NextResponse.json({ error: 'Service Unavailable', message: 'Agent service is down', statusCode: 503 }, { status: 503 })
+      }
+    }
+
     try {
       const response = await fetch(`${fastApiUrl}/agents/run/`, {
         method: 'POST',
@@ -111,8 +144,7 @@ export async function POST(req: Request) {
           workspace_id: workspaceId, 
           task,
           execution_target: executionTarget,
-          target_repo: targetRepo ?? null,
-          github_token: githubToken ?? null
+          target_repo: targetRepo ?? null
         }),
       })
 

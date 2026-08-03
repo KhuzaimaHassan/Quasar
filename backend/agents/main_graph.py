@@ -15,7 +15,6 @@ class AgentState(TypedDict, total=False):
     workspace_id: str
     execution_target: Literal['sandbox', 'github']
     target_repo: Optional[str]
-    github_token: Optional[str]
     plan: list[str]
     current_revision: int
     generated_files: dict[str, str]
@@ -130,7 +129,7 @@ def reviewer(state: AgentState):
             )
     else:
         return Command(
-            goto="human_approval",
+            goto="executor",
             update={
                 "review_notes": notes
             }
@@ -143,10 +142,13 @@ from langgraph.graph import StateGraph, START
 from langgraph.checkpoint.postgres import PostgresSaver
 from psycopg_pool import ConnectionPool
 
-def human_approval(state: AgentState):
+def executor(state: AgentState):
+    workspace_id = state.get("workspace_id")
     generated_files = state.get("generated_files", {})
+    tool_calls = state.get("tool_calls", []) or []
     execution_target = state.get("execution_target", "sandbox")
     target_repo = state.get("target_repo")
+    task = state.get("task", "Automated commit by Quasar Agent")
     
     if execution_target == "github" and target_repo:
         summary = f"{len(generated_files)} files will be committed to {target_repo}:\n\n"
@@ -156,29 +158,17 @@ def human_approval(state: AgentState):
     for path, content in generated_files.items():
         summary += f"--- {path} ---\n{content}\n\n"
         
-    is_approved = interrupt({"msg": summary, "pendingFiles": list(generated_files.keys())})
+    resume_payload = interrupt({"msg": summary, "pendingFiles": list(generated_files.keys())})
     
-    if isinstance(is_approved, dict):
-        approved = is_approved.get("approved", False)
+    if isinstance(resume_payload, dict):
+        approved = resume_payload.get("approved", False)
+        github_token = resume_payload.get("github_token")
     else:
-        approved = bool(is_approved)
+        approved = bool(resume_payload)
+        github_token = None
 
     if not approved:
-        return Command(
-            goto=END,
-            update={"error": "Cancelled by user"}
-        )
-        
-    return Command(goto="executor")
-
-def executor(state: AgentState):
-    workspace_id = state.get("workspace_id")
-    generated_files = state.get("generated_files", {})
-    tool_calls = state.get("tool_calls", []) or []
-    execution_target = state.get("execution_target", "sandbox")
-    target_repo = state.get("target_repo")
-    github_token = state.get("github_token")
-    task = state.get("task", "Automated commit by Quasar Agent")
+        return {"error": "Cancelled by user"}
     
     updated_tool_calls = list(tool_calls)
     
@@ -245,7 +235,6 @@ builder = StateGraph(AgentState)
 builder.add_node("planner", planner)
 builder.add_node("coder", coder)
 builder.add_node("reviewer", reviewer)
-builder.add_node("human_approval", human_approval)
 builder.add_node("executor", executor)
 
 builder.add_edge(START, "planner")
