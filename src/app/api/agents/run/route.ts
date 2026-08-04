@@ -99,7 +99,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Internal Server Error', message: 'Configuration error', statusCode: 500 }, { status: 500 })
     }
 
-    if (executionTarget === 'github' && githubToken && targetRepo) {
+    if (executionTarget === 'github') {
+      if (!githubToken || !targetRepo) {
+        return NextResponse.json({ 
+          error: 'Bad Request', 
+          message: 'GitHub execution requested, but GitHub connection or target repository is missing.', 
+          statusCode: 400 
+        }, { status: 400 })
+      }
       try {
         const checkRes = await fetch(`${fastApiUrl}/agents/run/check-repo-access`, {
           method: 'POST',
