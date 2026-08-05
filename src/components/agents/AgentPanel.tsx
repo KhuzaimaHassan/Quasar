@@ -18,7 +18,7 @@ export function AgentPanel({ conversationId, workspaceId }: { conversationId: st
   // Find the most recent run
   const activeRun = runs.length > 0 ? runs[0] : null;
   const isResolved = activeRun?.status === 'completed' || activeRun?.status === 'failed' || activeRun?.status === 'cancelled';
-  const showInput = !activeRun || isResolved;
+
 
   const handleStart = () => {
     if (!task.trim()) return;
