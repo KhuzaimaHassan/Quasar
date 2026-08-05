@@ -54,8 +54,8 @@ async def start_run(req: StartRunRequest, db: asyncpg.Connection = Depends(get_d
     except Exception as e:
         await db.execute(
             """
-            UPDATE "AgentRun" SET status = 'failed', "endedAt" = now() WHERE "threadId" = $1
-            """, thread_id
+            UPDATE "AgentRun" SET status = 'failed', "endedAt" = now(), "errorMessage" = $2 WHERE "threadId" = $1
+            """, thread_id, str(e)
         )
         return {"status": "failed", "error": str(e)}
         
@@ -65,8 +65,8 @@ async def start_run(req: StartRunRequest, db: asyncpg.Connection = Depends(get_d
     if values.get("error"):
         await db.execute(
             """
-            UPDATE "AgentRun" SET status = 'failed', "endedAt" = now() WHERE "threadId" = $1
-            """, thread_id
+            UPDATE "AgentRun" SET status = 'failed', "endedAt" = now(), "errorMessage" = $2 WHERE "threadId" = $1
+            """, thread_id, str(values.get("error"))
         )
         return {"status": "failed", "error": values.get("error")}
         
@@ -103,8 +103,8 @@ async def resume_run(thread_id: str, req: ResumeRunRequest, db: asyncpg.Connecti
     except Exception as e:
         await db.execute(
             """
-            UPDATE "AgentRun" SET status = 'failed', "endedAt" = now(), "pendingApproval" = NULL WHERE "threadId" = $1
-            """, thread_id
+            UPDATE "AgentRun" SET status = 'failed', "endedAt" = now(), "pendingApproval" = NULL, "errorMessage" = $2 WHERE "threadId" = $1
+            """, thread_id, str(e)
         )
         return {"status": "failed", "error": str(e)}
         
@@ -112,15 +112,17 @@ async def resume_run(thread_id: str, req: ResumeRunRequest, db: asyncpg.Connecti
     values = final_state.values
     
     status = "completed"
+    error_msg = None
     if values.get("error") == "Cancelled by user":
         status = "cancelled"
     elif values.get("error"):
         status = "failed"
+        error_msg = str(values.get("error"))
         
     await db.execute(
         """
-        UPDATE "AgentRun" SET status = $1, "endedAt" = now(), "pendingApproval" = NULL WHERE "threadId" = $2
-        """, status, thread_id
+        UPDATE "AgentRun" SET status = $1, "endedAt" = now(), "pendingApproval" = NULL, "errorMessage" = $3 WHERE "threadId" = $2
+        """, status, thread_id, error_msg
     )
     
     return values
