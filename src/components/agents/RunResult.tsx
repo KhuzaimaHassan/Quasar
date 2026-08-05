@@ -1,5 +1,5 @@
 import { AgentRun } from '@/lib/queries/agent-runs';
-import { CheckCircle2, XCircle, FileCode } from 'lucide-react';
+import { CheckCircle2, XCircle, FileCode, AlertCircle } from 'lucide-react';
 
 export function RunResult({ run }: { run: AgentRun }) {
   if (run.status === 'cancelled') {
@@ -10,6 +10,20 @@ export function RunResult({ run }: { run: AgentRun }) {
           <div>
             <p className="font-medium mb-1 text-foreground">Run Cancelled</p>
             <p className="text-muted-foreground">This run was cancelled, no files were written.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (run.status === 'failed') {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-start gap-3 p-4 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
+          <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
+          <div>
+            <p className="font-semibold mb-1">Agent Run Failed</p>
+            <p className="text-xs opacity-90 break-words">{run.errorMessage || 'An unknown error occurred during the agent run.'}</p>
           </div>
         </div>
       </div>

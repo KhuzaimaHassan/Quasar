@@ -65,19 +65,6 @@ export function AgentPanel({ conversationId, workspaceId }: { conversationId: st
           </div>
         ) : activeRun?.status === 'awaiting_approval' ? (
           <AwaitingApproval run={activeRun} />
-        ) : activeRun?.status === 'failed' && !showInput ? (
-          <div className="space-y-4 p-4 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
-            <div className="flex items-start gap-2">
-              <AlertCircle className="h-4 w-4 mt-0.5" />
-              <div>
-                <p className="font-semibold mb-1">Agent Run Failed</p>
-                <p className="text-xs opacity-90 break-words">{activeRun.errorMessage || 'An unknown error occurred.'}</p>
-              </div>
-            </div>
-            <Button variant="outline" size="sm" onClick={() => setTask(task)} className="w-full">
-              Try again
-            </Button>
-          </div>
         ) : (
           <div className="space-y-3">
             {activeRun && isResolved && <RunResult run={activeRun} />}
