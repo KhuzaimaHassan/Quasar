@@ -24,7 +24,7 @@ def upload_text(storage_path: str, content: str) -> None:
     supabase.storage.from_("uploads").upload(
         path=storage_path,
         file=file_bytes,
-        file_options={"content-type": "text/plain", "upsert": "true"}
+        file_options={"content-type": "text/plain", "x-upsert": "true"}
     )
 
 def list_objects(prefix: str) -> list[str]:
