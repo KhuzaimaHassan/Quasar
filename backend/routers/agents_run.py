@@ -4,6 +4,7 @@ from typing import Optional, Literal
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from langgraph.types import Command
+from langchain_core.runnables import RunnableConfig
 import asyncpg
 
 from core.security import verify_internal_secret
@@ -40,7 +41,7 @@ async def start_run(req: StartRunRequest, db: asyncpg.Connection = Depends(get_d
         str(uuid.uuid4()), req.conversation_id, thread_id, "running"
     )
     
-    config = {"configurable": {"thread_id": thread_id}}
+    config: RunnableConfig = {"configurable": {"thread_id": thread_id}}
     
     try:
         for event in graph.stream({
@@ -91,7 +92,7 @@ async def resume_run(thread_id: str, req: ResumeRunRequest, db: asyncpg.Connecti
     if not run_record:
         raise HTTPException(status_code=404, detail="AgentRun not found")
         
-    config = {"configurable": {"thread_id": thread_id}}
+    config: RunnableConfig = {"configurable": {"thread_id": thread_id}}
     state = graph.get_state(config)
     
     if not state or not state.next:

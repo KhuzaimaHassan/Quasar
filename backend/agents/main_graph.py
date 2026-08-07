@@ -40,7 +40,7 @@ def planner(state: AgentState) -> dict:
         }
     )
     
-    plan_output: PlanOutput = response.parsed
+    plan_output = response.parsed # type: ignore
     steps = plan_output.steps
     
     if len(steps) > 8:
@@ -72,7 +72,7 @@ def coder(state: AgentState) -> dict:
         }
     )
     
-    code_output: CodeOutput = response.parsed
+    code_output = response.parsed # type: ignore
     
     # Merge generated files into the state dictionary (path -> content)
     current_files = state.get("generated_files", {}) or {}
@@ -107,7 +107,7 @@ def reviewer(state: AgentState):
         }
     )
     
-    review_output: ReviewOutput = response.parsed
+    review_output = response.parsed # type: ignore
     
     notes = review_output.notes
     if review_output.issues:
@@ -140,7 +140,7 @@ def reviewer(state: AgentState):
 
 
 def executor(state: AgentState):
-    workspace_id = state.get("workspace_id")
+    workspace_id = state.get("workspace_id", "")
     generated_files = state.get("generated_files", {})
     tool_calls = state.get("tool_calls", []) or []
     execution_target = state.get("execution_target", "sandbox")
@@ -225,7 +225,7 @@ def executor(state: AgentState):
 
 db_url = settings.DATABASE_URL.replace("?pgbouncer=true", "").replace("&pgbouncer=true", "")
 pool = ConnectionPool(conninfo=db_url, kwargs={'autocommit': True, 'prepare_threshold': None})
-checkpointer = PostgresSaver(pool)
+checkpointer = PostgresSaver(pool) # type: ignore
 checkpointer.setup()
 
 builder = StateGraph(AgentState)

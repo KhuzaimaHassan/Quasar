@@ -21,7 +21,7 @@ client = genai.Client(api_key=settings.GOOGLE_API_KEY)
 db_url = settings.DATABASE_URL.replace("?pgbouncer=true", "").replace("&pgbouncer=true", "")
 # Also, we must disable prepared statements for pgbouncer (prepare_threshold=None)
 pool = ConnectionPool(conninfo=db_url, kwargs={'autocommit': True, 'prepare_threshold': None})
-checkpointer = PostgresSaver(pool)
+checkpointer = PostgresSaver(pool)  # type: ignore
 checkpointer.setup()
 
 def generate(state: AgentState):

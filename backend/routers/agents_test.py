@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from langgraph.types import Command
+from langchain_core.runnables import RunnableConfig
 
 from core.security import verify_internal_secret
 from core.db import get_db
@@ -32,7 +33,7 @@ async def start_graph(req: StartRequest, db: asyncpg.Connection = Depends(get_db
     )
     
     # Configure the thread_id for LangGraph checkpointer
-    config = {"configurable": {"thread_id": thread_id}}
+    config: RunnableConfig = {"configurable": {"thread_id": thread_id}}
     
     # Invoke the graph until it hits the interrupt() pause
     for event in graph.stream({"task": req.task}, config):
@@ -60,7 +61,7 @@ async def resume_graph(thread_id: str, req: ResumeRequest, db: asyncpg.Connectio
     if not run_record:
         raise HTTPException(status_code=404, detail="AgentRun not found")
         
-    config = {"configurable": {"thread_id": thread_id}}
+    config: RunnableConfig = {"configurable": {"thread_id": thread_id}}
     
     # Check if the graph actually has a pending state to resume
     state = graph.get_state(config)

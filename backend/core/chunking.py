@@ -31,8 +31,8 @@ def chunk_text(text: str, target_tokens: int = 500, overlap_tokens: int = 60) ->
         else:
             units.append(p)
             
-    chunks = []
-    current_chunk_units = []
+    chunks: list[str] = []
+    current_chunk_units: list[str] = []
     current_tokens = 0
     
     i = 0
@@ -49,7 +49,7 @@ def chunk_text(text: str, target_tokens: int = 500, overlap_tokens: int = 60) ->
                 chunks.append(chunk_str)
                 
             # 4. Carry the last overlap_tokens worth of text into the next chunk
-            overlap_units = []
+            overlap_units: list[str] = []
             overlap_count = 0
             for u in reversed(current_chunk_units):
                 u_tok = get_token_count(u)
