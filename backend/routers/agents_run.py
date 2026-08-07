@@ -1,5 +1,6 @@
 import uuid
 import json
+from typing import Optional, Literal
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from langgraph.types import Command
@@ -11,7 +12,6 @@ from agents.main_graph import graph
 
 router = APIRouter(prefix="/agents/run", tags=["Agents Run"])
 
-from typing import Optional, Literal
 
 class StartRunRequest(BaseModel):
     conversation_id: str
