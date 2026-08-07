@@ -3,7 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { getGithubToken } from "@/lib/github-token";
 
 // TEMPORARY TEST SCAFFOLDING - To be removed in #99
-export async function GET(_req: Request) {
+export async function GET() {
   try {
     const { userId } = await auth();
     if (!userId) {

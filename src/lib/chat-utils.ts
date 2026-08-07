@@ -30,7 +30,6 @@ export function toInitialMessages(dbMessages: PrismaMessage[]): any[] {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function convertToModelMessages(messages: any[]): Promise<any[]> {
   return messages
     .filter(m => ['system', 'user', 'assistant', 'tool'].includes(m.role))
