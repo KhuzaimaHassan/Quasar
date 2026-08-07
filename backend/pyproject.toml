@@ -1,0 +1,11 @@
+[tool.ruff]
+target-version = "py311"
+
+[tool.ruff.lint]
+# Enable standard pycodestyle (E) and pyflakes (F) rules
+select = ["E", "F"]
+
+# Ignore line length and other noisy rules
+ignore = [
+    "E501", # Line too long
+]
