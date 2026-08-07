@@ -1,4 +1,4 @@
-import asyncpg
+import asyncpg  # type: ignore[import-untyped]
 from typing import AsyncGenerator
 from .config import settings
 

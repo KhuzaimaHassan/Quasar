@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from langgraph.types import Command
 from langchain_core.runnables import RunnableConfig
-import asyncpg
+import asyncpg  # type: ignore[import-untyped]
 
 from core.security import verify_internal_secret
 from core.db import get_db

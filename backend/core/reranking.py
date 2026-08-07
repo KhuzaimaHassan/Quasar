@@ -1,7 +1,7 @@
 import logging
 import string
 from typing import List, Dict, Any
-from rank_bm25 import BM25Okapi
+from rank_bm25 import BM25Okapi  # type: ignore[import-untyped]
 
 logger = logging.getLogger(__name__)
 

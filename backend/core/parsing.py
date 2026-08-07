@@ -1,5 +1,5 @@
 import io
-import fitz  # PyMuPDF
+import fitz  # type: ignore[import-untyped]
 from docx import Document
 
 def extract_text(file_bytes: bytes, mime_type: str) -> str:

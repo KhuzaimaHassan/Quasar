@@ -1,4 +1,4 @@
-from typing import TypedDict, Optional, Literal
+from typing import TypedDict, Optional, Literal, cast
 import logging
 from google import genai
 
@@ -40,7 +40,7 @@ def planner(state: AgentState) -> dict:
         }
     )
     
-    plan_output = response.parsed # type: ignore
+    plan_output = cast(PlanOutput, response.parsed)
     steps = plan_output.steps
     
     if len(steps) > 8:
@@ -72,7 +72,7 @@ def coder(state: AgentState) -> dict:
         }
     )
     
-    code_output = response.parsed # type: ignore
+    code_output = cast(CodeOutput, response.parsed)
     
     # Merge generated files into the state dictionary (path -> content)
     current_files = state.get("generated_files", {}) or {}
@@ -107,7 +107,7 @@ def reviewer(state: AgentState):
         }
     )
     
-    review_output = response.parsed # type: ignore
+    review_output = cast(ReviewOutput, response.parsed)
     
     notes = review_output.notes
     if review_output.issues:

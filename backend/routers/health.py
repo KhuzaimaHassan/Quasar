@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends
-import asyncpg
+import asyncpg  # type: ignore[import-untyped]
 from core.db import get_db
 from core.security import verify_internal_secret
 

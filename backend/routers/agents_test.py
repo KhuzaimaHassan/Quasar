@@ -8,7 +8,7 @@ from langchain_core.runnables import RunnableConfig
 from core.security import verify_internal_secret
 from core.db import get_db
 from agents.test_graph import graph
-import asyncpg
+import asyncpg  # type: ignore[import-untyped]
 
 router = APIRouter(prefix="/agents/test", tags=["Agents Test"])
 
