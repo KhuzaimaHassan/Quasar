@@ -235,7 +235,7 @@ Or open them manually through the GitHub UI.
 - Label: `infra`
 - Body: Write `backend/Dockerfile` (python:3.11-slim base, copy requirements, copy source, expose 8000, CMD uvicorn). Write `docker-compose.yml` for local dev (postgres + redis + fastapi). Test: `docker compose up` → all services healthy.
 
-**#36 & #107** — GitHub Actions CI (lint, type-check, migration check) [IMPLEMENTED]
+**#36 & #107** — GitHub Actions CI (lint, type-check, migration check) [COMPLETE]
 - Label: `infra`
 - Body: `.github/workflows/ci.yml`. Jobs: frontend (npm ci, lint, type-check, build), backend (pip install, ruff check, mypy), and migration-check (pgvector container, npx prisma migrate deploy). Run on `pull_request` and `push` targeting `main`. Real automated test suites (pytest/vitest) are explicitly deferred to future work.
 
