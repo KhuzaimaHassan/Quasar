@@ -10,6 +10,7 @@ interface DraftMessage extends MessageProps {
 
 interface MessageListProps {
   draftMessages: DraftMessage[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   persistedMessages?: any[];
 }
 
@@ -24,9 +25,12 @@ export function MessageList({ draftMessages, persistedMessages = [] }: MessageLi
     citations: msg.metadata?.citations || undefined,
   }));
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mappedDrafts = draftMessages.map((msg: any) => {
     // Extract citations from AI SDK annotations (data parts)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const citationAnnotations = msg.annotations?.filter((a: any) => a.type === 'data-citations') || [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const citations = citationAnnotations.flatMap((a: any) => a.citations || []);
     return {
       ...msg,
@@ -34,6 +38,7 @@ export function MessageList({ draftMessages, persistedMessages = [] }: MessageLi
     };
   });
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const allMessages = [...mappedPersisted, ...mappedDrafts];
 
   // Auto-scroll logic

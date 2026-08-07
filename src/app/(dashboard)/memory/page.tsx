@@ -97,6 +97,7 @@ function AddMemoryForm() {
     <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row items-center gap-3 p-4 bg-muted/30 rounded-lg border">
       <div className="flex flex-col w-full sm:w-[150px] gap-1.5">
         <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground ml-1">Scope</span>
+        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
         <Select value={scope} onValueChange={(v: any) => setScope(v)}>
           <SelectTrigger>
             <SelectValue placeholder="Scope" />

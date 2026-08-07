@@ -93,7 +93,7 @@ export function DocumentRow({ document }: { document: Document }) {
             <AlertDialogHeader>
               <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
               <AlertDialogDescription>
-                This will permanently delete the document "{document.filename}" from the workspace. 
+                This will permanently delete the document &quot;{document.filename}&quot; from the workspace. 
                 Any associated chunks and vectors will also be removed. This action cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>

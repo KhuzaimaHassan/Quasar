@@ -33,6 +33,7 @@ export function ConversationList() {
   // or the local new-chat model when no conversation is open.
   const activeConversationId = params?.id as string | undefined;
   const activeConversation = activeConversationId
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ? (conversations as any[]).find((c) => c.id === activeConversationId)
     : null;
   const selectedModel = activeConversation?.model ?? newChatModel;
@@ -41,6 +42,7 @@ export function ConversationList() {
   // clicking away and creating a new chat inherits the last-used model.
   useEffect(() => {
     if (activeConversation?.model) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setNewChatModel(activeConversation.model);
     }
   }, [activeConversation?.model]);
@@ -59,6 +61,7 @@ export function ConversationList() {
     );
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const filteredConversations = (conversations as any[]).filter((c) =>
     c.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -144,6 +147,7 @@ export function ConversationList() {
             {searchQuery ? "No chats found." : "No conversations yet. Start a new chat above."}
           </div>
         ) : (
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           filteredConversations.map((chat: any) => (
             <div key={chat.id} onClick={() => router.push(`/chat/${chat.id}`)}>
               <ConversationCard

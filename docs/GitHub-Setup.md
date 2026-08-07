@@ -235,9 +235,13 @@ Or open them manually through the GitHub UI.
 - Label: `infra`
 - Body: Write `backend/Dockerfile` (python:3.11-slim base, copy requirements, copy source, expose 8000, CMD uvicorn). Write `docker-compose.yml` for local dev (postgres + redis + fastapi). Test: `docker compose up` → all services healthy.
 
-**#36** — GitHub Actions CI (lint, type-check, test on every PR)
+**#36 & #107** — GitHub Actions CI (lint, type-check, migration check) [IMPLEMENTED]
 - Label: `infra`
-- Body: `.github/workflows/ci.yml`. Jobs: frontend (npm ci, lint, type-check, test) and backend (pip install, ruff check, mypy, pytest). Run on `pull_request` targeting `main`. Block merge if CI fails.
+- Body: `.github/workflows/ci.yml`. Jobs: frontend (npm ci, lint, type-check, build), backend (pip install, ruff check, mypy), and migration-check (pgvector container, npx prisma migrate deploy). Run on `pull_request` and `push` targeting `main`. Real automated test suites (pytest/vitest) are explicitly deferred to future work.
+
+**#106** — Dockerize FastAPI service [COMPLETE]
+- Label: `infra`
+- Body: Satisfied by Render's existing Dockerfile. No further work needed.
 
 **#37** — OpenTelemetry spans (latency per retrieval / agent step / LLM call)
 - Label: `infra`

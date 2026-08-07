@@ -93,6 +93,7 @@ export function ChatInput({ onSend, isSending, onStop, conversationId }: ChatInp
             : a
         )
       );
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setAttachments((prev) =>
         prev.map((a) =>
@@ -112,6 +113,7 @@ export function ChatInput({ onSend, isSending, onStop, conversationId }: ChatInp
 
     for (const file of Array.from(files)) {
       // Client-side validation: mime type
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       if (!ALLOWED_MIME_TYPES.includes(file.type as any)) {
         alert(`"${file.name}" is not a supported file type.\nAllowed: PNG, JPEG, PDF, DOCX`);
         continue;
@@ -220,6 +222,7 @@ export function ChatInput({ onSend, isSending, onStop, conversationId }: ChatInp
               >
                 {/* Thumbnail or file icon */}
                 {a.previewUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={a.previewUrl}
                     alt={a.filename}

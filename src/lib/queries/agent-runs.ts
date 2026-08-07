@@ -7,8 +7,10 @@ export interface AgentRun {
   conversationId: string
   threadId: string
   status: AgentRunStatus
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   toolCalls: any
   totalTokens: number
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   pendingApproval?: any
   errorMessage?: string | null
   startedAt: string

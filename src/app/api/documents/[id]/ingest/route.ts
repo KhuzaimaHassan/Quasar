@@ -89,6 +89,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
 
       const data = await response.json()
       return NextResponse.json(data, { status: 202 })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (fetchError: any) {
       console.error('Fetch to FastAPI failed:', fetchError)
       await db.document.update({

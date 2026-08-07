@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useMemo, useRef, useEffect } from "react";
+import { use, useMemo, useRef, useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
@@ -43,6 +43,7 @@ export default function DynamicChatPage({ params }: { params: Promise<{ id: stri
   return <ChatContainer conversationId={conversationId} persistedMessages={persistedMessages} />;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function ChatContainer({ conversationId, persistedMessages }: { conversationId: string, persistedMessages: any[] }) {
   const transport = useMemo(() => new DefaultChatTransport({
     api: '/api/chat',
@@ -55,11 +56,11 @@ function ChatContainer({ conversationId, persistedMessages }: { conversationId: 
 
   // Track attachments sent with each message for optimistic rendering
   // Maps a "send index" to the attachments for that send
-  const pendingAttachmentsRef = useRef<PersistedAttachment[]>([]);
+  const [pendingAttachments, setPendingAttachments] = useState<PersistedAttachment[]>([]);
 
   const { messages, setMessages, sendMessage, stop, status, error } = useChat({
     transport,
-    // @ts-ignore - The ai/react vs @ai-sdk/react type definitions conflict in this setup
+    // @ts-expect-error - The ai/react vs @ai-sdk/react type definitions conflict in this setup
     initialMessages: initMsgs,
   });
 
@@ -103,7 +104,7 @@ function ChatContainer({ conversationId, persistedMessages }: { conversationId: 
     }));
 
     // Store attachments for optimistic rendering
-    pendingAttachmentsRef.current = allAttachmentMeta;
+    setPendingAttachments(allAttachmentMeta);
 
     // Build FileUIPart[] for images so the model can actually see them
     const fileParts: Array<{ type: 'file'; mediaType: string; url: string; filename: string }> = [];
@@ -126,6 +127,7 @@ function ChatContainer({ conversationId, persistedMessages }: { conversationId: 
       );
     } else {
       sendMessage(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         { text: content, files: undefined } as any,
         { body: { conversationId, attachments: allAttachmentMeta.length > 0 ? allAttachmentMeta : undefined } }
       );
@@ -134,13 +136,15 @@ function ChatContainer({ conversationId, persistedMessages }: { conversationId: 
 
   // We filter out any messages from useChat that are already persisted in the database.
   const draftMessages = messages
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .filter((msg: any) => !persistedMessages.some((p: any) => p.id === msg.id))
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .map((msg: any, index: number, array: any[]) => {
       const isLast = index === array.length - 1;
       const isStreamingMessage = isLast && msg.role === 'assistant' && status === 'streaming';
 
       // For user draft messages, attach the pending attachments from this send
-      const attachments = msg.role === 'user' ? pendingAttachmentsRef.current : undefined;
+      const attachments = msg.role === 'user' ? pendingAttachments : undefined;
 
       return {
         id: msg.id,
@@ -181,6 +185,32 @@ function ChatContainer({ conversationId, persistedMessages }: { conversationId: 
     });
   }
 
+
+  return (
+    <div className="flex h-full w-full overflow-hidden">
+      <div className="hidden md:flex h-full shrink-0">
+        <ConversationList />
+      </div>
+
+      <div className="flex flex-1 flex-col bg-muted/10 h-full relative">
+        <ChatHeader conversationId={conversationId} />
+        <MessageList draftMessages={draftMessages} persistedMessages={persistedMessages} />
+        <ChatInput onSend={handleSend} isSending={isSending} onStop={stop} conversationId={conversationId} />
+      </div>
+    </div>
+  );
+}
+
+/** Convert a File to a data URL string */
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 function ChatHeader({ conversationId }: { conversationId: string }) {
   const { data: conversation } = useConversation(conversationId);
   const { data: apiKeys } = useApiKeys();
@@ -192,6 +222,7 @@ function ChatHeader({ conversationId }: { conversationId: string }) {
   useEffect(() => {
     if (conversation?.workspaceId && workspaces?.length) {
       if (activeWorkspace?.id !== conversation.workspaceId) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const correctWorkspace = workspaces.find((w: any) => w.id === conversation.workspaceId);
         if (correctWorkspace) {
           setActiveWorkspace(correctWorkspace);
@@ -222,29 +253,4 @@ function ChatHeader({ conversationId }: { conversationId: string }) {
       </div>
     </header>
   );
-}
-
-  return (
-    <div className="flex h-full w-full overflow-hidden">
-      <div className="hidden md:flex h-full shrink-0">
-        <ConversationList />
-      </div>
-
-      <div className="flex flex-1 flex-col bg-muted/10 h-full relative">
-        <ChatHeader conversationId={conversationId} />
-        <MessageList draftMessages={draftMessages} persistedMessages={persistedMessages} />
-        <ChatInput onSend={handleSend} isSending={isSending} onStop={stop} conversationId={conversationId} />
-      </div>
-    </div>
-  );
-}
-
-/** Convert a File to a data URL string */
-function fileToDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
 }

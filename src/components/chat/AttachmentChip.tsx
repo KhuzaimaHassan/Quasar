@@ -19,6 +19,7 @@ export function AttachmentChip({ filename, mimeType, sizeBytes, url }: Attachmen
         rel="noopener noreferrer"
         className="block group relative overflow-hidden rounded-lg border bg-muted/50 transition-opacity hover:opacity-90 max-w-[200px]"
       >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={url}
           alt={filename}

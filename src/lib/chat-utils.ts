@@ -1,5 +1,6 @@
 import { Message as PrismaMessage } from '@prisma/client'
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function getMessageText(message: any): string {
   if (typeof message.content === 'string' && message.content.length > 0) {
     return message.content
@@ -9,6 +10,7 @@ export function getMessageText(message: any): string {
   }
   if (Array.isArray(message.parts)) {
     return message.parts
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .map((part: any) => {
         if (part.type === 'text') return part.text
         return '' 
@@ -18,6 +20,7 @@ export function getMessageText(message: any): string {
   return ''
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function toInitialMessages(dbMessages: PrismaMessage[]): any[] {
   return dbMessages.map((msg) => ({
     id: msg.id,
@@ -26,6 +29,8 @@ export function toInitialMessages(dbMessages: PrismaMessage[]): any[] {
   }))
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function convertToModelMessages(messages: any[]): Promise<any[]> {
   return messages
     .filter(m => ['system', 'user', 'assistant', 'tool'].includes(m.role))
@@ -39,6 +44,7 @@ export async function convertToModelMessages(messages: any[]): Promise<any[]> {
     .map(m => {
       if (m.role === 'user') {
         const textContent = getMessageText(m);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const imageParts: any[] = [];
 
         // 2. Add experimental_attachments

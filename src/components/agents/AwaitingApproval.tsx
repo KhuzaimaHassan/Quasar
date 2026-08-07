@@ -85,7 +85,7 @@ export function AwaitingApproval({ run }: { run: AgentRun }) {
             <AlertDialogHeader>
               <AlertDialogTitle>Reject these changes?</AlertDialogTitle>
               <AlertDialogDescription>
-                The agent's run will be cancelled and none of these files will be written. This action cannot be undone.
+                The agent&apos;s run will be cancelled and none of these files will be written. This action cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

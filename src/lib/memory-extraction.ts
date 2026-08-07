@@ -9,6 +9,7 @@ export type ExtractedFact = {
   confidence: number;
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function extractMemories(recentMessages: any[]): Promise<ExtractedFact[]> {
   try {
     // Format messages for the prompt

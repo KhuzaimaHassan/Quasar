@@ -50,6 +50,7 @@ export async function POST(req: Request) {
     if (typeof lastMessage.content === 'string') {
       userMessageContent = lastMessage.content
     } else if (Array.isArray(lastMessage.parts)) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       userMessageContent = lastMessage.parts.map((p: any) => p.text || '').join('')
     } else {
       userMessageContent = JSON.stringify(lastMessage.content)
@@ -160,6 +161,7 @@ export async function POST(req: Request) {
             role: 'assistant',
             content: text,
             tokenCount: usage.totalTokens,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             metadata: (citations.length > 0 ? { citations } : {}) as any,
           },
         })

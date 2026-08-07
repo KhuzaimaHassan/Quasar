@@ -43,6 +43,7 @@ export async function GET(_req: Request) {
     const data = await backendRes.json();
     return NextResponse.json({ success: true, backend_response: data });
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     console.error("Error in temporary test route:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });

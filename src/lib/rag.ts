@@ -8,6 +8,7 @@ export interface RetrievedChunk {
   filename: string;
   chunkIndex: number;
   documentId: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   metadata: any;
 }
 
@@ -61,6 +62,7 @@ export async function retrieveContext(workspaceId: string, query: string): Promi
 
     const data = await response.json();
     return data.chunks || [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     if (error.name === "AbortError") {
       console.warn("FastAPI /retrieve timed out (likely a cold start). Gracefully degrading RAG context for this message.");

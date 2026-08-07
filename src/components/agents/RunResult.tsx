@@ -32,11 +32,14 @@ export function RunResult({ run }: { run: AgentRun }) {
 
   // Completed status
   const toolCalls = Array.isArray(run.toolCalls) ? run.toolCalls : [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const githubCalls = toolCalls.filter((call: any) => call.tool === 'github.create_or_update_file');
   const isGithubRun = githubCalls.length > 0;
   
   const writtenFiles = toolCalls
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .filter((call: any) => call.tool === 'filesystem.write_file' || call.tool === 'github.create_or_update_file')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .map((call: any) => ({
       path: call.args?.file_path || call.args?.path || call.path || 'Unknown file',
       url: call.result?.commit?.html_url || call.result?.content?.html_url
@@ -54,6 +57,7 @@ export function RunResult({ run }: { run: AgentRun }) {
                 {isGithubRun ? "Committed files:" : "Files written:"}
               </p>
               <div className="space-y-1">
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                 {writtenFiles.map((file: any, i: number) => (
                   <div key={i} className="flex items-center justify-between text-xs font-mono bg-background/50 px-2 py-1 rounded border border-border/50 truncate">
                     <div className="flex items-center gap-2 truncate">

@@ -130,37 +130,21 @@ quasar/
 
 ---
 
-## Testing
+### CI/CD Pipeline
 
-### Frontend
-
-```bash
-npm run test          # Run Vitest unit tests
-npm run test:e2e      # Run Playwright end-to-end tests (M6)
-```
-
-Write unit tests for:
-- Context assembly function (`assembleContext`)
-- Token counting utilities
-- Zod schemas
-- Any function with non-trivial logic
-
-Don't unit test API routes or React components unless they have complex logic. Integration tests (e2e) cover the user-facing behaviour.
-
-### Backend
+The project uses GitHub Actions for continuous integration.
 
 ```bash
-cd backend
-pytest                        # All tests
-pytest tests/test_rag.py      # Specific file
-pytest -v -k "test_chunking"  # Specific test
+# Frontend Checks
+npm run type-check    # TypeScript compilation check
+npm run lint          # ESLint rules
+
+# Backend Checks
+ruff check backend/   # Python linting
+mypy backend/         # Python type checking
 ```
 
-Write tests for:
-- Chunking strategy
-- Retrieval pipeline (use a test PostgreSQL with pgvector)
-- MCP tool path safety (filesystem traversal prevention)
-- Agent state transitions
+**Note:** Real automated test suites (pytest for backend, vitest/playwright for frontend) are explicitly deferred to future work. The current CI pipeline ensures type-safety, linting standards, and that database migrations (`npx prisma migrate deploy`) apply cleanly against a fresh `pgvector` instance.
 
 ---
 

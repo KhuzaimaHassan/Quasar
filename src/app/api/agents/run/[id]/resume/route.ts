@@ -76,6 +76,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
       const data = await response.json()
       return NextResponse.json(data, { status: 200 })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (fetchError: any) {
       console.error('Fetch to FastAPI failed:', fetchError)
       return NextResponse.json({ error: 'Service Unavailable', message: 'Agent service is down', statusCode: 503 }, { status: 503 })

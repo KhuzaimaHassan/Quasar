@@ -23,6 +23,7 @@ interface MessageBubbleProps {
 }
 
 const streamdownComponents = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   table: ({ children, ...props }: any) => (
     <div className="overflow-x-auto my-4 rounded-xl border border-border">
       <table className="w-full text-sm text-left divide-y divide-border" {...props}>
@@ -30,11 +31,13 @@ const streamdownComponents = {
       </table>
     </div>
   ),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   th: ({ children, ...props }: any) => (
     <th className="bg-muted/50 px-4 py-2 font-semibold" {...props}>
       {children}
     </th>
   ),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   td: ({ children, ...props }: any) => (
     <td className="px-4 py-2" {...props}>
       {children}

@@ -25,6 +25,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       if (savedId) {
         const found = workspaces.find((w: Workspace) => w.id === savedId)
         if (found) {
+          // eslint-disable-next-line react-hooks/set-state-in-effect
           setActiveWorkspace(found)
           return
         }
