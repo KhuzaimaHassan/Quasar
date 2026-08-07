@@ -38,6 +38,10 @@ jobs:
         env:
           DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/dummy"
           DIRECT_URL: "postgresql://postgres:postgres@localhost:5432/dummy"
+          NEXT_PUBLIC_SUPABASE_URL: "https://dummy.supabase.co"
+          SUPABASE_SERVICE_ROLE_KEY: "dummy_key"
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_test_dummy"
+          CLERK_SECRET_KEY: "sk_test_dummy"
 
   backend:
     name: Backend Lint & Type Check
