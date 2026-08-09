@@ -95,3 +95,39 @@ export function useDeleteConversation() {
     },
   })
 }
+
+export function useSetFeedback(conversationId: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ messageId, rating }: { messageId: string; rating: 1 | -1 }) => {
+      const res = await fetch(`/api/messages/${messageId}/feedback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rating }),
+      })
+      if (!res.ok) throw new Error('Failed to set feedback')
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['messages', conversationId] })
+    },
+  })
+}
+
+export function useClearFeedback(conversationId: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (messageId: string) => {
+      const res = await fetch(`/api/messages/${messageId}/feedback`, {
+        method: 'DELETE',
+      })
+      if (!res.ok) throw new Error('Failed to clear feedback')
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['messages', conversationId] })
+    },
+  })
+}

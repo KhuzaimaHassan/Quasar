@@ -82,6 +82,7 @@ model Message {
   metadata       Json         @default("{}")
   tokenCount     Int          @default(0)
   createdAt      DateTime     @default(now())
+  feedback       MessageFeedback?
 
   @@index([conversationId, createdAt])
   @@map("messages")
@@ -148,4 +149,14 @@ model AgentRun {
 
   @@index([conversationId])
   @@index([status])
+}
+
+model MessageFeedback {
+  id        String   @id @default(uuid())
+  messageId String   @unique
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

@@ -146,6 +146,25 @@ Get all messages in a conversation (used for initial load; streaming handles new
 ]
 ```
 
+#### `POST /api/messages/:id/feedback`
+Set or update thumbs up/down feedback for a specific assistant message.
+
+```json
+// Request body
+{ "rating": 1 } // 1 for thumbs up, -1 for thumbs down
+
+// Response 200
+{ "id": "uuid", "messageId": "uuid", "rating": 1, "comment": null, "createdAt": "...", "updatedAt": "..." }
+```
+
+#### `DELETE /api/messages/:id/feedback`
+Clear feedback from a specific assistant message.
+
+```json
+// Response 204
+// No content
+```
+
 ---
 
 ### Chat (Streaming)
