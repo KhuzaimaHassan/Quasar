@@ -247,7 +247,7 @@ Or open them manually through the GitHub UI.
 - Label: `infra`
 - Body: Install `opentelemetry-instrumentation-fastapi` and `opentelemetry-instrumentation-sqlalchemy`. Instrument FastAPI app. Export spans to Uptrace or Jaeger (local). Add custom spans around RAG retrieval and LangGraph node transitions.
 
-**#38** — User feedback widget (thumbs up/down on responses)
+**[COMPLETE] #109** — Message Feedback (thumbs up/down only - comment UI and LangSmith tracking deferred to #103)
 - Label: `feat`
 - Body: Thumbs up/down buttons appear on hover below each assistant message. Click stores feedback in a new `message_feedback` table (message_id, rating: 1/-1, comment: optional). Show feedback count in LangSmith via metadata tag. Use as signal for eval dataset curation.
 

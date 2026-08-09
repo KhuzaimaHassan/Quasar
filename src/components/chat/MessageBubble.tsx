@@ -5,6 +5,8 @@ import { code } from "@streamdown/code";
 import type { PersistedAttachment } from "@/lib/attachment-types";
 import { AttachmentChip } from "./AttachmentChip";
 import { CitationChip, type CitationProps } from "./CitationChip";
+import { ThumbsUp, ThumbsDown } from "lucide-react";
+import { useSetFeedback, useClearFeedback } from "@/lib/queries/conversations";
 
 export interface MessageProps {
   id: string;
@@ -14,6 +16,8 @@ export interface MessageProps {
   attachments?: PersistedAttachment[];
   tokenCount?: number;
   citations?: CitationProps[];
+  conversationId?: string;
+  feedback?: { rating: number };
 }
 
 interface MessageBubbleProps {
@@ -47,6 +51,18 @@ const streamdownComponents = {
 
 export function MessageBubble({ message, isPending, isStreaming }: MessageBubbleProps) {
   const isUser = message.role === "user";
+
+  const setFeedback = useSetFeedback(message.conversationId || "");
+  const clearFeedback = useClearFeedback(message.conversationId || "");
+
+  const handleFeedback = (rating: 1 | -1) => {
+    if (!message.conversationId) return;
+    if (message.feedback?.rating === rating) {
+      clearFeedback.mutate(message.id);
+    } else {
+      setFeedback.mutate({ messageId: message.id, rating });
+    }
+  };
 
   return (
     <div
@@ -108,16 +124,44 @@ export function MessageBubble({ message, isPending, isStreaming }: MessageBubble
           </div>
         )}
 
-        {/* Hover Timestamp */}
-        <span
+        {/* Hover Metadata & Feedback */}
+        <div
           className={cn(
-            "absolute -bottom-5 text-[10px] text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap",
+            "absolute -bottom-5 flex items-center gap-2 text-[10px] text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap",
             isUser ? "right-1" : "left-1"
           )}
         >
-          {formatRelativeTime(message.createdAt)}
-          {!isUser && !isStreaming && !isPending && message.tokenCount ? ` · ${message.tokenCount.toLocaleString()} tokens` : ""}
-        </span>
+          <span>
+            {formatRelativeTime(message.createdAt)}
+            {!isUser && !isStreaming && !isPending && message.tokenCount ? ` · ${message.tokenCount.toLocaleString()} tokens` : ""}
+          </span>
+
+          {/* Feedback Controls - Only for resolved assistant messages */}
+          {!isUser && !isStreaming && !isPending && message.conversationId && (
+            <div className="flex items-center gap-1.5 ml-1">
+              <button 
+                onClick={() => handleFeedback(1)}
+                className={cn(
+                  "hover:text-foreground transition-colors",
+                  message.feedback?.rating === 1 && "text-primary hover:text-primary"
+                )}
+                disabled={setFeedback.isPending || clearFeedback.isPending}
+              >
+                <ThumbsUp className={cn("w-3 h-3", message.feedback?.rating === 1 && "fill-current")} />
+              </button>
+              <button 
+                onClick={() => handleFeedback(-1)}
+                className={cn(
+                  "hover:text-foreground transition-colors",
+                  message.feedback?.rating === -1 && "text-destructive hover:text-destructive"
+                )}
+                disabled={setFeedback.isPending || clearFeedback.isPending}
+              >
+                <ThumbsDown className={cn("w-3 h-3", message.feedback?.rating === -1 && "fill-current")} />
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -33,6 +33,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     const messages = await db.message.findMany({
       where: { conversationId: id },
       orderBy: { createdAt: 'asc' },
+      include: { feedback: true },
     })
 
     return NextResponse.json(messages, { status: 200 })
