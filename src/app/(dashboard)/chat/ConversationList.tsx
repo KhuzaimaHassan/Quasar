@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { cn, formatRelativeTime } from "@/lib/utils";
 import { ConversationCard } from "./ConversationCard";
 import { useWorkspace } from "@/components/providers/workspace-provider";
-import { useConversations, useCreateConversation } from "@/lib/queries/conversations";
+import { useConversations, useCreateConversation, useUpdateConversation } from "@/lib/queries/conversations";
 import { MODEL_CATALOG } from "@/lib/models";
 
 export function ConversationList() {
@@ -28,6 +28,7 @@ export function ConversationList() {
   const { activeWorkspace } = useWorkspace();
   const { data: conversations = [], isLoading } = useConversations(activeWorkspace?.id);
   const { mutate: createConversation, isPending: isCreating } = useCreateConversation();
+  const { mutate: updateConversation } = useUpdateConversation();
 
   // Derive the model to display: active conversation's model (single source of truth)
   // or the local new-chat model when no conversation is open.
@@ -156,6 +157,9 @@ export function ConversationList() {
                 model={MODEL_CATALOG.find((m) => m.id === chat.model)?.label || chat.model}
                 files={0}
                 isActive={params?.id === chat.id}
+                onRename={(newTitle) => {
+                  updateConversation({ id: chat.id, data: { title: newTitle } });
+                }}
               />
             </div>
           ))

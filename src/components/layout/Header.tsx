@@ -8,10 +8,12 @@ import { Sidebar } from "./Sidebar";
 import { UserButton } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
 import { useWorkspace } from "@/components/providers/workspace-provider";
+import { useTheme } from "next-themes";
 
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { activeWorkspace } = useWorkspace();
+  const { theme, setTheme } = useTheme();
 
   return (
     <>
@@ -53,7 +55,13 @@ export function Header() {
         {/* Right Side: Actions & Profile */}
         <div className="flex items-center gap-3 lg:gap-5 shrink-0">
           <div className="hidden sm:flex items-center gap-1.5">
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground rounded-full hover:bg-accent/60 focus-visible:ring-2" aria-label="Toggle theme">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-8 w-8 text-muted-foreground rounded-full hover:bg-accent/60 focus-visible:ring-2" 
+              aria-label="Toggle theme"
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            >
               <Moon className="h-[18px] w-[18px]" />
             </Button>
             <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground rounded-full relative hover:bg-accent/60 focus-visible:ring-2" aria-label="View notifications">

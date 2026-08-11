@@ -5,12 +5,14 @@ interface QuickActionCardProps {
   title: string;
   description: string;
   icon: LucideIcon;
+  onClick?: () => void;
 }
 
-export function QuickActionCard({ title, description, icon: Icon }: QuickActionCardProps) {
+export function QuickActionCard({ title, description, icon: Icon, onClick }: QuickActionCardProps) {
   return (
     <Card 
       tabIndex={0}
+      onClick={onClick}
       className="hover:border-primary/50 hover:bg-accent/30 hover:shadow-sm transition-all cursor-pointer group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       role="button"
       aria-label={`Action: ${title}`}

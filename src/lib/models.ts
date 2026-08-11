@@ -18,7 +18,7 @@ export const MODEL_CATALOG: ModelConfig[] = [
     id: 'gemini-2.5-pro',
     label: 'Gemini 2.5 Pro',
     provider: 'google',
-    requiresKey: false,
+    requiresKey: true,
   },
   {
     id: 'claude-sonnet-5',

@@ -224,22 +224,15 @@ Or open them manually through the GitHub UI.
 - Body: Set `LANGCHAIN_TRACING_V2=true` and `LANGCHAIN_API_KEY` in FastAPI env. Verify traces appear in LangSmith dashboard for both chat completions and agent runs. Add project tags (`quasar`, `production`, `staging`).
 
 **#33** — Cost dashboard (token usage, cost per conversation, trends)
-- Label: `feat`
-- Body: Settings → Usage page. Show: total tokens this month, estimated cost breakdown (by model), top 10 most expensive conversations, daily token usage chart (recharts). Compute cost from stored token counts + hardcoded price per model.
-
-**#34** — Prompt eval suite (golden Q&A pairs, automated regression)
-- Label: `ai`
-- Body: Create 20 golden Q&A pairs over test documents. Store in `evals/golden_set.json`. Write `evals/run_evals.py` that runs each question through the RAG pipeline and checks if the answer contains expected facts. Run as part of CI on push to `main`.
-
-**#35** — Dockerize FastAPI service
-- Label: `infra`
-- Body: Write `backend/Dockerfile` (python:3.11-slim base, copy requirements, copy source, expose 8000, CMD uvicorn). Write `docker-compose.yml` for local dev (postgres + redis + fastapi). Test: `docker compose up` → all services healthy.
+- [x] **#104:** Create Cost Dashboard (Usage breakdown by model. Note: Cost figures are estimates based on published list pricing, not real billing data)
+- [ ] **#105:** Evaluation Suite
+- [x] **#106:** Dockerize FastAPI RAG (Completed: The Dockerfile Render depends on already exists, no new work needed)
+- [x] **#107:** Set up CI pipeline for Next.js build and type checking
 
 **#36 & #107** — GitHub Actions CI (lint, type-check, migration check) [COMPLETE]
 - Label: `infra`
 - Body: `.github/workflows/ci.yml`. Jobs: frontend (npm ci, lint, type-check, build), backend (pip install, ruff check, mypy), and migration-check (pgvector container, npx prisma migrate deploy). Run on `pull_request` and `push` targeting `main`. Real automated test suites (pytest/vitest) are explicitly deferred to future work.
 
-**#106** — Dockerize FastAPI service [COMPLETE]
 - Label: `infra`
 - Body: Satisfied by Render's existing Dockerfile. No further work needed.
 

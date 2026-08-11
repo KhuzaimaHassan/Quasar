@@ -1,13 +1,14 @@
 import { auth } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { streamText, createUIMessageStreamResponse, toUIMessageStream } from 'ai'
+import { streamText, createUIMessageStreamResponse, toUIMessageStream, generateText } from 'ai'
 import { google } from '@ai-sdk/google'
 import { convertToModelMessages } from '@/lib/chat-utils'
 import { retrieveContext, buildSystemPrompt, resolveCitations } from '@/lib/rag'
 import { extractMemories } from '@/lib/memory-extraction'
 import { MODEL_CATALOG } from '@/lib/models'
 import { decrypt } from '@/lib/encryption'
+import { chatRateLimiter } from '@/lib/rate-limit'
 
 export const maxDuration = 30
 
@@ -16,6 +17,11 @@ export async function POST(req: Request) {
     const { userId: clerkId } = await auth()
     if (!clerkId) {
       return new NextResponse('Unauthorized', { status: 401 })
+    }
+
+    const { success } = await chatRateLimiter.limit(clerkId)
+    if (!success) {
+      return new NextResponse('Too Many Requests: You have exceeded the rate limit of 20 requests per minute.', { status: 429 })
     }
 
     const user = await db.user.findUnique({ where: { clerkId } })
@@ -112,9 +118,7 @@ export async function POST(req: Request) {
     const { provider } = catalogEntry;
     let languageModel;
 
-    if (provider === 'google') {
-      languageModel = google(modelId);
-    } else if (provider === 'anthropic' || provider === 'openai') {
+    if (catalogEntry.requiresKey) {
       // Look up user's API key
       const apiKeyRow = await db.apiKey.findUnique({
         where: {
@@ -136,17 +140,27 @@ export async function POST(req: Request) {
           const { createAnthropic } = await import('@ai-sdk/anthropic');
           const anthropic = createAnthropic({ apiKey: decryptedKey });
           languageModel = anthropic(modelId);
-        } else {
+        } else if (provider === 'openai') {
           const { createOpenAI } = await import('@ai-sdk/openai');
           const openai = createOpenAI({ apiKey: decryptedKey });
           languageModel = openai(modelId);
+        } else if (provider === 'google') {
+          const { createGoogleGenerativeAI } = await import('@ai-sdk/google');
+          const googleBYOK = createGoogleGenerativeAI({ apiKey: decryptedKey });
+          languageModel = googleBYOK(modelId);
+        } else {
+          return new NextResponse(`Unsupported BYOK provider: ${provider}`, { status: 400 });
         }
       } catch (err) {
         console.error(`[CHAT_ERROR] Failed to initialize BYOK model provider=${provider} model=${modelId}`, err instanceof Error ? err.message : String(err));
         return new NextResponse(`Failed to initialize ${provider} model. Your API key might be invalid.`, { status: 400 });
       }
     } else {
-      return new NextResponse(`Unsupported provider: ${provider}`, { status: 400 });
+      if (provider === 'google') {
+        languageModel = google(modelId);
+      } else {
+        return new NextResponse(`Unsupported default provider: ${provider}`, { status: 400 });
+      }
     }
 
     const result = streamText({
@@ -209,6 +223,26 @@ export async function POST(req: Request) {
           }).catch((err) => {
             console.error('[MEMORY_EXTRACTION_FATAL]', err);
           });
+        }
+
+        // Conversation auto-naming
+        if (conversation.title === 'New conversation') {
+          generateText({
+            model: google('gemini-3.5-flash'),
+            system: "Generate an extremely concise title (3-6 words) for this conversation based on the user's first message. Reply ONLY with the raw title text.",
+            prompt: userMessageContent
+          }).then(async ({ text }) => {
+            try {
+              await db.conversation.update({
+                where: { id: conversationId },
+                data: { title: text.trim().replace(/^["']|["']$/g, '') }
+              })
+            } catch (err) {
+              console.error('[AUTO_NAMING_DB_ERROR]', err)
+            }
+          }).catch(err => {
+            console.error('[AUTO_NAMING_GENERATION_ERROR]', err)
+          })
         }
       },
     })

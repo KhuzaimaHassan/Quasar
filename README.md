@@ -2,7 +2,7 @@
 
 > AI-powered developer workspace — streaming chat, document RAG, and multi-model support.
 
-**Live Demo:** [https://quasar.vercel.app](https://qausar.vercel.app/)
+**Live Demo:** [https://qausar.vercel.app](https://qausar.vercel.app)
 
 > **Note on the document ingestion service:** The RAG backend runs on Render's free tier, which spins down after 15 minutes of inactivity. The first document upload or retrieval call after an idle period may take 30–60 seconds to respond. This is expected and not a bug — subsequent calls are fast.
 
@@ -18,7 +18,7 @@
 
 Quasar is a production-deployed AI developer workspace. It lets you:
 
-- **Chat with multiple AI models** — Gemini (free, default), Claude Sonnet, and GPT-4o (via your own API key)
+- **Chat with multiple AI models** — Gemini (free, default), Gemini 2.5 Pro, Claude Sonnet, and GPT-4o (via your own API key)
 - **Upload documents and ask questions about them** — full retrieval-augmented generation (RAG): upload a PDF or DOCX, watch it get ingested and embedded, then ask questions and receive responses with cited sources
 - **Organise conversations into workspaces** — multi-workspace support with per-workspace document libraries and conversation history
 - **Track token usage** — per-message and running conversation totals
@@ -41,11 +41,11 @@ Quasar is a production-deployed AI developer workspace. It lets you:
 - **Authentication** — Clerk with email/password and OAuth; webhook-driven database sync on sign-up; secure route protection
 - **Markdown Rendering** — streaming-aware markdown with syntax highlighting and copy buttons via `streamdown`
 - **Responsive Layout** — desktop sidebar, mobile hamburger drawer, accessible at any viewport
+- **Memory** (M4) — long-term preference extraction and context injection
+- **Agents** (M5) — LangGraph state machine (Planner/Coder/Reviewer), MCP tool integrations, human-approval gate, GitHub commit capability with a pre-flight repo-access check
 
 ### 🔮 Planned
 
-- **Memory** (M4) — short-term conversation buffer (Redis) + long-term preference extraction
-- **Agents** (M5) — LangGraph state machine, MCP tool integrations (GitHub, filesystem)
 - **Production Evals** (M6) — LangSmith tracing, prompt eval suite, cost dashboard
 
 ---
@@ -106,10 +106,14 @@ Browser → Clerk (Auth) → Next.js (Vercel)
          Storage          PostgreSQL          (user sync)
               │               │
               └───────────────┤
-                              │  (chat retrieval / doc ingest)
+                              │  (chat retrieval / doc ingest / agents)
                         FastAPI (Render)
                               │
-                        Supabase pgvector
+              ┌───────────────┴───────────────┐
+              │                               │
+        Supabase pgvector            LangGraph Agent
+                                              │
+                                         GitHub API
 ```
 
 For a detailed breakdown of the architecture, data flow, and every design decision, see the [`docs/`](docs/) folder:
@@ -117,13 +121,20 @@ For a detailed breakdown of the architecture, data flow, and every design decisi
 | Document | Purpose |
 |----------|---------|
 | [Architecture.md](docs/Architecture.md) | System design and data flow |
+| [AI-Pipeline.md](docs/AI-Pipeline.md) | AI routing and component overview |
 | [RAG.md](docs/RAG.md) | Full RAG pipeline: parsing → chunking → embedding → retrieval → citation |
+| [Agents.md](docs/Agents.md) | LangGraph multi-agent system and GitHub integration |
+| [Memory.md](docs/Memory.md) | Long-term preference extraction and context |
 | [Decisions.md](docs/Decisions.md) | Architecture Decision Records (ADRs) — the *why* behind every major choice |
 | [Database.md](docs/Database.md) | Prisma schema, pgvector setup, query patterns |
 | [API.md](docs/API.md) | All API endpoints (Next.js routes + FastAPI) |
 | [Security.md](docs/Security.md) | BYOK encryption, route protection, ownership model |
 | [Deployment.md](docs/Deployment.md) | Vercel + Render deployment guide |
+| [Environment-Setup.md](docs/Environment-Setup.md) | Local dev environment and keys |
+| [GitHub-Setup.md](docs/GitHub-Setup.md) | CI/CD pipeline and issue tracking |
+| [Contributing.md](docs/Contributing.md) | Contribution standards and testing |
 | [Roadmap.md](docs/Roadmap.md) | Milestone plan and backlog |
+| [Performance.md](docs/Performance.md) | Latency tracking and optimizations |
 | [Lessons-Learned.md](docs/Lessons-Learned.md) | Hard-won engineering notes |
 
 ---
@@ -224,8 +235,18 @@ src/
 backend/                      # FastAPI RAG service
 ├── main.py
 ├── routers/
+│   ├── agents_run.py         # POST /agents/run — LangGraph execution
+│   ├── agents_test.py        # Sandbox testing routes
+│   ├── filesystem_test.py    # Sandbox FS tests
+│   ├── github_test.py        # Sandbox GitHub tests
+│   ├── health.py
 │   ├── ingest.py             # POST /ingest — full ingestion pipeline
-│   └── health.py
+│   └── retrieve.py           # POST /retrieve — RAG retrieval
+├── agents/                   # LangGraph definitions
+│   └── main_graph.py         # Planner/Coder/Reviewer nodes
+├── tools/                    # MCP tools
+│   ├── filesystem.py         # Sandbox FS tools
+│   └── github.py             # GitHub API wrappers
 └── core/
     ├── parsing.py            # PDF + DOCX text extraction
     ├── chunking.py           # Token-aware chunking
@@ -245,9 +266,9 @@ prisma/                       # Prisma schema and migrations
 | M1 — Foundation (auth, DB, UI shell) | ✅ Complete |
 | M2 — Chat (streaming, BYOK, history, attachments) | ✅ Complete |
 | M3 — RAG (ingestion, retrieval, citations) | ✅ Complete |
-| M4 — Memory | 🔲 Planned |
-| M5 — Agents (MCP + LangGraph) | 🔲 Planned |
-| M6 — Production evals and monitoring | 🔲 Planned |
+| M4 — Memory | ✅ Complete |
+| M5 — Agents (MCP + LangGraph) | ✅ Complete |
+| M6 — Production evals and monitoring | 🏗️ In Progress (#106, #107, #109 done; #103, #104, #105, #108 open) |
 
 ---
 

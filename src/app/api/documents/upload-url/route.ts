@@ -4,6 +4,7 @@ import { db } from '@/lib/db'
 import { supabaseAdmin } from '@/lib/supabase'
 import { createDocumentUploadSchema } from '@/lib/validations/document'
 import { randomUUID } from 'crypto'
+import { uploadRateLimiter } from '@/lib/rate-limit'
 
 export async function POST(req: Request) {
   try {
@@ -13,6 +14,14 @@ export async function POST(req: Request) {
       return NextResponse.json(
         { error: 'Unauthorized', message: 'You must be signed in', statusCode: 401 },
         { status: 401 }
+      )
+    }
+
+    const { success } = await uploadRateLimiter.limit(clerkId)
+    if (!success) {
+      return NextResponse.json(
+        { error: 'Too Many Requests', message: 'You have exceeded the rate limit of 10 uploads per hour.', statusCode: 429 },
+        { status: 429 }
       )
     }
 

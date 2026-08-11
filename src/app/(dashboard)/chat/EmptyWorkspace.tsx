@@ -1,10 +1,36 @@
-import { Sparkles, Clock } from "lucide-react";
+"use client";
+
+import { useRouter } from "next/navigation";
+import { Sparkles, Clock, MessageSquare, FileText, Loader2 } from "lucide-react";
 import { QuickActionCard } from "./QuickActionCard";
-import { SuggestedPrompt } from "./SuggestedPrompt";
 import { RecentActivityItem } from "./RecentActivityItem";
-import { MOCK_QUICK_ACTIONS, MOCK_SUGGESTED_PROMPTS, MOCK_RECENT_ACTIVITY } from "@/lib/mock-data";
+import { useWorkspace } from "@/components/providers/workspace-provider";
+import { useConversations, useCreateConversation } from "@/lib/queries/conversations";
+import { formatRelativeTime } from "@/lib/utils";
 
 export function EmptyWorkspace() {
+  const router = useRouter();
+  const { activeWorkspace } = useWorkspace();
+  const { data: conversations = [], isLoading } = useConversations(activeWorkspace?.id);
+  const { mutate: createConversation, isPending: isCreating } = useCreateConversation();
+
+  const recentConversations = (conversations as any[]).slice(0, 3);
+
+  const handleStartNewChat = () => {
+    createConversation(
+      { workspaceId: activeWorkspace?.id, model: "gemini-3.5-flash" },
+      {
+        onSuccess: (data) => {
+          router.push(`/chat/${data.id}`);
+        },
+      }
+    );
+  };
+
+  const handleUploadDocuments = () => {
+    router.push("/documents");
+  };
+
   return (
     <main 
       className="flex-1 overflow-y-auto w-full bg-background/50"
@@ -24,44 +50,43 @@ export function EmptyWorkspace() {
         </header>
 
         {/* Quick Actions Grid */}
-        <section aria-label="Quick Actions" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-16">
-          {MOCK_QUICK_ACTIONS.map((action, idx) => (
-            <QuickActionCard 
-              key={idx}
-              title={action.title}
-              description={action.description}
-              icon={action.icon}
-            />
-          ))}
+        <section aria-label="Quick Actions" className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-16 max-w-2xl mx-auto w-full">
+          <QuickActionCard 
+            title="Start New Chat"
+            description="Start a new conversation with an AI model."
+            icon={isCreating ? Loader2 : MessageSquare}
+            onClick={isCreating ? undefined : handleStartNewChat}
+          />
+          <QuickActionCard 
+            title="Upload Documents"
+            description="Add context documents to your workspace."
+            icon={FileText}
+            onClick={handleUploadDocuments}
+          />
         </section>
 
-        {/* Suggested Prompts & Activity */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 lg:gap-16">
-          <section aria-labelledby="suggested-heading" className="space-y-5">
-            <div className="flex items-center gap-2.5 px-1 border-b pb-2">
-              <Sparkles className="h-4 w-4 text-primary" aria-hidden="true" />
-              <h2 id="suggested-heading" className="text-sm font-semibold tracking-wide">Suggested for you</h2>
-            </div>
-            <div className="flex flex-col gap-2.5">
-              {MOCK_SUGGESTED_PROMPTS.map((prompt, idx) => (
-                <SuggestedPrompt key={idx} prompt={prompt} />
-              ))}
-            </div>
-          </section>
-
+        {/* Recent Activity */}
+        <div className="max-w-2xl mx-auto w-full">
           <section aria-labelledby="activity-heading" className="space-y-5">
             <div className="flex items-center gap-2.5 px-1 border-b pb-2">
               <Clock className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
               <h2 id="activity-heading" className="text-sm font-semibold tracking-wide text-muted-foreground">Recent Activity</h2>
             </div>
             <div className="flex flex-col gap-1 p-3 rounded-xl border bg-card/50 shadow-sm" role="list">
-              {MOCK_RECENT_ACTIVITY.map((activity) => (
-                <RecentActivityItem 
-                  key={activity.id}
-                  title={activity.title}
-                  time={activity.time}
-                />
-              ))}
+              {isLoading ? (
+                <div className="text-sm text-muted-foreground p-2">Loading recent activity...</div>
+              ) : recentConversations.length > 0 ? (
+                recentConversations.map((activity) => (
+                  <RecentActivityItem 
+                    key={activity.id}
+                    title={activity.title}
+                    time={formatRelativeTime(activity.updatedAt)}
+                    onClick={() => router.push(`/chat/${activity.id}`)}
+                  />
+                ))
+              ) : (
+                <div className="text-sm text-muted-foreground p-2">No recent activity found.</div>
+              )}
             </div>
           </section>
         </div>

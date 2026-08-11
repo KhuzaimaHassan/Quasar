@@ -82,7 +82,15 @@ function ChatContainer({ conversationId, persistedMessages }: { conversationId: 
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: ['conversation', conversationId] });
         queryClient.invalidateQueries({ queryKey: ['messages', conversationId] });
+        queryClient.invalidateQueries({ queryKey: ['conversations'] });
       }, 500);
+
+      // Additional invalidations to catch background LLM operations (e.g., auto-naming)
+      // which may take a few seconds to complete on the server after the stream ends.
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['conversation', conversationId] });
+        queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      }, 3000);
     }
     prevStatusRef.current = status;
   }, [status, conversationId, queryClient]);

@@ -1,6 +1,8 @@
-import { Paperclip } from "lucide-react";
+import { Paperclip, Pencil } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { useState, useRef, useEffect } from "react";
+import { Input } from "@/components/ui/input";
 
 interface ConversationCardProps {
   title: string;
@@ -9,9 +11,40 @@ interface ConversationCardProps {
   model: string;
   files: number;
   isActive: boolean;
+  onRename?: (newTitle: string) => void;
 }
 
-export function ConversationCard({ title, preview, time, model, files, isActive }: ConversationCardProps) {
+export function ConversationCard({ title, preview, time, model, files, isActive, onRename }: ConversationCardProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValue, setEditValue] = useState(title);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isEditing]);
+
+  const handleSave = () => {
+    setIsEditing(false);
+    if (editValue.trim() !== "" && editValue !== title) {
+      onRename?.(editValue.trim());
+    } else {
+      setEditValue(title); // revert
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleSave();
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      setIsEditing(false);
+      setEditValue(title);
+    }
+  };
+
   return (
     <article
       tabIndex={0}
@@ -23,11 +56,43 @@ export function ConversationCard({ title, preview, time, model, files, isActive 
       )}
       aria-current={isActive ? "page" : undefined}
     >
-      <div className="flex items-start justify-between w-full gap-2">
-        <h3 className="font-semibold text-sm truncate flex-1 text-foreground">
-          {title}
-        </h3>
-        <span className="text-xs whitespace-nowrap opacity-70 mt-0.5">
+      <div className="flex items-start justify-between w-full gap-2 group/header">
+        {isEditing ? (
+          <Input
+            ref={inputRef}
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            onBlur={handleSave}
+            onKeyDown={handleKeyDown}
+            onClick={(e) => e.stopPropagation()}
+            onDoubleClick={(e) => e.stopPropagation()}
+            className="h-6 text-sm px-1 py-0"
+          />
+        ) : (
+          <div className="flex-1 min-w-0 flex items-center gap-1.5">
+            <h3 
+              className="font-semibold text-sm truncate text-foreground"
+              onDoubleClick={(e) => {
+                e.stopPropagation();
+                setIsEditing(true);
+              }}
+              title="Double-click to rename"
+            >
+              {title}
+            </h3>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsEditing(true);
+              }}
+              className="opacity-0 group-hover/header:opacity-100 hover:text-foreground text-muted-foreground transition-opacity p-0.5 rounded"
+              title="Rename conversation"
+            >
+              <Pencil className="h-3 w-3" />
+            </button>
+          </div>
+        )}
+        <span className="text-xs whitespace-nowrap opacity-70 mt-0.5 shrink-0">
           {time}
         </span>
       </div>

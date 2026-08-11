@@ -281,3 +281,14 @@ Each decision is recorded here with the context, options considered, and rationa
 **Decision**: The nodes strictly use the `google-genai` SDK's native `response_schema` parameter by directly passing in rigidly defined Pydantic BaseModel schemas (e.g. `PlanOutput`, `CodeOutput`, `ReviewOutput`) along with `response_mime_type="application/json"`.
 
 **Rationale**: Free-text XML/markdown parsing using regex or string splitting is extremely brittle and frequently crashes LLM pipelines. By utilizing the SDK's native structured JSON enforcement, we guarantee that `response.parsed` automatically returns a deeply validated Python object. This pushes the burden of strict schema adherence directly onto the model and eliminates downstream parsing errors in our application logic.
+
+
+## ADR-017: Strict BYOK Server-Side Gating for Premium Models
+
+**Date:** 2026-08-11
+
+**Context:** A configuration gap was discovered where `gemini-2.5-pro` (a paid model) had `requiresKey: false` in the UI and the server-side API chat route hardcoded any `google` provider to use the server's default API key. This meant users could freely consume a premium model using the application's credentials, creating an uncontrolled spend vector. The gap existed for exactly one month (2026-07-14 to 2026-08-11).
+
+**Decision:** We updated `models.ts` so that all non-free tier models strictly flag `requiresKey: true`. More importantly, we refactored the server-side routing in `src/app/api/chat/route.ts`. The server now strictly consults `catalogEntry.requiresKey` to branch logic. If a model requires a key, it mandates an `ApiKey` row for that user and provider, decrypts it, and builds a dedicated provider instance for that model (now fully supporting BYOK for Anthropic, OpenAI, and Google).
+
+**Consequences:** The server's default API keys are now absolutely restricted to models explicitly whitelisted as free (e.g., `gemini-3.5-flash`). Any attempt to access a premium model without a decrypted BYOK key results in an immediate 400 rejection, sealing the spend vulnerability at the API layer regardless of UI state.

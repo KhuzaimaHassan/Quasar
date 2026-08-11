@@ -1,6 +1,7 @@
 import { Settings as SettingsIcon } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { ApiKeysSection } from "@/components/settings/ApiKeysSection";
+import { UsageSection } from "@/components/settings/UsageSection";
 
 export default function SettingsPage() {
   return (
@@ -11,8 +12,9 @@ export default function SettingsPage() {
         icon={SettingsIcon}
       />
       
-      <div className="max-w-2xl w-full">
+      <div className="max-w-2xl w-full flex flex-col gap-8">
         <ApiKeysSection />
+        <UsageSection />
       </div>
     </div>
   );

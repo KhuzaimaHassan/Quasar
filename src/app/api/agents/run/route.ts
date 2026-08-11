@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { createAgentRunSchema } from '@/lib/validations/agent-run'
 import { getGithubToken } from '@/lib/github-token'
+import { agentRunRateLimiter } from '@/lib/rate-limit'
 
 export const maxDuration = 60
 
@@ -52,6 +53,11 @@ export async function POST(req: Request) {
     const { userId: clerkId } = await auth()
     if (!clerkId) {
       return NextResponse.json({ error: 'Unauthorized', message: 'You must be signed in', statusCode: 401 }, { status: 401 })
+    }
+
+    const { success } = await agentRunRateLimiter.limit(clerkId)
+    if (!success) {
+      return NextResponse.json({ error: 'Too Many Requests', message: 'You have exceeded the rate limit of 5 agent runs per hour.', statusCode: 429 }, { status: 429 })
     }
 
     const user = await db.user.findUnique({ where: { clerkId }, select: { id: true } })
