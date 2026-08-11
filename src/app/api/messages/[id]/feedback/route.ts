@@ -82,7 +82,7 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
       await db.messageFeedback.delete({
         where: { messageId: id },
       })
-    } catch (e) {
+    } catch {
       // Prisma throws if the record doesn't exist, which is fine (idempotent delete)
     }
 
