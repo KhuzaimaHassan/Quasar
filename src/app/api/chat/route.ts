@@ -1,5 +1,5 @@
 import { auth } from '@clerk/nextjs/server'
-import { NextResponse } from 'next/server'
+import { NextResponse, after } from 'next/server'
 import { db } from '@/lib/db'
 import { streamText, createUIMessageStreamResponse, toUIMessageStream, generateText } from 'ai'
 import { google } from '@ai-sdk/google'
@@ -193,56 +193,60 @@ export async function POST(req: Request) {
         // Background memory extraction (Issue #95, Step 3)
         // Trigger every 5th message (using the request's messages array length)
         if (messages.length % 5 === 0) {
-          extractMemories(messages).then(async (facts) => {
-            for (const fact of facts) {
-              try {
-                await db.memory.upsert({
-                  where: {
-                    userId_scope_key: {
+          after(() => {
+            extractMemories(messages).then(async (facts) => {
+              for (const fact of facts) {
+                try {
+                  await db.memory.upsert({
+                    where: {
+                      userId_scope_key: {
+                        userId: user.id,
+                        scope: fact.scope,
+                        key: fact.key,
+                      }
+                    },
+                    update: {
+                      value: fact.value,
+                      confidence: fact.confidence,
+                    },
+                    create: {
                       userId: user.id,
                       scope: fact.scope,
                       key: fact.key,
+                      value: fact.value,
+                      confidence: fact.confidence,
                     }
-                  },
-                  update: {
-                    value: fact.value,
-                    confidence: fact.confidence,
-                  },
-                  create: {
-                    userId: user.id,
-                    scope: fact.scope,
-                    key: fact.key,
-                    value: fact.value,
-                    confidence: fact.confidence,
-                  }
-                });
-              } catch (err) {
-                console.error('[MEMORY_UPSERT_ERROR] Failed to upsert fact:', err);
+                  });
+                } catch (err) {
+                  console.error('[MEMORY_UPSERT_ERROR] Failed to upsert fact:', err);
+                }
               }
-            }
-          }).catch((err) => {
-            console.error('[MEMORY_EXTRACTION_FATAL]', err);
+            }).catch((err) => {
+              console.error('[MEMORY_EXTRACTION_FATAL]', err);
+            });
           });
         }
 
         // Conversation auto-naming
         if (conversation.title === 'New conversation') {
-          generateText({
-            model: google('gemini-3.5-flash'),
-            system: "Generate an extremely concise title (3-6 words) for this conversation based on the user's first message. Reply ONLY with the raw title text.",
-            prompt: userMessageContent
-          }).then(async ({ text }) => {
-            try {
-              await db.conversation.update({
-                where: { id: conversationId },
-                data: { title: text.trim().replace(/^["']|["']$/g, '') }
-              })
-            } catch (err) {
-              console.error('[AUTO_NAMING_DB_ERROR]', err)
-            }
-          }).catch(err => {
-            console.error('[AUTO_NAMING_GENERATION_ERROR]', err)
-          })
+          after(() => {
+            generateText({
+              model: google('gemini-3.5-flash'),
+              system: "Generate an extremely concise title (3-6 words) for this conversation based on the user's first message. Reply ONLY with the raw title text.",
+              prompt: userMessageContent
+            }).then(async ({ text }) => {
+              try {
+                await db.conversation.update({
+                  where: { id: conversationId },
+                  data: { title: text.trim().replace(/^["']|["']$/g, '') }
+                })
+              } catch (err) {
+                console.error('[AUTO_NAMING_DB_ERROR]', err)
+              }
+            }).catch(err => {
+              console.error('[AUTO_NAMING_FATAL_ERROR]', err)
+            })
+          });
         }
       },
     })
