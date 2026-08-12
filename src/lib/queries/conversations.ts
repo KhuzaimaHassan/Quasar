@@ -1,7 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import type { Conversation } from '@prisma/client'
 
 export function useConversations(workspaceId?: string | null) {
-  return useQuery({
+  return useQuery<Conversation[]>({
     queryKey: ['conversations', workspaceId],
     queryFn: async () => {
       const url = workspaceId 

@@ -14,8 +14,7 @@ export function EmptyWorkspace() {
   const { data: conversations = [], isLoading } = useConversations(activeWorkspace?.id);
   const { mutate: createConversation, isPending: isCreating } = useCreateConversation();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const recentConversations = (conversations as any[]).slice(0, 3);
+  const recentConversations = conversations.slice(0, 3);
 
   const handleStartNewChat = () => {
     createConversation(
