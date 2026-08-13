@@ -4,7 +4,6 @@ import { use, useMemo, useRef, useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
-import { ConversationList } from "../ConversationList";
 import { MessageList } from "@/components/chat/MessageList";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { useMessages, useConversation } from "@/lib/queries/conversations";
@@ -30,9 +29,6 @@ export default function DynamicChatPage({ params }: { params: Promise<{ id: stri
   if (isLoading) {
     return (
       <div className="flex h-full w-full overflow-hidden">
-        <div className="hidden md:flex h-full shrink-0">
-          <ConversationList />
-        </div>
         <div className="flex flex-1 items-center justify-center bg-muted/10">
           <span className="w-6 h-6 border-4 border-primary border-t-transparent rounded-full animate-spin"></span>
         </div>
@@ -196,10 +192,6 @@ function ChatContainer({ conversationId, persistedMessages }: { conversationId: 
 
   return (
     <div className="flex h-full w-full overflow-hidden">
-      <div className="hidden md:flex h-full shrink-0">
-        <ConversationList />
-      </div>
-
       <div className="flex flex-1 flex-col bg-muted/10 h-full relative">
         <ChatHeader conversationId={conversationId} />
         <MessageList draftMessages={draftMessages} persistedMessages={persistedMessages} />
@@ -225,19 +217,25 @@ function ChatHeader({ conversationId }: { conversationId: string }) {
   const { activeWorkspace, setActiveWorkspace } = useWorkspace();
   const { data: workspaces } = useWorkspaces();
   
-  // Force workspace synchronization on direct navigation or refresh
-  // This absolutely guarantees that the global workspace matches the conversation being viewed
+  const lastSyncedConversationId = useRef<string | null>(null);
+
+  // Force workspace synchronization on direct navigation or refresh.
+  // We use a ref to ensure this only happens once per conversation ID,
+  // preventing a race condition where it fights the WorkspaceSwitcher during navigation.
   useEffect(() => {
     if (conversation?.workspaceId && workspaces?.length) {
-      if (activeWorkspace?.id !== conversation.workspaceId) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const correctWorkspace = workspaces.find((w: any) => w.id === conversation.workspaceId);
-        if (correctWorkspace) {
-          setActiveWorkspace(correctWorkspace);
+      if (lastSyncedConversationId.current !== conversation.id) {
+        if (activeWorkspace?.id !== conversation.workspaceId) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const correctWorkspace = workspaces.find((w: any) => w.id === conversation.workspaceId);
+          if (correctWorkspace) {
+            setActiveWorkspace(correctWorkspace);
+          }
         }
+        lastSyncedConversationId.current = conversation.id;
       }
     }
-  }, [conversation?.workspaceId, workspaces, activeWorkspace?.id, setActiveWorkspace]);
+  }, [conversation?.id, conversation?.workspaceId, workspaces, activeWorkspace?.id, setActiveWorkspace]);
 
   if (!conversation) return null;
 

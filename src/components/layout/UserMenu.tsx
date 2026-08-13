@@ -1,9 +1,8 @@
 "use client";
 
-import { LogOut, Settings, Sparkles } from "lucide-react";
+import { LogOut, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { useUser, useClerk } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import {
@@ -34,9 +33,6 @@ export function UserMenu({ isCollapsed = false }: UserMenuProps) {
     .substring(0, 2)
     .toUpperCase();
   const imageUrl = user?.imageUrl;
-  
-  // Hardcoded for now as per instructions (until metadata is wired up)
-  const plan = "Pro";
 
   const handleSignOut = async () => {
     await signOut();
@@ -57,9 +53,6 @@ export function UserMenu({ isCollapsed = false }: UserMenuProps) {
           {!isCollapsed && (
             <div className="flex items-center justify-between flex-1 overflow-hidden">
               <span className="truncate text-sm font-medium">{displayName}</span>
-              <Badge variant="secondary" className="text-[10px] h-4 px-1.5 font-bold tracking-wide rounded-sm bg-primary/10 text-primary border-none">
-                {plan}
-              </Badge>
             </div>
           )}
         </Button>
@@ -69,7 +62,6 @@ export function UserMenu({ isCollapsed = false }: UserMenuProps) {
           <div className="flex flex-col space-y-1.5">
             <div className="flex items-center justify-between">
               <p className="text-sm font-semibold leading-none">{displayName}</p>
-              <Badge variant="secondary" className="text-[10px] h-4 px-1.5 font-bold tracking-wide rounded-sm bg-primary/10 text-primary border-none">{plan}</Badge>
             </div>
             {email && <p className="text-xs leading-none text-muted-foreground">{email}</p>}
           </div>
@@ -77,10 +69,6 @@ export function UserMenu({ isCollapsed = false }: UserMenuProps) {
         <DropdownMenuSeparator />
         
         <div className="p-1">
-          <DropdownMenuItem className="cursor-pointer gap-2 py-2 rounded-md">
-            <Sparkles className="h-4 w-4 text-primary" />
-            <span>Upgrade to Pro</span>
-          </DropdownMenuItem>
           <DropdownMenuItem onClick={() => router.push("/settings")} className="cursor-pointer gap-2 py-2 rounded-md">
             <Settings className="h-4 w-4 text-muted-foreground" />
             <span>Settings</span>

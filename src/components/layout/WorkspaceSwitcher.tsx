@@ -36,7 +36,7 @@ export function WorkspaceSwitcher() {
         setActiveWorkspace(newWs);
         setIsCreating(false);
         setNewName("");
-        if (pathname.startsWith('/chat/') || pathname.startsWith('/documents')) {
+        if (pathname.startsWith('/chat/') && pathname.length > '/chat/'.length) {
           router.push('/chat');
         }
       }
@@ -74,7 +74,7 @@ export function WorkspaceSwitcher() {
             className="cursor-pointer"
             onSelect={() => {
               setActiveWorkspace(workspace);
-              if (pathname.startsWith('/chat/') || pathname.startsWith('/documents')) {
+              if (pathname.startsWith('/chat/') && pathname.length > '/chat/'.length) {
                 router.push('/chat');
               }
             }}

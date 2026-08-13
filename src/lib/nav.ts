@@ -1,4 +1,4 @@
-import { MessageSquare, FileText, Brain, Settings, LucideIcon } from "lucide-react";
+import { MessageSquare, FileText, Brain, LucideIcon } from "lucide-react";
 
 export interface NavItem {
   label: string;
@@ -13,22 +13,11 @@ export interface NavGroup {
 
 export const navGroups: NavGroup[] = [
   {
-    label: "Workspace",
-    items: [
-      { label: "Documents", href: "/documents", icon: FileText },
-    ],
-  },
-  {
-    label: "AI",
+    label: "",
     items: [
       { label: "Chat", href: "/chat", icon: MessageSquare },
+      { label: "Documents", href: "/documents", icon: FileText },
       { label: "Memory", href: "/memory", icon: Brain },
-    ],
-  },
-  {
-    label: "Settings",
-    items: [
-      { label: "Settings", href: "/settings", icon: Settings },
     ],
   },
 ];
