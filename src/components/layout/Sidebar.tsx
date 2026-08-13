@@ -91,7 +91,7 @@ export function Sidebar() {
               <Button 
                 variant="ghost" 
                 size="icon"
-                className={cn("text-muted-foreground hover:text-foreground focus-visible:ring-2", isCollapsed ? "hidden" : "")}
+                className={cn("hidden md:flex text-muted-foreground hover:text-foreground focus-visible:ring-2", isCollapsed ? "md:hidden" : "")}
                 onClick={() => setIsCollapsed(!isCollapsed)}
                 aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
                 aria-expanded={!isCollapsed}
@@ -105,7 +105,7 @@ export function Sidebar() {
         
         {/* Collapse toggle for mobile/collapsed state when wordmark is gone or minimal */}
         {isCollapsed && (
-          <div className="flex justify-center pb-2 shrink-0">
+          <div className="hidden md:flex justify-center pb-2 shrink-0">
             <Button 
                 variant="ghost" 
                 size="icon"

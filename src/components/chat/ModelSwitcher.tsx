@@ -41,9 +41,9 @@ export function ModelSwitcher({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" className="h-8 gap-1 font-normal">
-          {selectedModel.label}
-          <ChevronDown className="h-3 w-3 text-muted-foreground" />
+        <Button variant="outline" size="sm" className="h-8 gap-1 font-normal max-w-[140px] sm:max-w-none">
+          <span className="truncate">{selectedModel.label}</span>
+          <ChevronDown className="h-3 w-3 text-muted-foreground shrink-0" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">

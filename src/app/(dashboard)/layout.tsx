@@ -10,7 +10,7 @@ export default function DashboardLayout({
 }) {
   return (
     <WorkspaceProvider>
-      <div className="flex h-screen overflow-hidden bg-background">
+      <div className="flex h-[100dvh] overflow-hidden bg-background">
         {/* Skip to content link for accessibility */}
         <a
           href="#main-content"

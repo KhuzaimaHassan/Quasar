@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { Menu, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -14,6 +15,12 @@ export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { activeWorkspace } = useWorkspace();
   const { theme, setTheme } = useTheme();
+  const pathname = usePathname();
+
+  // Close the mobile menu whenever the route changes
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [pathname]);
 
   return (
     <>

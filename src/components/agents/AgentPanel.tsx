@@ -35,9 +35,9 @@ export function AgentPanel({ conversationId, workspaceId }: { conversationId: st
   if (!isOpen) {
     return (
       <Button variant="outline" size="sm" onClick={() => setIsOpen(true)} className="h-8 gap-2">
-        <Bot className="h-4 w-4" />
-        Agent
-        <ChevronDown className="h-4 w-4 text-muted-foreground" />
+        <Bot className="h-4 w-4 shrink-0" />
+        <span className="hidden sm:inline">Agent</span>
+        <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0 hidden sm:block" />
       </Button>
     );
   }
