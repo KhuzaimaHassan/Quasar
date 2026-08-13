@@ -14,11 +14,14 @@ import {
 import { useWorkspaces, useCreateWorkspace } from "@/lib/queries/workspaces";
 import { useWorkspace } from "@/components/providers/workspace-provider";
 import { Workspace } from "@/types";
+import { useRouter, usePathname } from "next/navigation";
 
 export function WorkspaceSwitcher() {
   const { data: workspaces, isLoading } = useWorkspaces();
   const { mutate: createWorkspace, isPending: isCreatingWorkspace } = useCreateWorkspace();
   const { activeWorkspace, setActiveWorkspace } = useWorkspace();
+  const router = useRouter();
+  const pathname = usePathname();
   
   const [isCreating, setIsCreating] = useState(false);
   const [newName, setNewName] = useState("");
@@ -33,6 +36,9 @@ export function WorkspaceSwitcher() {
         setActiveWorkspace(newWs);
         setIsCreating(false);
         setNewName("");
+        if (pathname.startsWith('/chat/') || pathname.startsWith('/documents')) {
+          router.push('/chat');
+        }
       }
     });
   };
@@ -66,7 +72,12 @@ export function WorkspaceSwitcher() {
           <DropdownMenuItem 
             key={workspace.id} 
             className="cursor-pointer"
-            onSelect={() => setActiveWorkspace(workspace)}
+            onSelect={() => {
+              setActiveWorkspace(workspace);
+              if (pathname.startsWith('/chat/') || pathname.startsWith('/documents')) {
+                router.push('/chat');
+              }
+            }}
           >
             <span className="truncate">{workspace.name}</span>
           </DropdownMenuItem>

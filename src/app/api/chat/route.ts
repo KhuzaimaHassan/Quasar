@@ -15,6 +15,7 @@ export const maxDuration = 30
 export async function POST(req: Request) {
   try {
     const { userId: clerkId } = await auth()
+    
     if (!clerkId) {
       return new NextResponse('Unauthorized', { status: 401 })
     }
@@ -193,8 +194,7 @@ export async function POST(req: Request) {
         // Background memory extraction (Issue #95, Step 3)
         // Trigger every 5th message (using the request's messages array length)
         if (messages.length % 5 === 0) {
-          after(() => {
-            extractMemories(messages).then(async (facts) => {
+          after(() => extractMemories(messages).then(async (facts) => {
               for (const fact of facts) {
                 try {
                   await db.memory.upsert({
@@ -223,14 +223,13 @@ export async function POST(req: Request) {
               }
             }).catch((err) => {
               console.error('[MEMORY_EXTRACTION_FATAL]', err);
-            });
-          });
+            })
+          );
         }
 
         // Conversation auto-naming
         if (conversation.title === 'New conversation') {
-          after(() => {
-            generateText({
+          after(() => generateText({
               model: google('gemini-3.5-flash'),
               system: "Generate an extremely concise title (3-6 words) for this conversation based on the user's first message. Reply ONLY with the raw title text.",
               prompt: userMessageContent
@@ -246,7 +245,7 @@ export async function POST(req: Request) {
             }).catch(err => {
               console.error('[AUTO_NAMING_FATAL_ERROR]', err)
             })
-          });
+          );
         }
       },
     })
