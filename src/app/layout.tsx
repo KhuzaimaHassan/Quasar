@@ -24,7 +24,7 @@ export default function RootLayout({
   return (
     <ClerkProvider afterSignOutUrl="/sign-in">
       <html lang="en" suppressHydrationWarning>
-        <body className={`${inter.variable} font-sans antialiased`}>
+        <body className={`${inter.variable} font-sans antialiased`} suppressHydrationWarning>
           <ThemeProvider
             attribute="class"
             defaultTheme="system"

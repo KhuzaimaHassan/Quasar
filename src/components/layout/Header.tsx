@@ -6,7 +6,7 @@ import { Menu, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 import { Sidebar } from "./Sidebar";
-import { UserButton } from "@clerk/nextjs";
+import { UserButton, ClerkLoaded } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
 import { useWorkspace } from "@/components/providers/workspace-provider";
 import { useTheme } from "next-themes";
@@ -60,13 +60,15 @@ export function Header() {
             </Button>
           </div>
           
-          <UserButton 
-            appearance={{
-              elements: {
-                userButtonAvatarBox: "h-8 w-8 border border-border hover:opacity-80 transition-opacity"
-              }
-            }}
-          />
+          <ClerkLoaded>
+            <UserButton 
+              appearance={{
+                elements: {
+                  userButtonAvatarBox: "h-8 w-8 border border-border hover:opacity-80 transition-opacity"
+                }
+              }}
+            />
+          </ClerkLoaded>
         </div>
       </header>
 
