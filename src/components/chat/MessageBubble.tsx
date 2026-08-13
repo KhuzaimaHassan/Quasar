@@ -95,7 +95,7 @@ export function MessageBubble({ message, isPending, isStreaming }: MessageBubble
             <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce"></span>
           </div>
         ) : (
-          <div className="w-full break-words leading-relaxed">
+          <div className="w-full break-words leading-relaxed overflow-x-auto">
             {isUser ? (
               <div className="whitespace-pre-wrap [&_[data-streamdown='code-block']]:text-foreground [&_[data-streamdown='inline-code']]:text-foreground [&_[data-streamdown='table-wrapper']]:text-foreground">
                 <Streamdown mode="static" components={streamdownComponents} plugins={{ code }}>

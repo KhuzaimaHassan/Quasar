@@ -36,21 +36,21 @@ export function EmptyWorkspace() {
       className="flex-1 overflow-y-auto w-full bg-background/50"
       aria-label="Welcome Workspace"
     >
-      <div className="max-w-5xl mx-auto p-6 md:p-8 lg:p-12 pb-24 h-full flex flex-col justify-center animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="max-w-5xl mx-auto p-4 sm:p-6 md:p-8 lg:p-12 pb-24 h-full flex flex-col justify-center animate-in fade-in slide-in-from-bottom-4 duration-500">
         
         {/* Welcome Section */}
-        <header className="flex flex-col items-center text-center space-y-4 mb-16">
-          <div className="h-14 w-14 bg-primary/10 rounded-2xl flex items-center justify-center mb-2 shadow-sm border border-primary/10">
-            <Sparkles className="h-7 w-7 text-primary" aria-hidden="true" />
+        <header className="flex flex-col items-center text-center space-y-3 sm:space-y-4 mb-8 sm:mb-16">
+          <div className="h-12 w-12 sm:h-14 sm:w-14 bg-primary/10 rounded-2xl flex items-center justify-center mb-1 sm:mb-2 shadow-sm border border-primary/10">
+            <Sparkles className="h-6 w-6 sm:h-7 sm:w-7 text-primary" aria-hidden="true" />
           </div>
-          <h1 className="text-3xl font-semibold tracking-tight text-foreground">Welcome to Quasar</h1>
-          <p className="text-base text-muted-foreground max-w-2xl leading-relaxed">
+          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">Welcome to Quasar</h1>
+          <p className="text-sm sm:text-base text-muted-foreground max-w-2xl leading-relaxed">
             Your intelligent developer workspace. Interact with multiple AI models, upload context, and build software faster.
           </p>
         </header>
 
         {/* Quick Actions Grid */}
-        <section aria-label="Quick Actions" className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-16 max-w-2xl mx-auto w-full">
+        <section aria-label="Quick Actions" className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-5 mb-8 sm:mb-16 max-w-2xl mx-auto w-full">
           <QuickActionCard 
             title="Start New Chat"
             description="Start a new conversation with an AI model."
