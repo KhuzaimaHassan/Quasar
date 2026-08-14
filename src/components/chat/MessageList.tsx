@@ -72,10 +72,10 @@ export function MessageList({ draftMessages, persistedMessages = [] }: MessageLi
     <div
       ref={scrollRef}
       onScroll={handleScroll}
-      className="flex-1 overflow-y-auto p-4 md:p-6 pb-0"
+      className="flex-1 overflow-y-auto overflow-x-hidden min-w-0 p-3 sm:p-4 md:p-6 pb-0"
       aria-live="polite"
     >
-      <div className="max-w-3xl mx-auto flex flex-col pb-4">
+      <div className="max-w-3xl w-full mx-auto flex flex-col pb-4 min-w-0">
         {allMessages.map((msg) => (
           <MessageBubble
             key={msg.id}

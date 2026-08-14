@@ -69,8 +69,8 @@ export function Sidebar() {
     <TooltipProvider delayDuration={0}>
       <aside 
         className={cn(
-          "flex h-full flex-col border-r bg-card transition-all duration-300",
-          isCollapsed ? "w-[68px]" : "w-[260px] md:w-[320px]"
+          "flex h-full flex-col border-r bg-card transition-all duration-300 min-w-0",
+          isCollapsed ? "w-[68px]" : "w-[280px] md:w-[320px]"
         )}
         aria-label="Sidebar Navigation"
       >
@@ -235,9 +235,9 @@ export function Sidebar() {
               </div>
             </div>
 
-            <ScrollArea className="flex-1">
+            <ScrollArea className="flex-1 w-full min-w-0 [&>div>div]:!block [&>div>div]:!w-full">
               <div
-                className="px-2 pb-4 space-y-1"
+                className="px-2 pb-4 space-y-1 w-full min-w-0"
                 role="list"
                 aria-label="Conversation list"
               >
@@ -250,7 +250,7 @@ export function Sidebar() {
                 ) : (
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   filteredConversations.map((chat: any) => (
-                    <div key={chat.id} onClick={() => router.push(`/chat/${chat.id}`)}>
+                    <div key={chat.id} className="w-full min-w-0" onClick={() => router.push(`/chat/${chat.id}`)}>
                       <ConversationCard
                         title={chat.title}
                         time={formatRelativeTime(chat.updatedAt)}

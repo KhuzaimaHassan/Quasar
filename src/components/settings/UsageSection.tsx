@@ -51,21 +51,21 @@ export function UsageSection() {
           <>
             <div className="space-y-4">
               <h3 className="font-medium text-sm text-muted-foreground">Breakdown by Model</h3>
-              <div className="border rounded-lg overflow-hidden">
-                <table className="w-full text-sm text-left">
+              <div className="border rounded-lg overflow-x-auto">
+                <table className="w-full text-xs sm:text-sm text-left">
                   <thead className="bg-muted/50 border-b">
                     <tr>
-                      <th className="px-4 py-3 font-medium">Model</th>
-                      <th className="px-4 py-3 font-medium text-right">Total Tokens</th>
-                      <th className="px-4 py-3 font-medium text-right">Est. Cost</th>
+                      <th className="px-3 sm:px-4 py-2.5 sm:py-3 font-medium whitespace-nowrap">Model</th>
+                      <th className="px-3 sm:px-4 py-2.5 sm:py-3 font-medium text-right whitespace-nowrap">Total Tokens</th>
+                      <th className="px-3 sm:px-4 py-2.5 sm:py-3 font-medium text-right whitespace-nowrap">Est. Cost</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y">
                     {data.byModel.map((model) => (
                       <tr key={model.modelId} className="hover:bg-muted/30">
-                        <td className="px-4 py-3 font-medium">{model.label}</td>
-                        <td className="px-4 py-3 text-right">{model.totalTokens.toLocaleString()}</td>
-                        <td className="px-4 py-3 text-right font-medium">
+                        <td className="px-3 sm:px-4 py-2.5 sm:py-3 font-medium whitespace-nowrap">{model.label}</td>
+                        <td className="px-3 sm:px-4 py-2.5 sm:py-3 text-right whitespace-nowrap">{model.totalTokens.toLocaleString()}</td>
+                        <td className="px-3 sm:px-4 py-2.5 sm:py-3 text-right font-medium whitespace-nowrap">
                           {model.modelId === 'gemini-3.5-flash' ? (
                             <span className="text-green-600 dark:text-green-500">$0.00 (free tier)</span>
                           ) : (
@@ -89,21 +89,21 @@ export function UsageSection() {
             {data.trend.length > 0 && (
               <div className="space-y-4 pt-4 border-t">
                 <h3 className="font-medium text-sm text-muted-foreground">Daily Trend</h3>
-                <div className="border rounded-lg overflow-hidden">
-                  <table className="w-full text-sm text-left">
+                <div className="border rounded-lg overflow-x-auto">
+                  <table className="w-full text-xs sm:text-sm text-left">
                     <thead className="bg-muted/50 border-b">
                       <tr>
-                        <th className="px-4 py-3 font-medium">Date</th>
-                        <th className="px-4 py-3 font-medium text-right">Tokens</th>
-                        <th className="px-4 py-3 font-medium text-right">Cost</th>
+                        <th className="px-3 sm:px-4 py-2 sm:py-3 font-medium whitespace-nowrap">Date</th>
+                        <th className="px-3 sm:px-4 py-2 sm:py-3 font-medium text-right whitespace-nowrap">Tokens</th>
+                        <th className="px-3 sm:px-4 py-2 sm:py-3 font-medium text-right whitespace-nowrap">Cost</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y">
                       {data.trend.map((day) => (
                         <tr key={day.date} className="hover:bg-muted/30">
-                          <td className="px-4 py-2">{day.date}</td>
-                          <td className="px-4 py-2 text-right">{day.totalTokens.toLocaleString()}</td>
-                          <td className="px-4 py-2 text-right">${day.estimatedCost.toFixed(4)}</td>
+                          <td className="px-3 sm:px-4 py-2 font-medium whitespace-nowrap">{day.date}</td>
+                          <td className="px-3 sm:px-4 py-2 text-right whitespace-nowrap">{day.totalTokens.toLocaleString()}</td>
+                          <td className="px-3 sm:px-4 py-2 text-right whitespace-nowrap">${day.estimatedCost.toFixed(4)}</td>
                         </tr>
                       ))}
                     </tbody>

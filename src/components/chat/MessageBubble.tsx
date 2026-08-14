@@ -67,13 +67,13 @@ export function MessageBubble({ message, isPending, isStreaming }: MessageBubble
   return (
     <div
       className={cn(
-        "flex w-full mb-4 group",
+        "flex w-full mb-4 group min-w-0",
         isUser ? "justify-end" : "justify-start"
       )}
     >
       <div
         className={cn(
-          "relative max-w-[85%] sm:max-w-[75%] px-4 py-3 text-sm",
+          "relative max-w-[85%] sm:max-w-[75%] min-w-0 px-3.5 sm:px-4 py-2.5 sm:py-3 text-sm",
           isUser
             ? "bg-primary text-primary-foreground rounded-2xl rounded-br-sm"
             : "bg-muted text-foreground rounded-2xl rounded-bl-sm"
@@ -95,7 +95,7 @@ export function MessageBubble({ message, isPending, isStreaming }: MessageBubble
             <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce"></span>
           </div>
         ) : (
-          <div className="w-full break-words leading-relaxed overflow-x-auto">
+          <div className="w-full break-words leading-relaxed overflow-x-auto min-w-0">
             {isUser ? (
               <div className="whitespace-pre-wrap [&_[data-streamdown='code-block']]:text-foreground [&_[data-streamdown='inline-code']]:text-foreground [&_[data-streamdown='table-wrapper']]:text-foreground">
                 <Streamdown mode="static" components={streamdownComponents} plugins={{ code }}>

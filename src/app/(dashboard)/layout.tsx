@@ -27,7 +27,7 @@ export default function DashboardLayout({
         {/* Main Content Area: Stacked Header + Page Content */}
         <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
           <Header />
-          <main id="main-content" className="flex-1 overflow-auto flex relative">
+          <main id="main-content" className="flex-1 overflow-auto flex flex-col min-w-0 relative">
             {children}
           </main>
         </div>

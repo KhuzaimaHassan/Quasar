@@ -6,10 +6,33 @@ import { Menu, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 import { Sidebar } from "./Sidebar";
-import { UserButton, ClerkLoaded } from "@clerk/nextjs";
+import { UserButton } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
 import { useWorkspace } from "@/components/providers/workspace-provider";
 import { useTheme } from "next-themes";
+
+function HeaderUserButton() {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return <div className="h-8 w-8 rounded-full bg-muted border border-border shrink-0" />;
+  }
+
+  return (
+    <UserButton 
+      appearance={{
+        elements: {
+          userButtonAvatarBox: "h-8 w-8 border border-border hover:opacity-80 transition-opacity"
+        }
+      }}
+    />
+  );
+}
 
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -61,15 +84,7 @@ export function Header() {
             </Button>
           </div>
           
-          <ClerkLoaded>
-            <UserButton 
-              appearance={{
-                elements: {
-                  userButtonAvatarBox: "h-8 w-8 border border-border hover:opacity-80 transition-opacity"
-                }
-              }}
-            />
-          </ClerkLoaded>
+          <HeaderUserButton />
         </div>
       </header>
 
@@ -83,7 +98,7 @@ export function Header() {
       )}
       <div
         className={cn(
-          "fixed inset-y-0 left-0 z-50 w-[260px] transform transition-transform duration-300 ease-in-out md:hidden shadow-xl",
+          "fixed inset-y-0 left-0 z-50 w-[280px] sm:w-[300px] transform transition-transform duration-300 ease-in-out md:hidden shadow-xl",
           isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >

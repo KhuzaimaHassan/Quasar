@@ -33,10 +33,10 @@ export function EmptyWorkspace() {
 
   return (
     <main 
-      className="flex-1 overflow-y-auto w-full bg-background/50"
+      className="flex-1 overflow-y-auto w-full bg-background/50 flex flex-col min-w-0"
       aria-label="Welcome Workspace"
     >
-      <div className="max-w-5xl mx-auto p-4 sm:p-6 md:p-8 lg:p-12 pb-24 h-full flex flex-col justify-center animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="max-w-5xl w-full mx-auto p-4 sm:p-6 md:p-8 lg:p-12 pb-16 min-h-full flex flex-col justify-start md:justify-center my-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
         
         {/* Welcome Section */}
         <header className="flex flex-col items-center text-center space-y-3 sm:space-y-4 mb-8 sm:mb-16">

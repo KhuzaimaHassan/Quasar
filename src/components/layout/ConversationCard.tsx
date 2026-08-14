@@ -49,14 +49,14 @@ export function ConversationCard({ title, preview, time, model, files, isActive,
     <article
       tabIndex={0}
       className={cn(
-        "w-full flex flex-col gap-2 p-3 rounded-lg text-left transition-colors group cursor-pointer border border-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        "w-full flex flex-col gap-1.5 p-2.5 rounded-lg text-left transition-colors group cursor-pointer border border-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring overflow-hidden min-w-0",
         isActive 
           ? "bg-accent text-accent-foreground border-border/50" 
           : "hover:bg-accent/50 text-muted-foreground hover:text-foreground"
       )}
       aria-current={isActive ? "page" : undefined}
     >
-      <div className="flex items-start justify-between w-full gap-2 group/header">
+      <div className="flex items-start justify-between w-full gap-2 min-w-0 group/header">
         {isEditing ? (
           <Input
             ref={inputRef}
@@ -66,17 +66,17 @@ export function ConversationCard({ title, preview, time, model, files, isActive,
             onKeyDown={handleKeyDown}
             onClick={(e) => e.stopPropagation()}
             onDoubleClick={(e) => e.stopPropagation()}
-            className="h-6 text-sm px-1 py-0"
+            className="h-6 text-sm px-1 py-0 flex-1 min-w-0"
           />
         ) : (
-          <div className="flex-1 min-w-0 flex items-center gap-1.5">
+          <div className="flex-1 min-w-0 flex items-center gap-1 overflow-hidden">
             <h3 
-              className="font-semibold text-sm truncate text-foreground"
+              className="font-semibold text-sm truncate text-foreground flex-1 min-w-0"
               onDoubleClick={(e) => {
                 e.stopPropagation();
                 setIsEditing(true);
               }}
-              title="Double-click to rename"
+              title={title}
             >
               {title}
             </h3>
@@ -85,14 +85,14 @@ export function ConversationCard({ title, preview, time, model, files, isActive,
                 e.stopPropagation();
                 setIsEditing(true);
               }}
-              className="opacity-0 group-hover/header:opacity-100 hover:text-foreground text-muted-foreground transition-opacity p-0.5 rounded"
+              className="opacity-0 group-hover/header:opacity-100 hover:text-foreground text-muted-foreground transition-opacity p-0.5 rounded shrink-0"
               title="Rename conversation"
             >
               <Pencil className="h-3 w-3" />
             </button>
           </div>
         )}
-        <span className="text-xs whitespace-nowrap opacity-70 mt-0.5 shrink-0">
+        <span className="text-[11px] whitespace-nowrap opacity-70 mt-0.5 shrink-0 ml-1">
           {time}
         </span>
       </div>

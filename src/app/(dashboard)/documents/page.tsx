@@ -12,7 +12,7 @@ export default function DocumentsPage() {
   const { data: documents, isLoading } = useDocuments(activeWorkspace?.id ?? null);
 
   return (
-    <div className="flex flex-col h-full w-full p-6 lg:p-10 max-w-6xl mx-auto gap-8">
+    <div className="flex flex-col h-full w-full p-4 sm:p-6 lg:p-10 max-w-6xl mx-auto gap-6 sm:gap-8 overflow-y-auto">
       <PageHeader 
         title="Documents" 
         description="Upload and manage files to use as context for your AI models."

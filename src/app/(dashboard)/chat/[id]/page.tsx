@@ -28,7 +28,7 @@ export default function DynamicChatPage({ params }: { params: Promise<{ id: stri
   // Mount the actual chat only when initial messages are loaded, so useChat initializes correctly
   if (isLoading) {
     return (
-      <div className="flex h-full w-full overflow-hidden">
+      <div className="flex h-full w-full min-w-0 overflow-hidden">
         <div className="flex flex-1 items-center justify-center bg-muted/10">
           <span className="w-6 h-6 border-4 border-primary border-t-transparent rounded-full animate-spin"></span>
         </div>
@@ -191,8 +191,8 @@ function ChatContainer({ conversationId, persistedMessages }: { conversationId: 
 
 
   return (
-    <div className="flex h-full w-full overflow-hidden">
-      <div className="flex flex-1 flex-col bg-muted/10 h-full relative">
+    <div className="flex h-full w-full min-w-0 overflow-hidden">
+      <div className="flex flex-1 flex-col min-w-0 bg-muted/10 h-full relative">
         <ChatHeader conversationId={conversationId} />
         <MessageList draftMessages={draftMessages} persistedMessages={persistedMessages} />
         <ChatInput onSend={handleSend} isSending={isSending} onStop={stop} conversationId={conversationId} />
@@ -242,13 +242,13 @@ function ChatHeader({ conversationId }: { conversationId: string }) {
   const availableProviders = (apiKeys?.map((k: { provider: string }) => k.provider) || []) as Provider[];
 
   return (
-    <header className="flex items-center justify-between px-4 py-3 border-b bg-background/50 backdrop-blur-sm shrink-0 z-10 relative">
-      <div className="flex items-center min-w-0 flex-1 mr-4">
-        <h2 className="text-sm font-semibold text-foreground truncate">
+    <header className="flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 border-b bg-background/50 backdrop-blur-sm shrink-0 z-10 relative min-w-0">
+      <div className="flex items-center min-w-0 flex-1 mr-2 sm:mr-4">
+        <h2 className="text-xs sm:text-sm font-semibold text-foreground truncate">
           {conversation.title || 'New Conversation'}
         </h2>
       </div>
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
         <AgentPanel conversationId={conversationId} workspaceId={conversation.workspaceId} />
         <ModelSwitcher 
           conversationId={conversationId} 
