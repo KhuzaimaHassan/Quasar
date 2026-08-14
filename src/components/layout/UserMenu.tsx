@@ -57,7 +57,7 @@ export function UserMenu({ isCollapsed = false }: UserMenuProps) {
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-64 mb-2" align={isCollapsed ? "center" : "start"} side="right" sideOffset={12}>
+      <DropdownMenuContent className="w-64 mb-1" align={isCollapsed ? "center" : "start"} side={isCollapsed ? "right" : "top"} sideOffset={8}>
         <DropdownMenuLabel className="font-normal p-3">
           <div className="flex flex-col space-y-1.5">
             <div className="flex items-center justify-between">

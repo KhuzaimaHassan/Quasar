@@ -18,10 +18,12 @@ export function TokenBadge({ conversationId }: { conversationId: string }) {
 
   return (
     <span 
-      className="hidden sm:inline-flex text-[11px] font-medium text-muted-foreground/80 bg-muted/30 px-2 py-0.5 rounded-full border border-border/40 select-none"
+      className="inline-flex items-center text-[10px] sm:text-[11px] font-medium text-muted-foreground/80 bg-muted/40 px-1.5 sm:px-2 py-0.5 rounded-full border border-border/50 select-none whitespace-nowrap shrink-0 tabular-nums"
       title={`${tokens.toLocaleString()} tokens total`}
     >
-      {formatTokens(tokens)} tokens
+      <span>{formatTokens(tokens)}</span>
+      <span className="hidden sm:inline ml-1">tokens</span>
+      <span className="inline sm:hidden ml-0.5 text-[9px] opacity-70">tkn</span>
     </span>
   );
 }

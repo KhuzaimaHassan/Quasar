@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { Menu, Moon } from "lucide-react";
+import { Menu, Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 import { Sidebar } from "./Sidebar";
@@ -72,7 +72,7 @@ export function Header() {
 
         {/* Right Side: Actions & Profile */}
         <div className="flex items-center gap-3 lg:gap-5 shrink-0 ml-auto">
-          <div className="hidden sm:flex items-center gap-1.5">
+          <div className="flex items-center gap-1 sm:gap-1.5">
             <Button 
               variant="ghost" 
               size="icon" 
@@ -80,7 +80,11 @@ export function Header() {
               aria-label="Toggle theme"
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
             >
-              <Moon className="h-[18px] w-[18px]" />
+              {theme === "dark" ? (
+                <Sun className="h-[18px] w-[18px]" />
+              ) : (
+                <Moon className="h-[18px] w-[18px]" />
+              )}
             </Button>
           </div>
           
