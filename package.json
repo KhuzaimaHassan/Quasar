@@ -9,6 +9,9 @@
     "lint": "eslint",
     "type-check": "tsc --noEmit",
     "format": "prettier --write src/",
+    "eval": "npx tsx evals/run_evals.ts",
+    "eval:retrieval": "python evals/eval_retrieval.py",
+    "eval:generation": "npx tsx evals/eval_generation.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {

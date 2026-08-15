@@ -1,0 +1,138 @@
+[
+  {
+    "id": "resume_education",
+    "question": "Where did Khuzaima Hassan complete his undergraduate degree, and what was his CGPA?",
+    "workspaceId": "c3718835-6fb0-41fe-b91e-06fb626fe58b",
+    "expectedSourceFile": "Khuzaima_Hassan_Resume_1.docx",
+    "expectedFacts": [
+      "NED University of Engineering & Technology",
+      "B.S. in Data Science",
+      "CGPA of 3.885 (or first position)"
+    ]
+  },
+  {
+    "id": "resume_10pearls",
+    "question": "What was Khuzaima Hassan's role at 10Pearls and what did he build there?",
+    "workspaceId": "c3718835-6fb0-41fe-b91e-06fb626fe58b",
+    "expectedSourceFile": "Khuzaima_Hassan_Resume_1.docx",
+    "expectedFacts": [
+      "Data Science Intern (or Dec 2025 – Feb 2026)",
+      "MLOps pipeline for 3-day AQI forecasting"
+    ]
+  },
+  {
+    "id": "resume_teletabib",
+    "question": "What is TeleTabib and what technologies were used in its development?",
+    "workspaceId": "c3718835-6fb0-41fe-b91e-06fb626fe58b",
+    "expectedSourceFile": "Khuzaima_Hassan_Resume_1.docx",
+    "expectedFacts": [
+      "AI telehealth agent (Final Year Project)",
+      "LangGraph and open-source LLMs",
+      "RAG pipeline with FAISS and Sentence Transformers"
+    ]
+  },
+  {
+    "id": "resume_risk_scoring",
+    "question": "What did Khuzaima build in the Risk Scoring Platform project?",
+    "workspaceId": "c3718835-6fb0-41fe-b91e-06fb626fe58b",
+    "expectedSourceFile": "Khuzaima_Hassan_Resume_1.docx",
+    "expectedFacts": [
+      "Production fraud risk scoring platform",
+      "Built with Python, PostgreSQL, and FastAPI",
+      "Statistical drift detection and model monitoring"
+    ]
+  },
+  {
+    "id": "resume_skills",
+    "question": "What databases and visualization tools does Khuzaima Hassan have experience with?",
+    "workspaceId": "c3718835-6fb0-41fe-b91e-06fb626fe58b",
+    "expectedSourceFile": "Khuzaima_Hassan_Resume_1.docx",
+    "expectedFacts": [
+      "PostgreSQL and MySQL",
+      "Power BI, Pandas, NumPy, Matplotlib, or Seaborn"
+    ]
+  },
+  {
+    "id": "resume_certifications",
+    "question": "Which certifications does Khuzaima hold according to his resume?",
+    "workspaceId": "c3718835-6fb0-41fe-b91e-06fb626fe58b",
+    "expectedSourceFile": "Khuzaima_Hassan_Resume_1.docx",
+    "expectedFacts": [
+      "DataCamp certifications (ML Scientist, Data Analyst in SQL, or ML Engineer)",
+      "Huawei HCIA (or Coursera Python for DS AI & Dev)"
+    ]
+  },
+  {
+    "id": "cert_program",
+    "question": "What leadership certificate was awarded to Khuzaima Hassan, who issued it, and in what month/year?",
+    "workspaceId": "c3718835-6fb0-41fe-b91e-06fb626fe58b",
+    "expectedSourceFile": "Aspire-Certificate.pdf",
+    "expectedFacts": [
+      "2026 Aspire Leaders Program",
+      "Aspire Institute",
+      "July 2026"
+    ]
+  },
+  {
+    "id": "cert_coursework_hours",
+    "question": "How many hours of coursework and for which program does the certificate affirm?",
+    "workspaceId": "c3718835-6fb0-41fe-b91e-06fb626fe58b",
+    "expectedSourceFile": "Aspire-Certificate.pdf",
+    "expectedFacts": [
+      "40 hours of coursework",
+      "Aspire Leaders Program"
+    ]
+  },
+  {
+    "id": "cert_competencies",
+    "question": "What qualities and skills does the Aspire Institute certificate state Khuzaima demonstrated?",
+    "workspaceId": "c3718835-6fb0-41fe-b91e-06fb626fe58b",
+    "expectedSourceFile": "Aspire-Certificate.pdf",
+    "expectedFacts": [
+      "Enhanced critical thinking skills",
+      "Strengthened communication skills",
+      "Commitment to positive social impact (or self-confidence)"
+    ]
+  },
+  {
+    "id": "precision_aspire_credential",
+    "question": "Tell me about the credentials or awards Khuzaima earned specifically in July 2026.",
+    "workspaceId": "c3718835-6fb0-41fe-b91e-06fb626fe58b",
+    "expectedSourceFile": "Aspire-Certificate.pdf",
+    "expectedFacts": [
+      "Aspire Leaders Program certificate",
+      "Completed in July 2026 (or Aspire Institute)"
+    ]
+  },
+  {
+    "id": "precision_japanese_internship",
+    "question": "What database work did Khuzaima do during his Japanese Language & IT Internship?",
+    "workspaceId": "c3718835-6fb0-41fe-b91e-06fb626fe58b",
+    "expectedSourceFile": "Khuzaima_Hassan_Resume_1.docx",
+    "expectedFacts": [
+      "Added unique constraints to ensure data integrity or prevent duplicates",
+      "Wrote and executed database migration scripts"
+    ]
+  },
+  {
+    "id": "irrelevant_recipe",
+    "question": "What ingredients and steps are needed to make traditional French beef bourguignon?",
+    "workspaceId": "c3718835-6fb0-41fe-b91e-06fb626fe58b",
+    "expectedSourceFile": null,
+    "expectedFacts": []
+  },
+  {
+    "id": "irrelevant_astronomy",
+    "question": "What are the orbital properties and atmospheric composition of Neptune's moon Triton?",
+    "workspaceId": "c3718835-6fb0-41fe-b91e-06fb626fe58b",
+    "expectedSourceFile": null,
+    "expectedFacts": []
+  },
+  {
+    "id": "irrelevant_quantum",
+    "question": "How do superconducting Josephson junctions maintain quantum phase coherence in flux qubits?",
+    "workspaceId": "c3718835-6fb0-41fe-b91e-06fb626fe58b",
+    "expectedSourceFile": null,
+    "expectedFacts": []
+  }
+]
