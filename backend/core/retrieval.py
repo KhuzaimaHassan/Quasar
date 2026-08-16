@@ -8,7 +8,7 @@ async def retrieve_chunks(
     workspace_id: str, 
     query_embedding: List[float], 
     top_k: int = 5, 
-    similarity_threshold: float = 0.50
+    similarity_threshold: float = 0.7
 ) -> List[Dict[str, Any]]:
     """
     Retrieves the most semantically relevant chunks for a given query embedding within a specific workspace.

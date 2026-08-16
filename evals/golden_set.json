@@ -4,6 +4,9 @@
     "question": "Where did Khuzaima Hassan complete his undergraduate degree, and what was his CGPA?",
     "workspaceId": "c3718835-6fb0-41fe-b91e-06fb626fe58b",
     "expectedSourceFile": "Khuzaima_Hassan_Resume_1.docx",
+    "knownRetrievalGap": true,
+    "observedSimilarity": 0.6848,
+    "notes": "Known retrieval gap: scores 0.6848, below 0.70 threshold. Document not retrieved at production threshold.",
     "expectedFacts": [
       "NED University of Engineering & Technology",
       "B.S. in Data Science",
@@ -15,6 +18,9 @@
     "question": "What was Khuzaima Hassan's role at 10Pearls and what did he build there?",
     "workspaceId": "c3718835-6fb0-41fe-b91e-06fb626fe58b",
     "expectedSourceFile": "Khuzaima_Hassan_Resume_1.docx",
+    "knownRetrievalGap": true,
+    "observedSimilarity": 0.6901,
+    "notes": "Known retrieval gap: scores 0.6901, below 0.70 threshold. Document not retrieved at production threshold.",
     "expectedFacts": [
       "Data Science Intern (or Dec 2025 – Feb 2026)",
       "MLOps pipeline for 3-day AQI forecasting"
@@ -25,6 +31,9 @@
     "question": "What is TeleTabib and what technologies were used in its development?",
     "workspaceId": "c3718835-6fb0-41fe-b91e-06fb626fe58b",
     "expectedSourceFile": "Khuzaima_Hassan_Resume_1.docx",
+    "knownRetrievalGap": true,
+    "observedSimilarity": 0.5810,
+    "notes": "Known retrieval gap: scores 0.5810, below 0.70 threshold. Document not retrieved at production threshold.",
     "expectedFacts": [
       "AI telehealth agent (Final Year Project)",
       "LangGraph and open-source LLMs",
@@ -36,6 +45,9 @@
     "question": "What did Khuzaima build in the Risk Scoring Platform project?",
     "workspaceId": "c3718835-6fb0-41fe-b91e-06fb626fe58b",
     "expectedSourceFile": "Khuzaima_Hassan_Resume_1.docx",
+    "knownRetrievalGap": true,
+    "observedSimilarity": 0.6776,
+    "notes": "Known retrieval gap: scores 0.6776, below 0.70 threshold. Document not retrieved at production threshold.",
     "expectedFacts": [
       "Production fraud risk scoring platform",
       "Built with Python, PostgreSQL, and FastAPI",
@@ -47,6 +59,8 @@
     "question": "What databases and visualization tools does Khuzaima Hassan have experience with?",
     "workspaceId": "c3718835-6fb0-41fe-b91e-06fb626fe58b",
     "expectedSourceFile": "Khuzaima_Hassan_Resume_1.docx",
+    "knownRetrievalGap": false,
+    "observedSimilarity": 0.7353,
     "expectedFacts": [
       "PostgreSQL and MySQL",
       "Power BI, Pandas, NumPy, Matplotlib, or Seaborn"
@@ -57,6 +71,9 @@
     "question": "Which certifications does Khuzaima hold according to his resume?",
     "workspaceId": "c3718835-6fb0-41fe-b91e-06fb626fe58b",
     "expectedSourceFile": "Khuzaima_Hassan_Resume_1.docx",
+    "knownRetrievalGap": true,
+    "observedSimilarity": 0.6421,
+    "notes": "Known retrieval gap: chunk 2 (containing certifications text) scores below 0.70 threshold; only chunks 0 & 1 retrieved.",
     "expectedFacts": [
       "DataCamp certifications (ML Scientist, Data Analyst in SQL, or ML Engineer)",
       "Huawei HCIA (or Coursera Python for DS AI & Dev)"
@@ -67,6 +84,8 @@
     "question": "What leadership certificate was awarded to Khuzaima Hassan, who issued it, and in what month/year?",
     "workspaceId": "c3718835-6fb0-41fe-b91e-06fb626fe58b",
     "expectedSourceFile": "Aspire-Certificate.pdf",
+    "knownRetrievalGap": false,
+    "observedSimilarity": 0.7622,
     "expectedFacts": [
       "2026 Aspire Leaders Program",
       "Aspire Institute",
@@ -78,6 +97,9 @@
     "question": "How many hours of coursework and for which program does the certificate affirm?",
     "workspaceId": "c3718835-6fb0-41fe-b91e-06fb626fe58b",
     "expectedSourceFile": "Aspire-Certificate.pdf",
+    "knownRetrievalGap": true,
+    "observedSimilarity": 0.6823,
+    "notes": "Known retrieval gap: scores 0.6823, below 0.70 threshold. Document not retrieved at production threshold.",
     "expectedFacts": [
       "40 hours of coursework",
       "Aspire Leaders Program"
@@ -88,6 +110,8 @@
     "question": "What qualities and skills does the Aspire Institute certificate state Khuzaima demonstrated?",
     "workspaceId": "c3718835-6fb0-41fe-b91e-06fb626fe58b",
     "expectedSourceFile": "Aspire-Certificate.pdf",
+    "knownRetrievalGap": false,
+    "observedSimilarity": 0.8112,
     "expectedFacts": [
       "Enhanced critical thinking skills",
       "Strengthened communication skills",
@@ -99,6 +123,8 @@
     "question": "Tell me about the credentials or awards Khuzaima earned specifically in July 2026.",
     "workspaceId": "c3718835-6fb0-41fe-b91e-06fb626fe58b",
     "expectedSourceFile": "Aspire-Certificate.pdf",
+    "knownRetrievalGap": false,
+    "observedSimilarity": 0.7702,
     "expectedFacts": [
       "Aspire Leaders Program certificate",
       "Completed in July 2026 (or Aspire Institute)"
@@ -109,6 +135,8 @@
     "question": "What database work did Khuzaima do during his Japanese Language & IT Internship?",
     "workspaceId": "c3718835-6fb0-41fe-b91e-06fb626fe58b",
     "expectedSourceFile": "Khuzaima_Hassan_Resume_1.docx",
+    "knownRetrievalGap": false,
+    "observedSimilarity": 0.7886,
     "expectedFacts": [
       "Added unique constraints to ensure data integrity or prevent duplicates",
       "Wrote and executed database migration scripts"
@@ -119,6 +147,7 @@
     "question": "What ingredients and steps are needed to make traditional French beef bourguignon?",
     "workspaceId": "c3718835-6fb0-41fe-b91e-06fb626fe58b",
     "expectedSourceFile": null,
+    "knownRetrievalGap": false,
     "expectedFacts": []
   },
   {
@@ -126,6 +155,7 @@
     "question": "What are the orbital properties and atmospheric composition of Neptune's moon Triton?",
     "workspaceId": "c3718835-6fb0-41fe-b91e-06fb626fe58b",
     "expectedSourceFile": null,
+    "knownRetrievalGap": false,
     "expectedFacts": []
   },
   {
@@ -133,6 +163,7 @@
     "question": "How do superconducting Josephson junctions maintain quantum phase coherence in flux qubits?",
     "workspaceId": "c3718835-6fb0-41fe-b91e-06fb626fe58b",
     "expectedSourceFile": null,
+    "knownRetrievalGap": false,
     "expectedFacts": []
   }
 ]

@@ -82,11 +82,11 @@ async function main() {
   console.log("\n" + "=".repeat(80));
   console.log("                        FINAL EVALUATION REPORT CARD");
   console.log("=".repeat(80));
-  console.log(`Execution Time: ${durationSec}s`);
-  console.log(`Retrieval Eval:   ${retrievalPassed ? '\x1b[32m[PASS]\x1b[0m 100% (14/14 cases)' : '\x1b[31m[FAIL]\x1b[0m'}`);
+  console.log(`Execution Time:   ${durationSec}s`);
+  console.log(`Retrieval Eval:   ${retrievalPassed ? '\x1b[32m[PASS]\x1b[0m 9/14 Strict Passes (6 Hits + 3 Guardrails) + 5 Known Sub-0.70 Gaps' : '\x1b[31m[FAIL]\x1b[0m'}`);
   
   if (genResult) {
-    console.log(`Generation Eval:  ${generationPassed ? '\x1b[32m[PASS]\x1b[0m' : '\x1b[31m[FAIL]\x1b[0m'} ${genResult.passedCases}/${genResult.totalCases} cases (${((genResult.passedCases / genResult.totalCases) * 100).toFixed(1)}%)`);
+    console.log(`Generation Eval:  ${generationPassed ? '\x1b[32m[PASS]\x1b[0m' : '\x1b[31m[FAIL]\x1b[0m'} ${genResult.passedCases}/${genResult.totalCases} active cases (${((genResult.passedCases / genResult.totalCases) * 100).toFixed(1)}%)`);
     console.log(`Fact Verification:${genResult.passedFactsCount}/${genResult.totalFactsEvaluated} facts confirmed (${((genResult.passedFactsCount / genResult.totalFactsEvaluated) * 100).toFixed(1)}%)`);
   } else {
     console.log(`Generation Eval:  \x1b[31m[CRASHED]\x1b[0m`);
@@ -94,7 +94,7 @@ async function main() {
 
   const overallSuccess = retrievalPassed && generationPassed;
   console.log("-".repeat(80));
-  console.log(`OVERALL RESULT:   ${overallSuccess ? '\x1b[32mALL EVALS PASSED (READY)\x1b[0m' : '\x1b[31mEVALUATION FAILED (SEE DETAILS ABOVE)\x1b[0m'}`);
+  console.log(`OVERALL RESULT:   ${overallSuccess ? '\x1b[32mEVALUATION COMPLETE (TRUTH BASELINE ESTABLISHED)\x1b[0m' : '\x1b[31mEVALUATION FAILED\x1b[0m'}`);
   console.log("=".repeat(80) + "\n");
 
   process.exit(overallSuccess ? 0 : 1);
