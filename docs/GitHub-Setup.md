@@ -219,13 +219,13 @@ Or open them manually through the GitHub UI.
 
 ### Milestone 6 — Production
 
-**#32** — LangSmith integration (trace LLM calls + agent runs)
+**#32 / #103** — LangSmith integration (trace LLM calls + agent runs) [IMPLEMENTED]
 - Label: `ai`
-- Body: Set `LANGCHAIN_TRACING_V2=true` and `LANGCHAIN_API_KEY` in FastAPI env. Verify traces appear in LangSmith dashboard for both chat completions and agent runs. Add project tags (`quasar`, `production`, `staging`).
+- Body: Set `LANGCHAIN_TRACING_V2=true` and `LANGCHAIN_API_KEY` in FastAPI env. Verify traces appear in LangSmith dashboard for both chat completions and agent runs. Active client-side redaction ensures `github_token` and secrets are scrubbed to `[REDACTED]`. Add project tags (`quasar`, `agent`, `chat`).
 
 **#33** — Cost dashboard (token usage, cost per conversation, trends)
 - [x] **#104:** Create Cost Dashboard (Usage breakdown by model. Note: Cost figures are estimates based on published list pricing, not real billing data)
-- [ ] **#105:** Evaluation Suite
+- [x] **#105:** Evaluation Suite (Truth baseline established against 0.70 threshold)
 - [x] **#106:** Dockerize FastAPI RAG (Completed: The Dockerfile Render depends on already exists, no new work needed)
 - [x] **#107:** Set up CI pipeline for Next.js build and type checking
 
@@ -233,12 +233,9 @@ Or open them manually through the GitHub UI.
 - Label: `infra`
 - Body: `.github/workflows/ci.yml`. Jobs: frontend (npm ci, lint, type-check, build), backend (pip install, ruff check, mypy), and migration-check (pgvector container, npx prisma migrate deploy). Run on `pull_request` and `push` targeting `main`. Real automated test suites (pytest/vitest) are explicitly deferred to future work.
 
+**#37 / #108** — OpenTelemetry spans [INTENTIONALLY NOT BUILT]
 - Label: `infra`
-- Body: Satisfied by Render's existing Dockerfile. No further work needed.
-
-**#37** — OpenTelemetry spans (latency per retrieval / agent step / LLM call)
-- Label: `infra`
-- Body: Install `opentelemetry-instrumentation-fastapi` and `opentelemetry-instrumentation-sqlalchemy`. Instrument FastAPI app. Export spans to Uptrace or Jaeger (local). Add custom spans around RAG retrieval and LangGraph node transitions.
+- Body: Intentionally not built separately. LangSmith covers the full observability scope for LLM, RAG, and agent execution without redundant OpenTelemetry infrastructure (see ADR-018 in Decisions.md).
 
 **[COMPLETE] #109** — Message Feedback (thumbs up/down only - comment UI and LangSmith tracking deferred to #103)
 - Label: `feat`

@@ -9,6 +9,7 @@ import { extractMemories } from '@/lib/memory-extraction'
 import { MODEL_CATALOG } from '@/lib/models'
 import { decrypt } from '@/lib/encryption'
 import { chatRateLimiter } from '@/lib/rate-limit'
+import { traceChatGeneration, sanitizeTraceMetadata } from '@/lib/langsmith'
 
 export const maxDuration = 30
 
@@ -164,91 +165,108 @@ export async function POST(req: Request) {
       }
     }
 
-    const result = streamText({
-      model: languageModel,
-      system: systemPrompt,
-      messages: modelMessages,
-      async onFinish({ text, usage }) {
-        // Persist the assistant's response
-        await db.message.create({
-          data: {
-            conversationId,
-            role: 'assistant',
-            content: text,
-            tokenCount: usage.totalTokens,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            metadata: (citations.length > 0 ? { citations } : {}) as any,
-          },
-        })
+    const result = await traceChatGeneration(
+      `chat-${modelId}`,
+      () =>
+        streamText({
+          model: languageModel,
+          system: systemPrompt,
+          messages: modelMessages,
+          async onFinish({ text, usage }) {
+            // Persist the assistant's response
+            await db.message.create({
+              data: {
+                conversationId,
+                role: 'assistant',
+                content: text,
+                tokenCount: usage.totalTokens,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                metadata: (citations.length > 0 ? { citations } : {}) as any,
+              },
+            })
 
-        // Increment the conversation's total tokens
-        await db.conversation.update({
-          where: { id: conversationId },
-          data: {
-            totalTokens: {
-              increment: usage.totalTokens,
-            },
-          },
-        })
+            // Increment the conversation's total tokens
+            await db.conversation.update({
+              where: { id: conversationId },
+              data: {
+                totalTokens: {
+                  increment: usage.totalTokens,
+                },
+              },
+            })
 
-        // Background memory extraction (Issue #95, Step 3)
-        // Trigger every 5th message (using the request's messages array length)
-        if (messages.length % 5 === 0) {
-          after(() => extractMemories(messages).then(async (facts) => {
-              for (const fact of facts) {
-                try {
-                  await db.memory.upsert({
-                    where: {
-                      userId_scope_key: {
-                        userId: user.id,
-                        scope: fact.scope,
-                        key: fact.key,
+            // Background memory extraction (Issue #95, Step 3)
+            // Trigger every 5th message (using the request's messages array length)
+            if (messages.length % 5 === 0) {
+              after(() =>
+                extractMemories(messages)
+                  .then(async (facts) => {
+                    for (const fact of facts) {
+                      try {
+                        await db.memory.upsert({
+                          where: {
+                            userId_scope_key: {
+                              userId: user.id,
+                              scope: fact.scope,
+                              key: fact.key,
+                            },
+                          },
+                          update: {
+                            value: fact.value,
+                            confidence: fact.confidence,
+                          },
+                          create: {
+                            userId: user.id,
+                            scope: fact.scope,
+                            key: fact.key,
+                            value: fact.value,
+                            confidence: fact.confidence,
+                          },
+                        })
+                      } catch (err) {
+                        console.error('[MEMORY_UPSERT_ERROR] Failed to upsert fact:', err)
                       }
-                    },
-                    update: {
-                      value: fact.value,
-                      confidence: fact.confidence,
-                    },
-                    create: {
-                      userId: user.id,
-                      scope: fact.scope,
-                      key: fact.key,
-                      value: fact.value,
-                      confidence: fact.confidence,
                     }
-                  });
-                } catch (err) {
-                  console.error('[MEMORY_UPSERT_ERROR] Failed to upsert fact:', err);
-                }
-              }
-            }).catch((err) => {
-              console.error('[MEMORY_EXTRACTION_FATAL]', err);
-            })
-          );
-        }
+                  })
+                  .catch((err) => {
+                    console.error('[MEMORY_EXTRACTION_FATAL]', err)
+                  })
+              )
+            }
 
-        // Conversation auto-naming
-        if (conversation.title === 'New conversation') {
-          after(() => generateText({
-              model: google('gemini-3.5-flash'),
-              system: "Generate an extremely concise title (3-6 words) for this conversation based on the user's first message. Reply ONLY with the raw title text.",
-              prompt: userMessageContent
-            }).then(async ({ text }) => {
-              try {
-                await db.conversation.update({
-                  where: { id: conversationId },
-                  data: { title: text.trim().replace(/^["']|["']$/g, '') }
+            // Conversation auto-naming
+            if (conversation.title === 'New conversation') {
+              after(() =>
+                generateText({
+                  model: google('gemini-3.5-flash'),
+                  system:
+                    "Generate an extremely concise title (3-6 words) for this conversation based on the user's first message. Reply ONLY with the raw title text.",
+                  prompt: userMessageContent,
                 })
-              } catch (err) {
-                console.error('[AUTO_NAMING_DB_ERROR]', err)
-              }
-            }).catch(err => {
-              console.error('[AUTO_NAMING_FATAL_ERROR]', err)
-            })
-          );
-        }
-      },
-    })
+                  .then(async ({ text }) => {
+                    try {
+                      await db.conversation.update({
+                        where: { id: conversationId },
+                        data: { title: text.trim().replace(/^["']|["']$/g, '') },
+                      })
+                    } catch (err) {
+                      console.error('[AUTO_NAMING_DB_ERROR]', err)
+                    }
+                  })
+                  .catch((err) => {
+                    console.error('[AUTO_NAMING_FATAL_ERROR]', err)
+                  })
+              )
+            }
+          },
+        }),
+      sanitizeTraceMetadata({
+        conversationId,
+        workspaceId: conversation.workspaceId,
+        modelId,
+        provider,
+      })
+    )
 
     return createUIMessageStreamResponse({
       stream: toUIMessageStream({ 

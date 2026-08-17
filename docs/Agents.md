@@ -175,3 +175,10 @@ Instead, the UI provides:
 - **Max Planner Steps**: Hard cap at 8 plan steps per run to prevent runaway agents.
 - **Max Revisions**: Hard cap of 3 iterations for the Coder ↔ Reviewer loop to prevent infinite generation loops.
 - **Max tool calls**: Hard cap at 20 MCP calls per run.
+
+---
+
+## Observability
+
+Agent runs are traceable via **LangSmith** for inspecting execution graphs, node latency, state transitions, and LLM completions. A client-side redaction filter is strictly enforced before trace payloads leave the service, guaranteeing that user credentials (including `github_token` passed during resumption) are scrubbed to `"[REDACTED]"` and never transmitted to LangSmith.
+

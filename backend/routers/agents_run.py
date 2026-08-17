@@ -9,6 +9,7 @@ import asyncpg  # type: ignore[import-untyped]
 
 from core.security import verify_internal_secret
 from core.db import get_db
+from core.langsmith_client import get_langsmith_tracer
 from agents.main_graph import graph
 
 router = APIRouter(prefix="/agents/run", tags=["Agents Run"])
@@ -41,7 +42,13 @@ async def start_run(req: StartRunRequest, db: asyncpg.Connection = Depends(get_d
         str(uuid.uuid4()), req.conversation_id, thread_id, "running"
     )
     
-    config: RunnableConfig = {"configurable": {"thread_id": thread_id}}
+    tracer = get_langsmith_tracer()
+    callbacks = [tracer] if tracer else []
+    config: RunnableConfig = {
+        "configurable": {"thread_id": thread_id},
+        "callbacks": callbacks,
+        "tags": ["agent", req.execution_target]
+    }
     
     try:
         for event in graph.stream({
@@ -92,7 +99,13 @@ async def resume_run(thread_id: str, req: ResumeRunRequest, db: asyncpg.Connecti
     if not run_record:
         raise HTTPException(status_code=404, detail="AgentRun not found")
         
-    config: RunnableConfig = {"configurable": {"thread_id": thread_id}}
+    tracer = get_langsmith_tracer()
+    callbacks = [tracer] if tracer else []
+    config: RunnableConfig = {
+        "configurable": {"thread_id": thread_id},
+        "callbacks": callbacks,
+        "tags": ["agent", "resume"]
+    }
     state = graph.get_state(config)
     
     if not state or not state.next:

@@ -292,3 +292,34 @@ Each decision is recorded here with the context, options considered, and rationa
 **Decision:** We updated `models.ts` so that all non-free tier models strictly flag `requiresKey: true`. More importantly, we refactored the server-side routing in `src/app/api/chat/route.ts`. The server now strictly consults `catalogEntry.requiresKey` to branch logic. If a model requires a key, it mandates an `ApiKey` row for that user and provider, decrypts it, and builds a dedicated provider instance for that model (now fully supporting BYOK for Anthropic, OpenAI, and Google).
 
 **Consequences:** The server's default API keys are now absolutely restricted to models explicitly whitelisted as free (e.g., `gemini-3.5-flash`). Any attempt to access a premium model without a decrypted BYOK key results in an immediate 400 rejection, sealing the spend vulnerability at the API layer regardless of UI state.
+
+---
+
+## ADR-018: LangSmith Covers OpenTelemetry's Planned Scope — #108 Not Built Separately
+
+**Status**: Accepted  
+**Date**: M6 implementation
+
+**Context**: Issue #108 originally planned a generic OpenTelemetry instrumentation setup for tracing distributed requests across Next.js and FastAPI. Issue #103 planned LangSmith for LLM, RAG, and agent observability.
+
+**Decision**: We implement LangSmith (#103) as the single observability and tracing platform for both LangGraph agent runs (FastAPI) and chat generations (Next.js), and intentionally omit #108 as a redundant subsystem.
+
+**Rationale**: LangSmith provides deep, domain-specific tracing for LLMs, prompt chains, LangGraph state transitions, tool execution latency, and token consumption out of the box. Setting up a parallel OpenTelemetry collector, exporter pipeline, and backend dashboard would add infrastructure maintenance overhead without providing additional value over LangSmith's native LangGraph inspection capabilities.
+
+**Consequences**: Agent and chat traces are centralized in LangSmith. OpenTelemetry is marked as intentionally superseded and not built separately.
+
+---
+
+## ADR-019: Trace Redaction for github_token, Verified Against a Real Trace
+
+**Status**: Accepted  
+**Date**: M6 implementation
+
+**Context**: In the M5 security patch, `github_token` was removed from `AgentState` so that user OAuth tokens would never be serialized to the checkpointed Postgres database. However, LangGraph's automatic tracing captures runtime inputs—including payloads passed to `Command(resume=...)` when resuming interrupted graphs. This meant `github_token` could leak into external LangSmith traces even though it was excluded from Postgres checkpoint state.
+
+**Decision**: We implemented an active, recursive redaction layer passed to LangSmith Client (`hide_inputs` and `hide_outputs`), replacing `github_token` (and other sensitive credentials) with `"[REDACTED]"` before any trace payload is serialized or transmitted over the wire. This guarantee is verified directly against real traces in the LangSmith dashboard UI.
+
+**Rationale**: State exclusion and trace-input exclusion operate through completely independent mechanisms. Excluding a secret from checkpointed state only protects the database; it does not protect observability pipelines that capture invocation inputs. Active redaction at the client level ensures secrets are cleansed at the boundary before leaving the local process.
+
+**Consequences**: Traces in LangSmith safely capture agent execution structure, step timings, and tool names while guaranteeing that user credentials never appear in plain text or nested objects within LangSmith.
+
