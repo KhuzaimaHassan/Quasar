@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from langgraph.types import Command
 from langchain_core.runnables import RunnableConfig
+from langchain_core.callbacks import BaseCallbackHandler
 import asyncpg  # type: ignore[import-untyped]
 
 from core.security import verify_internal_secret
@@ -43,7 +44,7 @@ async def start_run(req: StartRunRequest, db: asyncpg.Connection = Depends(get_d
     )
     
     tracer = get_langsmith_tracer()
-    callbacks = [tracer] if tracer else []
+    callbacks: list[BaseCallbackHandler] = [tracer] if tracer else []
     config: RunnableConfig = {
         "configurable": {"thread_id": thread_id},
         "callbacks": callbacks,
@@ -100,7 +101,7 @@ async def resume_run(thread_id: str, req: ResumeRunRequest, db: asyncpg.Connecti
         raise HTTPException(status_code=404, detail="AgentRun not found")
         
     tracer = get_langsmith_tracer()
-    callbacks = [tracer] if tracer else []
+    callbacks: list[BaseCallbackHandler] = [tracer] if tracer else []
     config: RunnableConfig = {
         "configurable": {"thread_id": thread_id},
         "callbacks": callbacks,
