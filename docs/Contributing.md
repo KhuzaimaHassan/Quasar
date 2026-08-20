@@ -130,6 +130,17 @@ quasar/
 
 ---
 
+### Pre-Commit Secret Scanning (Standing Safeguard)
+
+To prevent credentials, API tokens, and database connection strings from leaking into Git history or commit diffs, Husky executes an automated secret scanning pre-commit hook (`scripts/scan-secrets.mjs`).
+
+- **Automated Hook:** Runs on every `git commit` via `.husky/pre-commit`.
+- **Manual Check:** `npm run scan:secrets`
+- **Protected Patterns:** Blocks API keys (`sk-...`, `ghp_...`, `lsv2_...`), cloud secrets (`whsec_...`, `AIza...`), JWT service role keys, and database connection strings (`postgresql://user:pass@host:5432/dbname`).
+- **Rule:** Never hardcode secrets in test scripts, documentation, or code. Always use `.env.local` (frontend) or `backend/.env` (FastAPI).
+
+---
+
 ### CI/CD Pipeline
 
 The project uses GitHub Actions for continuous integration.

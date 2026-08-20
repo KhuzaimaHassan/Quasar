@@ -2,7 +2,7 @@
 
 > AI-powered developer workspace — streaming chat, document RAG, and multi-model support.
 
-**Live Demo:** [https://qausar.vercel.app](https://qausar.vercel.app)
+**Live Demo:** [https://quasar-sand.vercel.app](https://quasar-sand.vercel.app)
 
 > **Note on the document ingestion service:** The RAG backend runs on Render's free tier, which spins down after 15 minutes of inactivity. The first document upload or retrieval call after an idle period may take 30–60 seconds to respond. This is expected and not a bug — subsequent calls are fast.
 
@@ -43,22 +43,26 @@ Quasar is a production-deployed AI developer workspace. It lets you:
 - **Responsive Layout** — desktop sidebar, mobile hamburger drawer, accessible at any viewport
 - **Memory** (M4) — long-term preference extraction and context injection
 - **Agents** (M5) — LangGraph state machine (Planner/Coder/Reviewer), MCP tool integrations, human-approval gate, GitHub commit capability with a pre-flight repo-access check
-
-### 🔮 Planned
-
-- **Production Evals** (M6) — LangSmith tracing, prompt eval suite, cost dashboard
+- **Production Evals & Observability** (M6) — LangSmith native tracing with client-side secret redaction (ADR-019), prompt evaluation suite (evals fixture), cost and token analytics dashboard
 
 ---
 
 ## Screenshots
 
-[screenshot: chat interface with streaming response]
+### Streaming Chat Interface
+![Streaming Chat](./public/screenshots/01_chat_streaming.png)
 
-[screenshot: documents page showing upload zone and document list with status badges]
+### Document Library & RAG
+![Documents Page](./public/screenshots/02_documents_page.png)
 
-[screenshot: settings page — BYOK API key management]
+### Long-Term Memory & User Preferences
+![Memory Page](./public/screenshots/03_memory_page.png)
 
-[screenshot: mobile view — hamburger nav open]
+### Settings — BYOK API Key Management & Cost Analytics
+![Settings Page](./public/screenshots/04_settings_page.png)
+
+### Responsive Mobile Drawer
+![Mobile View](./public/screenshots/05_mobile_view.png)
 
 ---
 
