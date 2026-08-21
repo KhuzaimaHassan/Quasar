@@ -180,7 +180,7 @@ evals/                        # RAG & prompt evaluation suite
 | **M5 — Agents** | LangGraph State Graph, MCP Tools, GitHub Human Gate | ✅ **100% Complete** |
 | **M6 — Evals & Observability** | LangSmith Tracing (ADR-018), Evals Suite, Cost Analytics | ✅ **100% Complete** |
 
-> **Deliberate Design Decisions:** Features #92 (Local WebGPU/Ollama execution), #93 (Elasticsearch hybrid search), and #108 (Sentry error tracking) were intentionally not built following architectural evaluation — choosing native pgvector RRF hybrid re-ranking and client-sanitized LangSmith tracing instead. Full rationale and trade-offs are documented in [ADR-018](docs/Decisions.md#adr-018-client-side-langsmith-tracing-redaction) and [ADR-019](docs/Decisions.md#adr-019-observability-langsmith-vs-sentry).
+> **Notes on Deferred Scope:** Features #92 (Local WebGPU/Ollama execution), #93 (Elasticsearch hybrid search), and #108 (Sentry error tracking) were evaluated and deliberately deferred in favor of pgvector RRF re-ranking and native LangSmith tracing. Details are documented in [ADR-018](docs/Decisions.md#adr-018-client-side-langsmith-tracing-redaction) and [ADR-019](docs/Decisions.md#adr-019-observability-langsmith-vs-sentry).
 
 ---
 
