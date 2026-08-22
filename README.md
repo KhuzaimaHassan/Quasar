@@ -183,7 +183,7 @@ evals/                        # RAG & prompt evaluation suite
 > **Deliberate Design Decisions:** Several planned items were intentionally not built following architectural evaluation:
 > - **#92 (Redis sliding window buffer):** Not built; a simple 30-message count cap was sufficient for this project's scale ([ADR-006](docs/Decisions.md#adr-006-redis-for-short-term-memory-buffer), [ADR-011](docs/Decisions.md#adr-011-no-redis-for-short-term-memory)).
 > - **#93 (Conversation summarization / compression):** Skipped for the same scale reasoning as #92 ([ADR-011](docs/Decisions.md#adr-011-no-redis-for-short-term-memory)); long-term preference extraction (#95) was built separately.
-> - **#108 (OpenTelemetry tracing):** Not built because native LangSmith tracing shipped in #103 covers the full LLM, RAG, and agent observability surface ([ADR-018](docs/Decisions.md#adr-018-langsmith-covers-opentelemetry-planned-scope--108-not-built-separately)).
+> - **#108 (OpenTelemetry tracing):** Not built because native LangSmith tracing shipped in #103 covers the full LLM, RAG, and agent observability surface ([ADR-018](docs/Decisions.md#adr-018-langsmith-covers-opentelemetrys-planned-scope--108-not-built-separately)).
 
 ---
 
