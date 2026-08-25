@@ -155,7 +155,7 @@ async def check_repo_access(req: CheckRepoAccessRequest):
     try:
         has_access = check_repo_write_access(req.github_token, req.target_repo)
         return {"has_access": has_access}
-    except Exception as e:
+    except Exception:
         import logging
         logging.exception("Repo access check failed for %s", req.target_repo)
         return {"has_access": False, "error": "Failed to check repository access"}
