@@ -189,12 +189,24 @@ function ChatContainer({ conversationId, persistedMessages }: { conversationId: 
     });
   }
 
+  const handleRetry = () => {
+    if (persistedMessages.length > 0) {
+      const lastMsg = persistedMessages[persistedMessages.length - 1];
+      if (lastMsg.role === 'user' && lastMsg.content) {
+        sendMessage(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          { text: lastMsg.content, files: undefined } as any,
+          { body: { conversationId } }
+        );
+      }
+    }
+  };
 
   return (
     <div className="flex h-full w-full min-w-0 overflow-hidden">
       <div className="flex flex-1 flex-col min-w-0 bg-muted/10 h-full relative">
         <ChatHeader conversationId={conversationId} />
-        <MessageList draftMessages={draftMessages} persistedMessages={persistedMessages} />
+        <MessageList draftMessages={draftMessages} persistedMessages={persistedMessages} onRetry={handleRetry} />
         <ChatInput onSend={handleSend} isSending={isSending} onStop={stop} conversationId={conversationId} />
       </div>
     </div>

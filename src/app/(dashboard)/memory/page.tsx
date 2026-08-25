@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Brain, Plus, Trash2, Edit2, Check, X, Loader2 } from "lucide-react";
+import { Brain, Plus, Trash2, Edit2, Check, X, Loader2, AlertCircle } from "lucide-react";
 import { PageHeader, EmptyState } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -57,10 +57,15 @@ function MemoryRow({ memory }: { memory: Memory }) {
             </Button>
           </div>
         ) : (
-          <div className="flex items-center gap-2 group-hover:bg-muted/50 p-1 -ml-1 rounded cursor-pointer transition-colors" onClick={() => setIsEditing(true)}>
+          <button
+            type="button"
+            className="flex items-center gap-2 group-hover:bg-muted/50 p-1 -ml-1 rounded cursor-pointer transition-colors text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            onClick={() => setIsEditing(true)}
+            aria-label={`Edit ${memory.key}: ${memory.value}`}
+          >
             <span className="text-sm font-medium">{memory.value}</span>
             <Edit2 className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
-          </div>
+          </button>
         )}
       </div>
       <Button 
@@ -69,6 +74,7 @@ function MemoryRow({ memory }: { memory: Memory }) {
         className="h-8 w-8 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mt-2" 
         onClick={() => deleteMemory(memory.id)}
         disabled={isDeleting || isEditing}
+        aria-label={`Delete ${memory.key} memory`}
       >
         {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
       </Button>
@@ -151,7 +157,7 @@ function MemorySection({ title, description, memories }: { title: string, descri
 }
 
 export default function MemoryPage() {
-  const { data: memories, isLoading } = useMemories();
+  const { data: memories, isLoading, error } = useMemories();
   const { mutate: clearMemories, isPending: isClearing } = useClearMemories();
   const [showClearDialog, setShowClearDialog] = useState(false);
 
@@ -159,6 +165,23 @@ export default function MemoryPage() {
     return (
       <div className="flex items-center justify-center h-full w-full">
         <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col h-full w-full p-4 sm:p-6 lg:p-10 max-w-6xl mx-auto gap-6 sm:gap-8 overflow-y-auto">
+        <PageHeader 
+          title="Memory" 
+          description="Manage what Quasar remembers about your preferences, projects, styles, and facts."
+          icon={Brain}
+        />
+        <EmptyState 
+          icon={AlertCircle}
+          title="Something went wrong loading memory"
+          description="Failed to load your stored memories. Please try refreshing the page."
+        />
       </div>
     );
   }

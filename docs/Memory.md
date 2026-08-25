@@ -6,7 +6,7 @@ Quasar maintains two types of memory to make conversations feel persistent and p
 
 | Type | Storage | Scope | Lifespan |
 |------|---------|-------|----------|
-| Short-term | Redis | Per-conversation | 24 hours (TTL) |
+| Short-term | In-Memory (DB backed) | Per-conversation | 30-message window (ADR-011) |
 | Long-term | PostgreSQL | Per-user | Permanent (until deleted) |
 
 Short-term memory is the conversation's sliding window — it prevents the context from growing unboundedly as a conversation gets long. Long-term memory captures durable facts about the user: their preferred frameworks, ongoing projects, coding style.
@@ -128,7 +128,7 @@ The UI is built using React Query hooks (`useMemories`, `useUpdateMemory`, etc.)
 
 | Failure | Handling |
 |---------|----------|
-| Redis unavailable | Fall back to DB-only conversation history; degraded short-term memory but functional |
+| Context window exceeded | Automatically trimmed to last 30 messages in memory (ADR-011) |
 | Extraction produces malformed JSON | Catch parse error, skip extraction for that session, log |
 | Memory conflicts (contradictory facts) | New value overwrites old; log the conflict for review |
 | User deletes memory mid-conversation | Re-fetch memories before each request, not once at session start |

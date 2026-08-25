@@ -46,3 +46,6 @@ __pycache__/
 *$py.class
 venv/
 backend/.env
+
+# Local tooling / Agent cache
+.agents/

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { MessageBubble, type MessageProps } from "./MessageBubble";
+import { AlertCircle, RotateCcw } from "lucide-react";
 
 interface DraftMessage extends MessageProps {
   isPending?: boolean;
@@ -12,9 +13,10 @@ interface MessageListProps {
   draftMessages: DraftMessage[];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   persistedMessages?: any[];
+  onRetry?: () => void;
 }
 
-export function MessageList({ draftMessages, persistedMessages = [] }: MessageListProps) {
+export function MessageList({ draftMessages, persistedMessages = [], onRetry }: MessageListProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isUserScrolledUp, setIsUserScrolledUp] = useState(false);
 
@@ -40,6 +42,13 @@ export function MessageList({ draftMessages, persistedMessages = [] }: MessageLi
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const allMessages = [...mappedPersisted, ...mappedDrafts];
+
+  // Detect orphaned user message: last persisted message is from user,
+  // and there are no draft messages (streaming/pending) in progress
+  const lastPersisted = mappedPersisted[mappedPersisted.length - 1];
+  const hasOrphanedMessage =
+    lastPersisted?.role === "user" &&
+    draftMessages.length === 0;
 
   // Auto-scroll logic
   useEffect(() => {
@@ -84,6 +93,23 @@ export function MessageList({ draftMessages, persistedMessages = [] }: MessageLi
             isStreaming={(msg as DraftMessage).isStreaming}
           />
         ))}
+        {hasOrphanedMessage && (
+          <div className="flex justify-start mb-4">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded-lg px-3 py-2">
+              <AlertCircle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+              <span>No response received</span>
+              {onRetry && (
+                <button
+                  onClick={onRetry}
+                  className="inline-flex items-center gap-1 ml-1 text-xs font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  Try again
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

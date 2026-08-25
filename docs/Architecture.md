@@ -32,8 +32,8 @@ Quasar is a three-tier web application with a clear separation between the clien
 │  DATA / AI LAYER                                            │
 │                                                             │
 │  PostgreSQL + Prisma   pgvector (embeddings)               │
-│  Redis (short-term memory)   Supabase Storage              │
-│  Claude API   OpenAI API   LangSmith   OpenTelemetry       │
+│  Upstash Redis (rate limit)  Supabase Storage              │
+│  LLM APIs (Gemini/Anthropic/OpenAI)   LangSmith (Tracing)  │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -142,7 +142,8 @@ See [Decisions.md](Decisions.md) for the full ADR list. The short versions:
 
 - **Next.js API routes first, FastAPI only from M3** — avoids dual-service complexity in early milestones.
 - **pgvector over Pinecone** — keeps infra simple; add Pinecone if chunks exceed ~1M.
-- **PostgreSQL over Redis for memory in M4 prototype** — validate the logic first, then add Redis for performance.
+- **In-memory message cap over Redis for short-term memory (ADR-011)** — 30-message slice suffices given large model context windows; avoids extra cache infrastructure.
+- **LangSmith covers observability scope (ADR-018)** — unified LLM trace and latency tracking in LangSmith superseded separate OpenTelemetry spans.
 - **Clerk over Auth.js** — faster to implement, better DX, free tier is sufficient.
 - **Supabase Storage over S3** — same bucket as DB provider, row-level security, no extra account.
 

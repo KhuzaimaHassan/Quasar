@@ -2,7 +2,7 @@
 
 ## Overview
 
-Quasar uses a single PostgreSQL database for all relational data. The `pgvector` extension is added for vector similarity search (RAG). Redis is used alongside PostgreSQL from M4 onward for the short-term conversation memory buffer.
+Quasar uses a single PostgreSQL database for all relational data. The `pgvector` extension is added for vector similarity search (RAG). Per ADR-011, short-term memory is handled via an in-memory message-count cap (last 30 messages) in the application layer rather than an external Redis buffer. (Upstash Redis is used independently for API rate limiting in M5/M6).
 
 ORM: **Prisma** (type-safe, migration-based, integrates cleanly with Next.js).
 
@@ -207,13 +207,12 @@ CREATE INDEX idx_documents_status ON documents(status);
 
 ---
 
-## Redis (Memory Buffer — M4)
+## Redis / Upstash (Rate Limiting — M5/M6)
 
-Not managed by Prisma. Used as a sliding-window buffer for conversation context.
+Per ADR-011, Redis is **not** used as a conversation memory buffer (the app relies on a simple in-memory 30-message cap). Instead, Upstash Redis is used via `@upstash/ratelimit` for sliding-window rate limiting on API endpoints (`/api/chat`, `/api/documents/upload-url`, `/api/agents/run`).
 
-| Key pattern | TTL | Value |
-|-------------|-----|-------|
-| `conv:{conversation_id}:buffer` | 24h | JSON array of last N messages |
-| `conv:{conversation_id}:summary` | 7d | Compressed summary of older turns |
-
-Connection via `ioredis`. Single Redis instance is fine for this scale.
+| Key pattern | Algorithm | Limit |
+|-------------|-----------|-------|
+| `@upstash/ratelimit:chat:{userId}` | Sliding window (1m) | 20 req/min |
+| `@upstash/ratelimit:upload:{userId}` | Sliding window (1h) | 10 req/hr |
+| `@upstash/ratelimit:agent:{userId}` | Sliding window (1h) | 5 req/hr |

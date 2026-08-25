@@ -273,23 +273,13 @@ Access traces at `https://smith.langchain.com/projects/quasar`.
 
 ## Monitoring
 
+Per ADR-018, LangSmith serves as the primary observability layer for LLM calls, retrieval latency, and multi-step agent execution, superseding separate OpenTelemetry setup.
+
 | Tool | What it monitors |
 |------|-----------------|
-| LangSmith | LLM call latency, token usage, agent step traces |
-| OpenTelemetry + Uptrace | HTTP request latency, error rates, DB query times |
+| LangSmith | LLM call latency, token usage, retrieval & agent step traces (ADR-018) |
 | Vercel Analytics | Frontend page load, Core Web Vitals |
 | Render Metrics | CPU, memory, and logs for FastAPI container |
-
-### OpenTelemetry setup (FastAPI)
-
-```python
-from opentelemetry import trace
-from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
-from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
-
-FastAPIInstrumentor.instrument_app(app)
-SQLAlchemyInstrumentor().instrument()
-```
 
 ---
 

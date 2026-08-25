@@ -28,7 +28,7 @@ export function Sidebar() {
   const [newChatModel, setNewChatModel] = useState("gemini-3.5-flash");
 
   const { activeWorkspace } = useWorkspace();
-  const { data: conversations = [], isLoading } = useConversations(activeWorkspace?.id);
+  const { data: conversations = [], isLoading, error } = useConversations(activeWorkspace?.id);
   const { mutate: createConversation, isPending: isCreating } = useCreateConversation();
   const { mutate: updateConversation } = useUpdateConversation();
 
@@ -243,6 +243,11 @@ export function Sidebar() {
               >
                 {isLoading ? (
                   <div className="p-4 text-center text-xs text-muted-foreground">Loading chats...</div>
+                ) : error ? (
+                  <div className="p-4 text-center text-xs text-muted-foreground flex flex-col items-center gap-1">
+                    <span className="text-destructive font-medium">Something went wrong loading chats</span>
+                    <span className="text-[10px]">Please refresh to retry</span>
+                  </div>
                 ) : filteredConversations.length === 0 ? (
                   <div className="p-4 text-center text-xs text-muted-foreground">
                     {searchQuery ? "No chats found." : "No conversations yet."}

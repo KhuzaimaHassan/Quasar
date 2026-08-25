@@ -33,6 +33,10 @@ if (!workspace) return new Response('Not found', { status: 404 });
 
 Return 404 (not 403) when a resource belongs to another user — this avoids leaking the existence of other users' resources.
 
+### Internal Service Trust Boundary (FastAPI)
+
+The FastAPI backend is strictly an internal service and is not exposed to end users. It trusts any caller presenting a valid `X-Internal-Secret` matching `INTERNAL_SERVICE_SECRET`. Consequently, FastAPI does **not** independently verify resource ownership (such as checking whether a `workspace_id` or `conversation_id` belongs to the requesting user) — all user authentication, rate limiting, and ownership enforcement are deliberately handled at the Next.js API layer before forwarding requests. This is an intentional, load-bearing architecture decision: the Next.js backend serves as the single security gateway and authoritative source of truth for user context and access control.
+
 ---
 
 ## API Keys
