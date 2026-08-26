@@ -118,9 +118,9 @@ quasar/
 │   ├── agents/               ← LangGraph nodes
 │   ├── requirements.txt
 │   └── Dockerfile
-├── evals/                    ← Evaluation suite
+├── evals/                    ← RAGAS evaluation suite
 │   ├── golden_set.json
-│   └── run_evals.py
+│   └── run_eval.py
 ├── docs/                     ← All documentation
 ├── .github/
 │   ├── workflows/

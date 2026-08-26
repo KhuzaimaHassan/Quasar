@@ -9,9 +9,7 @@
     "lint": "eslint",
     "type-check": "tsc --noEmit",
     "format": "prettier --write src/",
-    "eval": "npx tsx evals/run_evals.ts",
-    "eval:retrieval": "python evals/eval_retrieval.py",
-    "eval:generation": "npx tsx evals/eval_generation.ts",
+    "eval": "backend\\.venv\\Scripts\\python.exe evals/run_eval.py",
     "postinstall": "prisma generate",
     "scan:secrets": "node scripts/scan-secrets.mjs",
     "prepare": "husky"

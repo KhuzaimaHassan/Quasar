@@ -13,3 +13,6 @@ langgraph
 langgraph-checkpoint-postgres
 psycopg[binary,pool]
 httpx
+ragas
+langchain-google-genai
+langchain-google-vertexai

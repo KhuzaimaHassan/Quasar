@@ -9,7 +9,7 @@
 | M3 — RAG (ingestion, embeddings, retrieval, citations) | ✅ Done | Week 7 |
 | M4 — Memory (short + long-term) | ✅ Done | Week 9 |
 | M5 — Agents (MCP + LangGraph) | ✅ Done | Week 12 |
-| M6 — Production (evals, CI/CD) | 🔲 Not started | Week 14 |
+| M6 — Production (evals, CI/CD) | ✅ Done | Week 14 |
 
 Update statuses as you go: 🔲 Not started → 🔄 In progress → ✅ Done → ⚠️ Blocked
 
@@ -26,6 +26,7 @@ The following features are **in scope for v1.0**. Everything else goes below in 
 - [x] Long-term user preference memory (M4 — planned)
 - [x] MCP tool integrations (GitHub, filesystem) (M5)
 - [x] LangGraph multi-agent pipeline (M5)
+- [x] Production RAG evaluation suite (RAGAS 0.4.3 runner in evals/run_eval.py) (M6)
 - [ ] Token cost dashboard (M6 — planned)
 - [ ] LangSmith tracing (M6 — planned)
 - [ ] Docker + GitHub Actions CI/CD (M6 — planned)

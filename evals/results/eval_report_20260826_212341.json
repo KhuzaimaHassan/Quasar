@@ -1,0 +1,294 @@
+{
+  "timestamp": "20260826_212341",
+  "models": {
+    "responseGeneration": "gemini-3.5-flash-lite",
+    "judgeLLM": "gemini-3.5-flash-lite",
+    "judgeEmbeddings": "models/gemini-embedding-001"
+  },
+  "totalCases": 14,
+  "segmentedMetrics": {
+    "overall": {
+      "faithfulness": 0.0,
+      "answer_relevancy": 0.2953,
+      "context_precision": 0.2,
+      "context_recall": 0.1429
+    },
+    "inScopeRetrievalSuite": {
+      "faithfulness": 0.0,
+      "answer_relevancy": 0.8858,
+      "context_precision": 1.0,
+      "context_recall": 1.0
+    },
+    "knownRetrievalGapSuite": {
+      "faithfulness": 0.0,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.0,
+      "context_recall": 0.0
+    },
+    "negativeGuardrailRefusalSuite": {
+      "refusalRate": 0.6667,
+      "scores": {
+        "faithfulness": 0.0,
+        "answer_relevancy": 0.0,
+        "context_precision": 0.0,
+        "context_recall": 0.0
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "resume_education",
+      "question": "Where did Khuzaima Hassan complete his undergraduate degree, and what was his CGPA?",
+      "expectedSourceFile": "Khuzaima_Hassan_Resume_1.docx",
+      "knownRetrievalGap": true,
+      "observedSimilarity": 0.6848,
+      "retrievedChunksCount": 0,
+      "retrievedContexts": [],
+      "generatedResponse": "I am Quasar. Based on the provided context, there is no information available regarding Khuzaima Hassan, his undergraduate degree, or his CGPA.",
+      "reference": "NED University of Engineering & Technology\nB.S. in Data Science\nCGPA of 3.885 (or first position)",
+      "scores": {
+        "faithfulness": null,
+        "answer_relevancy": 0.0,
+        "context_precision": null,
+        "context_recall": 0.0
+      }
+    },
+    {
+      "id": "resume_10pearls",
+      "question": "What was Khuzaima Hassan's role at 10Pearls and what did he build there?",
+      "expectedSourceFile": "Khuzaima_Hassan_Resume_1.docx",
+      "knownRetrievalGap": true,
+      "observedSimilarity": 0.6901,
+      "retrievedChunksCount": 0,
+      "retrievedContexts": [],
+      "generatedResponse": "I am Quasar, your AI assistant. Based on the provided context, there is no information available regarding Khuzaima Hassan, his role at 10Pearls, or what he built there.",
+      "reference": "Data Science Intern (or Dec 2025 \u2013 Feb 2026)\nMLOps pipeline for 3-day AQI forecasting",
+      "scores": {
+        "faithfulness": null,
+        "answer_relevancy": null,
+        "context_precision": null,
+        "context_recall": 0.0
+      }
+    },
+    {
+      "id": "resume_teletabib",
+      "question": "What is TeleTabib and what technologies were used in its development?",
+      "expectedSourceFile": "Khuzaima_Hassan_Resume_1.docx",
+      "knownRetrievalGap": true,
+      "observedSimilarity": 0.581,
+      "retrievedChunksCount": 0,
+      "retrievedContexts": [],
+      "generatedResponse": "I am Quasar, your AI assistant. \n\nBased on the provided context, there is no information available about \"TeleTabib\" or the technologies used in its development. Therefore, I cannot answer your question at this time.",
+      "reference": "AI telehealth agent (Final Year Project)\nLangGraph and open-source LLMs\nRAG pipeline with FAISS and Sentence Transformers",
+      "scores": {
+        "faithfulness": null,
+        "answer_relevancy": null,
+        "context_precision": 0.0,
+        "context_recall": 0.0
+      }
+    },
+    {
+      "id": "resume_risk_scoring",
+      "question": "What did Khuzaima build in the Risk Scoring Platform project?",
+      "expectedSourceFile": "Khuzaima_Hassan_Resume_1.docx",
+      "knownRetrievalGap": true,
+      "observedSimilarity": 0.6776,
+      "retrievedChunksCount": 0,
+      "retrievedContexts": [],
+      "generatedResponse": "I'm sorry, but I don't have any information in my provided context about what Khuzaima built in the Risk Scoring Platform project.",
+      "reference": "Production fraud risk scoring platform\nBuilt with Python, PostgreSQL, and FastAPI\nStatistical drift detection and model monitoring",
+      "scores": {
+        "faithfulness": null,
+        "answer_relevancy": 0.0,
+        "context_precision": null,
+        "context_recall": null
+      }
+    },
+    {
+      "id": "resume_skills",
+      "question": "What databases and visualization tools does Khuzaima Hassan have experience with?",
+      "expectedSourceFile": "Khuzaima_Hassan_Resume_1.docx",
+      "knownRetrievalGap": false,
+      "observedSimilarity": 0.7353,
+      "retrievedChunksCount": 2,
+      "retrievedContexts": [
+        "Japanese Language & IT Internship (Plus W \u00d7 OEC) | Internee\tApr 2025 \u2013 Sep 2025\n\nWorked on database-related tasks to support backend development, adding unique constraints to ensure data integrity and prevent duplicate records\n\nWrote and executed database migration scripts to safely update existing tables and maintain data consistency across environments\n\nProjects\n\nTeleTabib \u2013 AI Telehealth Agent (Final Year Project)\n\nArchitected an AI-driven telehealth agent utilizing LangGraph and open-source LLMs to automate patient interactions\n\nIntegrated agentic workflows and a RAG pipeline (FAISS + Sentence Transformers) over medical document datasets, delivered by a 4-person team under academic and industrial supervision\n\nJob Finder AI \u2013 Full-Stack AI Job-Matching Platform\n\ngithub.com/KhuzaimaHassan/job-finder-ai\n\nBuilt a full-stack AI job-matching platform (Next.js, FastAPI, PostgreSQL/Supabase) with Gemini 2.5 Flash for resume parsing and ATS scoring; deployed on Vercel and Render\n\nRisk Scoring Platform \u2013 End-to-End ML System\n\ngithub.com/KhuzaimaHassan/Risk-Scoring-Platform\n\nBuilt and deployed a production fraud risk scoring platform (live at risk-scoring-platform.onrender.com) using Python, PostgreSQL, and FastAPI, covering data ingestion, feature engineering, and model training\n\nImplemented model versioning and a model monitoring layer with statistical drift detection to track prediction distributions and flag performance degradation\n\n10Pearls AQI Predictor \u2013 MLOps Forecasting Pipeline\n\ngithub.com/KhuzaimaHassan/10-Pearls-AQI-Predictor\n\nEngineered a 3-day AQI forecasting pipeline (32 features, 15 models, 5 algorithms) with Optuna tuning, automated GitHub Actions retraining, Hopsworks feature store, and Docker deployment to Hugging Face Spaces\n\nInsight Agent \u2013 LLM-Powered Data Analysis App\n\ngithub.com/KhuzaimaHassan/Insight-Agent\n\nIntegrated Google's Gemini API to build an LLM-powered app answering natural language queries over datasets in real time, with a Streamlit dashboard for automated summaries, visualizations, and interactive Q&A\n\nEducation\n\nNED University of Engineering & Technology | B.S. Data Science\tSep 2022 \u2013 Jun 2026\n\nCGPA: 3.885/4.00 (First Position in Academic Ranking)",
+        "Khuzaima Hassan\n\nAI/ML Engineer | Data Science Graduate | Python Developer\n\nkhuzaimahassan52@gmail.com | +92 321 3937589 | Karachi, Pakistan | linkedin.com/in/khuzaima-hassan-2004mkh | github.com/KhuzaimaHassan | khuzaima-portfolio.web.app\n\nProfessional Summary\n\nData Science Graduate from NED University with hands-on experience in machine learning and Generative AI, gained through a Data Science Internship at 10Pearls. Proficient in Python, SQL, FastAPI, and Streamlit, with practical experience integrating LLM APIs (Gemini, Groq) and open-source models (Qwen, Llama) for real-time data Q&A, automated reporting, and interactive dashboards. Strong foundation in classification, regression, Deep Learning (LSTM), feature engineering, model evaluation, and end-to-end ML pipeline design.\n\nTechnical Skills\n\nProgramming: Python, SQL\n\nMachine Learning: Classification, Regression, Deep Learning, LSTM, XGBoost, LightGBM, SHAP, Feature Engineering, Data Preprocessing, Model Evaluation, Cross-Validation, Model Monitoring, Pipeline Design\n\nGenerative AI & LLMs: Gemini API, Groq API, LangChain, LangGraph, Qwen, Llama, RAG, FAISS, Vector Embeddings, Sentence Transformers, LLM Integration, Prompt Engineering, GenAI App Development\n\nFrameworks & Tools: FastAPI, Streamlit, Git, GitHub, GitHub Actions, Hopsworks, Jupyter Notebook, Hugging Face\n\nCloud & Deployment: Render, Vercel, Hugging Face Spaces, Docker\n\nDatabases & Visualization: PostgreSQL, MySQL, Power BI, Pandas, NumPy, Matplotlib, Seaborn\n\nProfessional Experience\n\n10Pearls | Data Science Intern\tDec 2025 \u2013 Feb 2026\n\nBuilt and deployed an end-to-end MLOps pipeline for 3-day AQI forecasting \u2014 automating data ingestion, model retraining, and dashboard deployment (see AQI Predictor project)\n\nCollaborated cross-functionally to translate environmental data into actionable, data-driven monitoring insights\n\nJapanese Language & IT Internship (Plus W \u00d7 OEC) | Internee\tApr 2025 \u2013 Sep 2025\n\nWorked on database-related tasks to support backend development, adding unique constraints to ensure data integrity and prevent duplicate records"
+      ],
+      "generatedResponse": "Based on the provided documents, Khuzaima Hassan has experience with the following databases and visualization tools:\n\n* **Databases:** PostgreSQL, MySQL, and Supabase\n* **Visualization Tools:** Power BI, Matplotlib, and Seaborn (along with Pandas and NumPy)",
+      "reference": "PostgreSQL and MySQL\nPower BI, Pandas, NumPy, Matplotlib, or Seaborn",
+      "scores": {
+        "faithfulness": null,
+        "answer_relevancy": null,
+        "context_precision": null,
+        "context_recall": null
+      }
+    },
+    {
+      "id": "resume_certifications",
+      "question": "Which certifications does Khuzaima hold according to his resume?",
+      "expectedSourceFile": "Khuzaima_Hassan_Resume_1.docx",
+      "knownRetrievalGap": true,
+      "observedSimilarity": 0.6421,
+      "retrievedChunksCount": 3,
+      "retrievedContexts": [
+        "Japanese Language & IT Internship (Plus W \u00d7 OEC) | Internee\tApr 2025 \u2013 Sep 2025\n\nWorked on database-related tasks to support backend development, adding unique constraints to ensure data integrity and prevent duplicate records\n\nWrote and executed database migration scripts to safely update existing tables and maintain data consistency across environments\n\nProjects\n\nTeleTabib \u2013 AI Telehealth Agent (Final Year Project)\n\nArchitected an AI-driven telehealth agent utilizing LangGraph and open-source LLMs to automate patient interactions\n\nIntegrated agentic workflows and a RAG pipeline (FAISS + Sentence Transformers) over medical document datasets, delivered by a 4-person team under academic and industrial supervision\n\nJob Finder AI \u2013 Full-Stack AI Job-Matching Platform\n\ngithub.com/KhuzaimaHassan/job-finder-ai\n\nBuilt a full-stack AI job-matching platform (Next.js, FastAPI, PostgreSQL/Supabase) with Gemini 2.5 Flash for resume parsing and ATS scoring; deployed on Vercel and Render\n\nRisk Scoring Platform \u2013 End-to-End ML System\n\ngithub.com/KhuzaimaHassan/Risk-Scoring-Platform\n\nBuilt and deployed a production fraud risk scoring platform (live at risk-scoring-platform.onrender.com) using Python, PostgreSQL, and FastAPI, covering data ingestion, feature engineering, and model training\n\nImplemented model versioning and a model monitoring layer with statistical drift detection to track prediction distributions and flag performance degradation\n\n10Pearls AQI Predictor \u2013 MLOps Forecasting Pipeline\n\ngithub.com/KhuzaimaHassan/10-Pearls-AQI-Predictor\n\nEngineered a 3-day AQI forecasting pipeline (32 features, 15 models, 5 algorithms) with Optuna tuning, automated GitHub Actions retraining, Hopsworks feature store, and Docker deployment to Hugging Face Spaces\n\nInsight Agent \u2013 LLM-Powered Data Analysis App\n\ngithub.com/KhuzaimaHassan/Insight-Agent\n\nIntegrated Google's Gemini API to build an LLM-powered app answering natural language queries over datasets in real time, with a Streamlit dashboard for automated summaries, visualizations, and interactive Q&A\n\nEducation\n\nNED University of Engineering & Technology | B.S. Data Science\tSep 2022 \u2013 Jun 2026\n\nCGPA: 3.885/4.00 (First Position in Academic Ranking)",
+        "Khuzaima Hassan\n\nAI/ML Engineer | Data Science Graduate | Python Developer\n\nkhuzaimahassan52@gmail.com | +92 321 3937589 | Karachi, Pakistan | linkedin.com/in/khuzaima-hassan-2004mkh | github.com/KhuzaimaHassan | khuzaima-portfolio.web.app\n\nProfessional Summary\n\nData Science Graduate from NED University with hands-on experience in machine learning and Generative AI, gained through a Data Science Internship at 10Pearls. Proficient in Python, SQL, FastAPI, and Streamlit, with practical experience integrating LLM APIs (Gemini, Groq) and open-source models (Qwen, Llama) for real-time data Q&A, automated reporting, and interactive dashboards. Strong foundation in classification, regression, Deep Learning (LSTM), feature engineering, model evaluation, and end-to-end ML pipeline design.\n\nTechnical Skills\n\nProgramming: Python, SQL\n\nMachine Learning: Classification, Regression, Deep Learning, LSTM, XGBoost, LightGBM, SHAP, Feature Engineering, Data Preprocessing, Model Evaluation, Cross-Validation, Model Monitoring, Pipeline Design\n\nGenerative AI & LLMs: Gemini API, Groq API, LangChain, LangGraph, Qwen, Llama, RAG, FAISS, Vector Embeddings, Sentence Transformers, LLM Integration, Prompt Engineering, GenAI App Development\n\nFrameworks & Tools: FastAPI, Streamlit, Git, GitHub, GitHub Actions, Hopsworks, Jupyter Notebook, Hugging Face\n\nCloud & Deployment: Render, Vercel, Hugging Face Spaces, Docker\n\nDatabases & Visualization: PostgreSQL, MySQL, Power BI, Pandas, NumPy, Matplotlib, Seaborn\n\nProfessional Experience\n\n10Pearls | Data Science Intern\tDec 2025 \u2013 Feb 2026\n\nBuilt and deployed an end-to-end MLOps pipeline for 3-day AQI forecasting \u2014 automating data ingestion, model retraining, and dashboard deployment (see AQI Predictor project)\n\nCollaborated cross-functionally to translate environmental data into actionable, data-driven monitoring insights\n\nJapanese Language & IT Internship (Plus W \u00d7 OEC) | Internee\tApr 2025 \u2013 Sep 2025\n\nWorked on database-related tasks to support backend development, adding unique constraints to ensure data integrity and prevent duplicate records",
+        "Aspire Institute Awards this Certificate to\nKhuzaima Hassan\nwho has successfully completed all modules of the\n2026 Aspire Leaders Program\nJuly 2026\nThrough their dedicated participation, Khuzaima has demonstrated increased self-confidence, enhanced critical thinking skills,\nstrengthened communication skills, and a deepened commitment to making a positive social impact among a global community.\nThis certificate affirms the completion of 40 hours of coursework through the Aspire Leaders Program.\nMay it serve as a testament to their dedication, hard work, and continued pursuit of excellence."
+      ],
+      "generatedResponse": "Based on the provided context documents, the resume lists an education background (B.S. Data Science from NED University of Engineering & Technology) and various internships and projects, but it **does not** explicitly list any formal certifications. \n\nHowever, another document provided in the context (from Aspire Institute) shows that Khuzaima successfully completed the **2026 Aspire Leaders Program** (comprising 40 hours of coursework) in July 2026.",
+      "reference": "DataCamp certifications (ML Scientist, Data Analyst in SQL, or ML Engineer)\nHuawei HCIA (or Coursera Python for DS AI & Dev)",
+      "scores": {
+        "faithfulness": null,
+        "answer_relevancy": null,
+        "context_precision": null,
+        "context_recall": 0.0
+      }
+    },
+    {
+      "id": "cert_program",
+      "question": "What leadership certificate was awarded to Khuzaima Hassan, who issued it, and in what month/year?",
+      "expectedSourceFile": "Aspire-Certificate.pdf",
+      "knownRetrievalGap": false,
+      "observedSimilarity": 0.7622,
+      "retrievedChunksCount": 1,
+      "retrievedContexts": [
+        "Aspire Institute Awards this Certificate to\nKhuzaima Hassan\nwho has successfully completed all modules of the\n2026 Aspire Leaders Program\nJuly 2026\nThrough their dedicated participation, Khuzaima has demonstrated increased self-confidence, enhanced critical thinking skills,\nstrengthened communication skills, and a deepened commitment to making a positive social impact among a global community.\nThis certificate affirms the completion of 40 hours of coursework through the Aspire Leaders Program.\nMay it serve as a testament to their dedication, hard work, and continued pursuit of excellence."
+      ],
+      "generatedResponse": "Based on the provided document, here are the details regarding the certificate awarded to Khuzaima Hassan:\n\n* **Leadership Certificate:** The 2026 Aspire Leaders Program Certificate (affirming the completion of 40 hours of coursework).\n* **Issued By:** Aspire Institute.\n* **Month/Year:** July 2026.",
+      "reference": "2026 Aspire Leaders Program\nAspire Institute\nJuly 2026",
+      "scores": {
+        "faithfulness": null,
+        "answer_relevancy": 0.836,
+        "context_precision": 1.0,
+        "context_recall": 1.0
+      }
+    },
+    {
+      "id": "cert_coursework_hours",
+      "question": "How many hours of coursework and for which program does the certificate affirm?",
+      "expectedSourceFile": "Aspire-Certificate.pdf",
+      "knownRetrievalGap": true,
+      "observedSimilarity": 0.6823,
+      "retrievedChunksCount": 0,
+      "retrievedContexts": [],
+      "generatedResponse": "I am Quasar, your AI assistant. Based on the provided context, there is no information available to answer your question about the hours of coursework and the specific program the certificate affirms.",
+      "reference": "40 hours of coursework\nAspire Leaders Program",
+      "scores": {
+        "faithfulness": null,
+        "answer_relevancy": 0.0,
+        "context_precision": 0.0,
+        "context_recall": 0.0
+      }
+    },
+    {
+      "id": "cert_competencies",
+      "question": "What qualities and skills does the Aspire Institute certificate state Khuzaima demonstrated?",
+      "expectedSourceFile": "Aspire-Certificate.pdf",
+      "knownRetrievalGap": false,
+      "observedSimilarity": 0.8112,
+      "retrievedChunksCount": 1,
+      "retrievedContexts": [
+        "Aspire Institute Awards this Certificate to\nKhuzaima Hassan\nwho has successfully completed all modules of the\n2026 Aspire Leaders Program\nJuly 2026\nThrough their dedicated participation, Khuzaima has demonstrated increased self-confidence, enhanced critical thinking skills,\nstrengthened communication skills, and a deepened commitment to making a positive social impact among a global community.\nThis certificate affirms the completion of 40 hours of coursework through the Aspire Leaders Program.\nMay it serve as a testament to their dedication, hard work, and continued pursuit of excellence."
+      ],
+      "generatedResponse": "Based on the provided document, the Aspire Institute certificate states that Khuzaima demonstrated the following qualities and skills:\n\n* Increased self-confidence\n* Enhanced critical thinking skills\n* Strengthened communication skills\n* A deepened commitment to making a positive social impact among a global community\n* Dedication, hard work, and continued pursuit of excellence",
+      "reference": "Enhanced critical thinking skills\nStrengthened communication skills\nCommitment to positive social impact (or self-confidence)",
+      "scores": {
+        "faithfulness": null,
+        "answer_relevancy": 0.9355,
+        "context_precision": null,
+        "context_recall": null
+      }
+    },
+    {
+      "id": "precision_aspire_credential",
+      "question": "Tell me about the credentials or awards Khuzaima earned specifically in July 2026.",
+      "expectedSourceFile": "Aspire-Certificate.pdf",
+      "knownRetrievalGap": false,
+      "observedSimilarity": 0.7702,
+      "retrievedChunksCount": 2,
+      "retrievedContexts": [
+        "Aspire Institute Awards this Certificate to\nKhuzaima Hassan\nwho has successfully completed all modules of the\n2026 Aspire Leaders Program\nJuly 2026\nThrough their dedicated participation, Khuzaima has demonstrated increased self-confidence, enhanced critical thinking skills,\nstrengthened communication skills, and a deepened commitment to making a positive social impact among a global community.\nThis certificate affirms the completion of 40 hours of coursework through the Aspire Leaders Program.\nMay it serve as a testament to their dedication, hard work, and continued pursuit of excellence.",
+        "Khuzaima Hassan\n\nAI/ML Engineer | Data Science Graduate | Python Developer\n\nkhuzaimahassan52@gmail.com | +92 321 3937589 | Karachi, Pakistan | linkedin.com/in/khuzaima-hassan-2004mkh | github.com/KhuzaimaHassan | khuzaima-portfolio.web.app\n\nProfessional Summary\n\nData Science Graduate from NED University with hands-on experience in machine learning and Generative AI, gained through a Data Science Internship at 10Pearls. Proficient in Python, SQL, FastAPI, and Streamlit, with practical experience integrating LLM APIs (Gemini, Groq) and open-source models (Qwen, Llama) for real-time data Q&A, automated reporting, and interactive dashboards. Strong foundation in classification, regression, Deep Learning (LSTM), feature engineering, model evaluation, and end-to-end ML pipeline design.\n\nTechnical Skills\n\nProgramming: Python, SQL\n\nMachine Learning: Classification, Regression, Deep Learning, LSTM, XGBoost, LightGBM, SHAP, Feature Engineering, Data Preprocessing, Model Evaluation, Cross-Validation, Model Monitoring, Pipeline Design\n\nGenerative AI & LLMs: Gemini API, Groq API, LangChain, LangGraph, Qwen, Llama, RAG, FAISS, Vector Embeddings, Sentence Transformers, LLM Integration, Prompt Engineering, GenAI App Development\n\nFrameworks & Tools: FastAPI, Streamlit, Git, GitHub, GitHub Actions, Hopsworks, Jupyter Notebook, Hugging Face\n\nCloud & Deployment: Render, Vercel, Hugging Face Spaces, Docker\n\nDatabases & Visualization: PostgreSQL, MySQL, Power BI, Pandas, NumPy, Matplotlib, Seaborn\n\nProfessional Experience\n\n10Pearls | Data Science Intern\tDec 2025 \u2013 Feb 2026\n\nBuilt and deployed an end-to-end MLOps pipeline for 3-day AQI forecasting \u2014 automating data ingestion, model retraining, and dashboard deployment (see AQI Predictor project)\n\nCollaborated cross-functionally to translate environmental data into actionable, data-driven monitoring insights\n\nJapanese Language & IT Internship (Plus W \u00d7 OEC) | Internee\tApr 2025 \u2013 Sep 2025\n\nWorked on database-related tasks to support backend development, adding unique constraints to ensure data integrity and prevent duplicate records"
+      ],
+      "generatedResponse": "Based on the provided documents, Khuzaima Hassan earned the **2026 Aspire Leaders Program Certificate** in July 2026, awarded by the Aspire Institute. \n\nAccording to the certificate, this credential affirms the completion of 40 hours of coursework and recognizes that Khuzaima demonstrated:\n* Increased self-confidence\n* Enhanced critical thinking skills\n* Strengthened communication skills\n* A deepened commitment to making a positive social impact among a global community",
+      "reference": "Aspire Leaders Program certificate\nCompleted in July 2026 (or Aspire Institute)",
+      "scores": {
+        "faithfulness": null,
+        "answer_relevancy": null,
+        "context_precision": null,
+        "context_recall": null
+      }
+    },
+    {
+      "id": "precision_japanese_internship",
+      "question": "What database work did Khuzaima do during his Japanese Language & IT Internship?",
+      "expectedSourceFile": "Khuzaima_Hassan_Resume_1.docx",
+      "knownRetrievalGap": false,
+      "observedSimilarity": 0.7886,
+      "retrievedChunksCount": 1,
+      "retrievedContexts": [
+        "Japanese Language & IT Internship (Plus W \u00d7 OEC) | Internee\tApr 2025 \u2013 Sep 2025\n\nWorked on database-related tasks to support backend development, adding unique constraints to ensure data integrity and prevent duplicate records\n\nWrote and executed database migration scripts to safely update existing tables and maintain data consistency across environments\n\nProjects\n\nTeleTabib \u2013 AI Telehealth Agent (Final Year Project)\n\nArchitected an AI-driven telehealth agent utilizing LangGraph and open-source LLMs to automate patient interactions\n\nIntegrated agentic workflows and a RAG pipeline (FAISS + Sentence Transformers) over medical document datasets, delivered by a 4-person team under academic and industrial supervision\n\nJob Finder AI \u2013 Full-Stack AI Job-Matching Platform\n\ngithub.com/KhuzaimaHassan/job-finder-ai\n\nBuilt a full-stack AI job-matching platform (Next.js, FastAPI, PostgreSQL/Supabase) with Gemini 2.5 Flash for resume parsing and ATS scoring; deployed on Vercel and Render\n\nRisk Scoring Platform \u2013 End-to-End ML System\n\ngithub.com/KhuzaimaHassan/Risk-Scoring-Platform\n\nBuilt and deployed a production fraud risk scoring platform (live at risk-scoring-platform.onrender.com) using Python, PostgreSQL, and FastAPI, covering data ingestion, feature engineering, and model training\n\nImplemented model versioning and a model monitoring layer with statistical drift detection to track prediction distributions and flag performance degradation\n\n10Pearls AQI Predictor \u2013 MLOps Forecasting Pipeline\n\ngithub.com/KhuzaimaHassan/10-Pearls-AQI-Predictor\n\nEngineered a 3-day AQI forecasting pipeline (32 features, 15 models, 5 algorithms) with Optuna tuning, automated GitHub Actions retraining, Hopsworks feature store, and Docker deployment to Hugging Face Spaces\n\nInsight Agent \u2013 LLM-Powered Data Analysis App\n\ngithub.com/KhuzaimaHassan/Insight-Agent\n\nIntegrated Google's Gemini API to build an LLM-powered app answering natural language queries over datasets in real time, with a Streamlit dashboard for automated summaries, visualizations, and interactive Q&A\n\nEducation\n\nNED University of Engineering & Technology | B.S. Data Science\tSep 2022 \u2013 Jun 2026\n\nCGPA: 3.885/4.00 (First Position in Academic Ranking)"
+      ],
+      "generatedResponse": "Based on the provided context, during his Japanese Language & IT Internship at Plus W \u00d7 OEC, Khuzaima performed the following database work:\n\n* Worked on database-related tasks to support backend development, which included adding unique constraints to ensure data integrity and prevent duplicate records.\n* Wrote and executed database migration scripts to safely update existing tables and maintain data consistency across environments.",
+      "reference": "Added unique constraints to ensure data integrity or prevent duplicates\nWrote and executed database migration scripts",
+      "scores": {
+        "faithfulness": null,
+        "answer_relevancy": null,
+        "context_precision": null,
+        "context_recall": null
+      }
+    },
+    {
+      "id": "irrelevant_recipe",
+      "question": "What ingredients and steps are needed to make traditional French beef bourguignon?",
+      "expectedSourceFile": null,
+      "knownRetrievalGap": false,
+      "observedSimilarity": null,
+      "retrievedChunksCount": 0,
+      "retrievedContexts": [],
+      "generatedResponse": "Based on the provided context, there is no information available about the ingredients or steps needed to make traditional French beef bourguignon. Therefore, I cannot answer your question using the provided documents.",
+      "reference": "",
+      "scores": {
+        "faithfulness": null,
+        "answer_relevancy": null,
+        "context_precision": null,
+        "context_recall": null
+      }
+    },
+    {
+      "id": "irrelevant_astronomy",
+      "question": "What are the orbital properties and atmospheric composition of Neptune's moon Triton?",
+      "expectedSourceFile": null,
+      "knownRetrievalGap": false,
+      "observedSimilarity": null,
+      "retrievedChunksCount": 0,
+      "retrievedContexts": [],
+      "generatedResponse": "I am Quasar, your AI assistant. Unfortunately, the provided context does not contain any information about Neptune's moon Triton. Therefore, I am unable to answer your question based on the available sources.",
+      "reference": "",
+      "scores": {
+        "faithfulness": null,
+        "answer_relevancy": null,
+        "context_precision": 0.0,
+        "context_recall": null
+      }
+    },
+    {
+      "id": "irrelevant_quantum",
+      "question": "How do superconducting Josephson junctions maintain quantum phase coherence in flux qubits?",
+      "expectedSourceFile": null,
+      "knownRetrievalGap": false,
+      "observedSimilarity": null,
+      "retrievedChunksCount": 0,
+      "retrievedContexts": [],
+      "generatedResponse": "I am Quasar, your AI assistant. Based on the provided context, there is no information available to explain how superconducting Josephson junctions maintain quantum phase coherence in flux qubits.",
+      "reference": "",
+      "scores": {
+        "faithfulness": null,
+        "answer_relevancy": 0.0,
+        "context_precision": 0.0,
+        "context_recall": 0.0
+      }
+    }
+  ]
+}

@@ -109,16 +109,21 @@ To eliminate confusion and remove dead/overlapping code, the following actions w
 
 ---
 
-## 7. Success Metrics
+## 7. Success Metrics & Segmented Reporting
+
+To prevent conflating intentional guardrail refusals and known similarity threshold gaps with overall pipeline quality, evaluation results are reported in 3 distinct sub-aggregates rather than a single flat average:
 
 | Metric | Target | How Measured |
 |--------|--------|--------------|
-| **Faithfulness Baseline** | $\ge 0.85$ | Average RAGAS faithfulness across golden set |
-| **Answer Relevancy Baseline** | $\ge 0.85$ | Average RAGAS answer relevancy across golden set |
-| **Context Precision Baseline** | $\ge 0.80$ | Average RAGAS context precision across golden set |
-| **Context Recall Baseline** | $\ge 0.75$ | Average RAGAS context recall across golden set |
-| **Execution Reliability** | 100% completion without unhandled 429 quota crashes | Exponential backoff retry wrapper |
-| **Runtime Performance** | $< 3\text{ minutes}$ | Total execution time for the full 14-case suite |
+| **1. Primary Benchmark (In-Scope Suite, 5 cases)** | | |
+| - **Faithfulness** | $\ge 0.85$ | Average RAGAS faithfulness on valid retrieval cases (`retrievedChunksCount >= 1`) |
+| - **Answer Relevancy** | $\ge 0.85$ | Average RAGAS answer relevancy on valid retrieval cases |
+| - **Context Precision** | $\ge 0.80$ | Average RAGAS context precision on valid retrieval cases |
+| - **Context Recall** | $\ge 0.75$ | Average RAGAS context recall on valid retrieval cases |
+| **2. Known Retrieval Gap Suite (6 cases)** | Benchmark Tracking | Precision & Recall on cases where target chunk similarity is $< 0.70$ (6 cases) |
+| **3. Negative Guardrail Refusal Suite (3 cases)** | $100\%$ Refusal Accuracy | Correct refusal rate on irrelevant/unrelated queries |
+| **Execution Reliability** | 100% completion without 429 / 503 crashes | Exponential backoff retry wrapper (`retry_with_backoff`) |
+| **Model Attribution** | Explicit in report | Response generation & judge model logged in Markdown/JSON headers |
 | **Artifact Generation** | 100% of runs | Timestamped `.md` and `.json` files saved in `evals/results/` |
 | **Single Entry Point** | Exactly 1 script (`evals/run_eval.py`) | All legacy runner files deleted from `evals/` |
 
