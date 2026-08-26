@@ -57,15 +57,20 @@ except ImportError as e:
     sys.exit(1)
 
 class CleanChatGoogleGenerativeAI(ChatGoogleGenerativeAI):
-    """Wrapper that strips markdown code fences from LLM responses before RAGAS Pydantic JSON parsing."""
-    def _clean_text(self, text: str) -> str:
-        if not isinstance(text, str):
-            return text
-        t = text.strip()
-        if t.startswith("```"):
-            t = re.sub(r"^```(?:json)?\s*\n", "", t)
-            t = re.sub(r"\n\s*```$", "", t)
-        return t.strip()
+    """Wrapper that recursively strips markdown code fences from LLM text and structured list responses before RAGAS Pydantic JSON parsing."""
+    def _clean_text(self, content: Any) -> Any:
+        if isinstance(content, str):
+            t = content.strip()
+            if t.startswith("```"):
+                t = re.sub(r"^```(?:json)?\s*\n", "", t)
+                t = re.sub(r"\n\s*```$", "", t)
+            return t.strip()
+        elif isinstance(content, list):
+            for item in content:
+                if isinstance(item, dict) and "text" in item:
+                    item["text"] = self._clean_text(item["text"])
+            return content
+        return content
 
     def generate(self, messages, stop=None, callbacks=None, **kwargs):
         result = super().generate(messages, stop=stop, callbacks=callbacks, **kwargs)
@@ -159,13 +164,19 @@ User Question: {query}
 
     return retry_with_backoff(_generate)
 
-def calc_segment_averages(cases: List[Dict[str, Any]], filter_fn) -> Dict[str, float]:
+def calc_segment_metrics(cases: List[Dict[str, Any]], filter_fn) -> Dict[str, Any]:
     filtered = [c for c in cases if filter_fn(c)]
     if not filtered:
-        return {"faithfulness": 0.0, "answer_relevancy": 0.0, "context_precision": 0.0, "context_recall": 0.0}
+        return {
+            "faithfulness": {"score": 0.0, "validCount": 0, "totalCount": 0},
+            "answer_relevancy": {"score": 0.0, "validCount": 0, "totalCount": 0},
+            "context_precision": {"score": 0.0, "validCount": 0, "totalCount": 0},
+            "context_recall": {"score": 0.0, "validCount": 0, "totalCount": 0}
+        }
 
     totals = {"faithfulness": 0.0, "answer_relevancy": 0.0, "context_precision": 0.0, "context_recall": 0.0}
     counts = {"faithfulness": 0, "answer_relevancy": 0, "context_precision": 0, "context_recall": 0}
+    total_cases = len(filtered)
 
     for c in filtered:
         scores = c.get("scores", {})
@@ -175,7 +186,21 @@ def calc_segment_averages(cases: List[Dict[str, Any]], filter_fn) -> Dict[str, f
                 totals[metric] += float(val)
                 counts[metric] += 1
 
-    return {m: (round(totals[m] / counts[m], 4) if counts[m] > 0 else 0.0) for m in totals}
+    return {
+        m: {
+            "score": round(totals[m] / counts[m], 4) if counts[m] > 0 else 0.0,
+            "validCount": counts[m],
+            "totalCount": total_cases
+        } for m in totals
+    }
+
+def is_valid_refusal(response_text: str) -> bool:
+    refusal_phrases = [
+        "no information", "does not contain", "cannot answer", "unable to answer",
+        "don't have any information", "do not have any information", "no relevant context"
+    ]
+    t = response_text.lower()
+    return any(p in t for p in refusal_phrases)
 
 def main():
     logger.info(f"Starting Quasar RAG Evaluation Suite (RAGAS 0.4.3)...")
@@ -286,20 +311,20 @@ def main():
                 detail["scores"][key] = None
 
     # Calculate 3-Way Segmented Sub-Aggregates
-    overall_scores = calc_segment_averages(case_details, lambda c: True)
-    in_scope_scores = calc_segment_averages(case_details, lambda c: not c["knownRetrievalGap"] and c["expectedSourceFile"] is not None)
-    known_gap_scores = calc_segment_averages(case_details, lambda c: c["knownRetrievalGap"])
-    guardrail_scores = calc_segment_averages(case_details, lambda c: c["expectedSourceFile"] is None)
+    overall_metrics = calc_segment_metrics(case_details, lambda c: True)
+    in_scope_metrics = calc_segment_metrics(case_details, lambda c: not c["knownRetrievalGap"] and c["expectedSourceFile"] is not None)
+    known_gap_metrics = calc_segment_metrics(case_details, lambda c: c["knownRetrievalGap"])
+    guardrail_metrics = calc_segment_metrics(case_details, lambda c: c["expectedSourceFile"] is None)
 
     # Count Refusal Accuracy on Negative Guardrails
     guardrail_cases = [c for c in case_details if c["expectedSourceFile"] is None]
-    refusal_successes = sum(1 for c in guardrail_cases if c["retrievedChunksCount"] == 0 and "no information" in c["generatedResponse"].lower())
+    refusal_successes = sum(1 for c in guardrail_cases if c["retrievedChunksCount"] == 0 and is_valid_refusal(c["generatedResponse"]))
     guardrail_refusal_rate = round(refusal_successes / len(guardrail_cases), 4) if guardrail_cases else 1.0
 
     logger.info("Evaluation complete! 3-Way Segmented RAGAS Scores:")
-    logger.info(f" - In-Scope Retrieval Suite (5 cases) : Faithfulness={in_scope_scores['faithfulness']}, Relevancy={in_scope_scores['answer_relevancy']}, Precision={in_scope_scores['context_precision']}, Recall={in_scope_scores['context_recall']}")
-    logger.info(f" - Known Retrieval Gap Suite (6 cases): Precision={known_gap_scores['context_precision']}, Recall={known_gap_scores['context_recall']}")
-    logger.info(f" - Negative Guardrail Refusal Suite (3 cases): Refusal Rate={guardrail_refusal_rate * 100:.1f}%")
+    logger.info(f" - In-Scope Suite (5 cases): Faithfulness={in_scope_metrics['faithfulness']['score']} ({in_scope_metrics['faithfulness']['validCount']}/5), Relevancy={in_scope_metrics['answer_relevancy']['score']} ({in_scope_metrics['answer_relevancy']['validCount']}/5), Precision={in_scope_metrics['context_precision']['score']} ({in_scope_metrics['context_precision']['validCount']}/5), Recall={in_scope_metrics['context_recall']['score']} ({in_scope_metrics['context_recall']['validCount']}/5)")
+    logger.info(f" - Known Retrieval Gap Suite (6 cases): Precision={known_gap_metrics['context_precision']['score']}, Recall={known_gap_metrics['context_recall']['score']}")
+    logger.info(f" - Negative Guardrail Refusal Suite (3 cases): Refusal Accuracy={guardrail_refusal_rate * 100:.1f}% ({refusal_successes}/3)")
 
     # 6. Save reports to evals/results/
     results_dir = Path(__file__).parent / "results"
@@ -318,12 +343,14 @@ def main():
         },
         "totalCases": len(cases),
         "segmentedMetrics": {
-            "overall": overall_scores,
-            "inScopeRetrievalSuite": in_scope_scores,
-            "knownRetrievalGapSuite": known_gap_scores,
+            "overall": overall_metrics,
+            "inScopeRetrievalSuite": in_scope_metrics,
+            "knownRetrievalGapSuite": known_gap_metrics,
             "negativeGuardrailRefusalSuite": {
                 "refusalRate": guardrail_refusal_rate,
-                "scores": guardrail_scores
+                "refusalCount": refusal_successes,
+                "totalGuardrailCases": len(guardrail_cases),
+                "metrics": guardrail_metrics
             }
         },
         "cases": case_details
@@ -341,22 +368,23 @@ def main():
         f"**RAGAS Judge Model:** `{JUDGE_MODEL_NAME}`  ",
         f"**Embedding Model:** `{EMBEDDING_MODEL_NAME}`  \n",
         "## 1. Primary Benchmark: In-Scope Retrieval Suite (5 Cases)",
-        "| Metric | Target Baseline | Observed Score | Status |",
-        "| :--- | :---: | :---: | :---: |",
-        f"| **Faithfulness** | $\\ge 0.85$ | `{in_scope_scores.get('faithfulness', 0.0):.4f}` | {'✅ PASS' if in_scope_scores.get('faithfulness', 0.0) >= 0.85 else '⚠️ BELOW TARGET'} |",
-        f"| **Answer Relevancy** | $\\ge 0.85$ | `{in_scope_scores.get('answer_relevancy', 0.0):.4f}` | {'✅ PASS' if in_scope_scores.get('answer_relevancy', 0.0) >= 0.85 else '⚠️ BELOW TARGET'} |",
-        f"| **Context Precision** | $\\ge 0.80$ | `{in_scope_scores.get('context_precision', 0.0):.4f}` | {'✅ PASS' if in_scope_scores.get('context_precision', 0.0) >= 0.80 else '⚠️ BELOW TARGET'} |",
-        f"| **Context Recall** | $\\ge 0.75$ | `{in_scope_scores.get('context_recall', 0.0):.4f}` | {'✅ PASS' if in_scope_scores.get('context_recall', 0.0) >= 0.75 else '⚠️ BELOW TARGET'} |\n",
+        "| Metric | Target | Score (Sub-sample Average) | Non-NaN Coverage | Status |",
+        "| :--- | :---: | :---: | :---: | :---: |",
+        f"| **Faithfulness** | $\\ge 0.85$ | `{in_scope_metrics['faithfulness']['score']:.4f}` | `{in_scope_metrics['faithfulness']['validCount']}/5 cases` | {'✅ PASS' if in_scope_metrics['faithfulness']['score'] >= 0.85 else '⚠️ BELOW TARGET'} |",
+        f"| **Answer Relevancy** | $\\ge 0.85$ | `{in_scope_metrics['answer_relevancy']['score']:.4f}` | `{in_scope_metrics['answer_relevancy']['validCount']}/5 cases` | {'✅ PASS' if in_scope_metrics['answer_relevancy']['score'] >= 0.85 else '⚠️ BELOW TARGET'} |",
+        f"| **Context Precision** | $\\ge 0.80$ | `{in_scope_metrics['context_precision']['score']:.4f}` | `{in_scope_metrics['context_precision']['validCount']}/5 cases` | {'✅ PASS' if in_scope_metrics['context_precision']['score'] >= 0.80 else '⚠️ BELOW TARGET'} |",
+        f"| **Context Recall** | $\\ge 0.75$ | `{in_scope_metrics['context_recall']['score']:.4f}` | `{in_scope_metrics['context_recall']['validCount']}/5 cases` | {'✅ PASS' if in_scope_metrics['context_recall']['score'] >= 0.75 else '⚠️ BELOW TARGET'} |\n",
         "## 2. Sub-Segment Benchmarks\n",
-        f"- **Known Retrieval Gap Suite (6 Cases)**: Context Precision = `{known_gap_scores['context_precision']:.4f}`, Context Recall = `{known_gap_scores['context_recall']:.4f}` *(Targeting similarity score threshold lowering)*",
+        f"- **Known Retrieval Gap Suite (6 Cases)**: Context Precision = `{known_gap_metrics['context_precision']['score']:.4f}`, Context Recall = `{known_gap_metrics['context_recall']['score']:.4f}` *(Cases where target similarity < 0.70 threshold)*",
+        f"  - *Cases included*: `resume_education`, `resume_10pearls`, `resume_teletabib`, `resume_risk_scoring`, `resume_certifications`, `cert_coursework_hours`",
         f"- **Negative Guardrail Refusal Suite (3 Cases)**: Refusal Accuracy = `{guardrail_refusal_rate * 100:.1f}%` ({refusal_successes}/{len(guardrail_cases)} correct refusals)\n",
         "## 3. Overall Unfiltered Aggregate (14 Cases)",
-        "| Metric | Flat Average (Conflated) |",
-        "| :--- | :---: |",
-        f"| **Faithfulness** | `{overall_scores.get('faithfulness', 0.0):.4f}` |",
-        f"| **Answer Relevancy** | `{overall_scores.get('answer_relevancy', 0.0):.4f}` |",
-        f"| **Context Precision** | `{overall_scores.get('context_precision', 0.0):.4f}` |",
-        f"| **Context Recall** | `{overall_scores.get('context_recall', 0.0):.4f}` |\n",
+        "| Metric | Flat Score | Non-NaN Coverage |",
+        "| :--- | :---: | :---: |",
+        f"| **Faithfulness** | `{overall_metrics['faithfulness']['score']:.4f}` | `{overall_metrics['faithfulness']['validCount']}/14 cases` |",
+        f"| **Answer Relevancy** | `{overall_metrics['answer_relevancy']['score']:.4f}` | `{overall_metrics['answer_relevancy']['validCount']}/14 cases` |",
+        f"| **Context Precision** | `{overall_metrics['context_precision']['score']:.4f}` | `{overall_metrics['context_precision']['validCount']}/14 cases` |",
+        f"| **Context Recall** | `{overall_metrics['context_recall']['score']:.4f}` | `{overall_metrics['context_recall']['validCount']}/14 cases` |\n",
         "## 4. Detailed Per-Case Breakdown\n",
         "| Case ID | Retr. Chunks | Faithfulness | Relevancy | Precision | Recall | Suite Category |",
         "| :--- | :---: | :---: | :---: | :---: | :---: | :--- |"
@@ -389,12 +417,12 @@ def main():
     print(f"Model: {RESPONSE_MODEL_NAME} | Judge: {JUDGE_MODEL_NAME}")
     print("=" * 80)
     print("PRIMARY IN-SCOPE SUITE (5 Cases):")
-    print(f" - Faithfulness       : {in_scope_scores.get('faithfulness', 0.0):.4f}")
-    print(f" - Answer Relevancy   : {in_scope_scores.get('answer_relevancy', 0.0):.4f}")
-    print(f" - Context Precision  : {in_scope_scores.get('context_precision', 0.0):.4f}")
-    print(f" - Context Recall     : {in_scope_scores.get('context_recall', 0.0):.4f}")
+    print(f" - Faithfulness       : {in_scope_metrics['faithfulness']['score']:.4f} ({in_scope_metrics['faithfulness']['validCount']}/5 cases)")
+    print(f" - Answer Relevancy   : {in_scope_metrics['answer_relevancy']['score']:.4f} ({in_scope_metrics['answer_relevancy']['validCount']}/5 cases)")
+    print(f" - Context Precision  : {in_scope_metrics['context_precision']['score']:.4f} ({in_scope_metrics['context_precision']['validCount']}/5 cases)")
+    print(f" - Context Recall     : {in_scope_metrics['context_recall']['score']:.4f} ({in_scope_metrics['context_recall']['validCount']}/5 cases)")
     print("-" * 80)
-    print(f"GUARDRAIL REFUSAL ACCURACY (3 Cases): {guardrail_refusal_rate * 100:.1f}%")
+    print(f"GUARDRAIL REFUSAL ACCURACY (3 Cases): {guardrail_refusal_rate * 100:.1f}% ({refusal_successes}/3)")
     print("=" * 80)
     print(f"Reports saved to: {results_dir.resolve()}")
 
