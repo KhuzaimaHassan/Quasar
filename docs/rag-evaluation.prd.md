@@ -122,7 +122,9 @@ To prevent conflating intentional guardrail refusals and known similarity thresh
 | - **Context Recall** | $\ge 0.75$ | Average RAGAS context recall on valid retrieval cases |
 | **2. Known Retrieval Gap Suite (6 cases)** | Benchmark Tracking | Precision & Recall on cases where target chunk similarity is $< 0.70$ (6 cases) |
 | **3. Negative Guardrail Refusal Suite (3 cases)** | $100\%$ Refusal Accuracy | Correct refusal rate on irrelevant/unrelated queries |
-| **Execution Reliability** | 100% completion without 429 / 503 crashes | Exponential backoff retry wrapper (`retry_with_backoff`) |
+| **Execution Reliability** | 100% completion without crashes | Exponential backoff retry wrapper (`retry_with_backoff`) |
+| **Execution Runtime (Free Tier)** | ~7.5 minutes | `max_workers=1` under Google GenAI Free Tier 15 RPM limit (~56 total API calls) |
+| **Execution Runtime (Paid Tier)** | $< 3$ minutes | `max_workers=3+` when using paid Gemini API keys with higher RPM quotas |
 | **Model Attribution** | Explicit in report | Response generation & judge model logged in Markdown/JSON headers |
 | **Artifact Generation** | 100% of runs | Timestamped `.md` and `.json` files saved in `evals/results/` |
 | **Single Entry Point** | Exactly 1 script (`evals/run_eval.py`) | All legacy runner files deleted from `evals/` |
