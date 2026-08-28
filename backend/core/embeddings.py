@@ -30,7 +30,7 @@ def _call_embed_api_with_retry(contents: List[str], task_type: str, max_retries:
         try:
             return client.models.embed_content(
                 model='gemini-embedding-001',
-                contents=contents,
+                contents=contents,  # type: ignore[arg-type]
                 config=types.EmbedContentConfig(
                     output_dimensionality=768,
                     task_type=task_type
