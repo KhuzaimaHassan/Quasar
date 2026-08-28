@@ -46,6 +46,12 @@ These are improvements to existing features. Pick from this list once v1.0 is sh
 - [ ] Support for PPTX, XLSX, HTML, Markdown file types
 - [ ] Codebase ingestion — parse and chunk code files by AST boundaries (function/class level)
 
+### Known Gaps & Next Up (Milestone 6 Baseline Findings)
+- **Retrieval Threshold Gap**: 6 of 14 golden-set cases have retrieval similarity scores between 0.58 and 0.69, just under the production 0.70 cosine similarity threshold, causing 0 chunks to be returned for otherwise-answerable questions (see [`evals/golden_set.json`](file:///c:/Users/Administrator/OneDrive/Desktop/Quasar/evals/golden_set.json), `knownRetrievalGap: true`).
+- **Empirical Baseline Confirmation**: Confirmed via the RAGAS evaluation baseline in [`evals/results/eval_report_20260828_155553.json`](file:///c:/Users/Administrator/OneDrive/Desktop/Quasar/evals/results/eval_report_20260828_155553.json) — Context Precision and Context Recall are both 0.0000 for this suite specifically because retrieval returns nothing, not because retrieval logic is wrong.
+- **Negative-Guardrail Refusal Accuracy**: The negative-guardrail suite (3 cases) currently passes 100% refusal accuracy, but an earlier baseline run caught one case where the pipeline answered instead of refusing — worth monitoring if that recurs.
+- **Next Milestone Candidate**: Experiment with lowering the cosine similarity threshold to 0.60–0.65 (as flagged in `docs/Lessons-Learned.md`, Issue #88) and re-run [`evals/run_eval.py`](file:///c:/Users/Administrator/OneDrive/Desktop/Quasar/evals/run_eval.py) to measure whether that closes the gap without degrading precision on the negative-guardrail suite.
+
 ### Chat
 - [ ] Conversation branching — fork a conversation from any message
 - [ ] System prompt editor — let users write and save custom system prompts per workspace
