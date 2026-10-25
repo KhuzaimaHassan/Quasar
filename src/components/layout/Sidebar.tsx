@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter, useParams } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { cn, formatRelativeTime } from "@/lib/utils";
 import { navGroups } from "@/lib/nav";
 import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
@@ -11,18 +11,18 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { PanelLeftClose, PanelLeftOpen, Search, Plus, ChevronDown, Loader2 } from "lucide-react";
+import { PanelLeftClose, PanelLeftOpen, Search, Plus, ChevronDown, Loader2, Lock } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useWorkspace } from "@/components/providers/workspace-provider";
 import { useConversations, useCreateConversation, useUpdateConversation } from "@/lib/queries/conversations";
-import { DEFAULT_MODEL_ID, MODEL_CATALOG, getModelLabel, resolveModelId } from "@/lib/models";
+import { DEFAULT_MODEL_ID, MODEL_CATALOG, getModelLabel } from "@/lib/models";
+import { useApiKeys } from "@/lib/queries/api-keys";
 import { ConversationCard } from "./ConversationCard";
 
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const params = useParams();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [newChatModel, setNewChatModel] = useState(DEFAULT_MODEL_ID);
@@ -31,25 +31,21 @@ export function Sidebar() {
   const { data: conversations = [], isLoading, error } = useConversations(activeWorkspace?.id);
   const { mutate: createConversation, isPending: isCreating } = useCreateConversation();
   const { mutate: updateConversation } = useUpdateConversation();
+  const { data: apiKeys = [] } = useApiKeys();
 
-  const activeConversationId = params?.id as string | undefined;
-  const activeConversation = activeConversationId
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ? (conversations as any[]).find((c) => c.id === activeConversationId)
-    : null;
-  const selectedModel = activeConversation?.model ?? newChatModel;
-
-  useEffect(() => {
-    if (activeConversation?.model) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setNewChatModel(resolveModelId(activeConversation.model));
-    }
-  }, [activeConversation?.model]);
+  const selectedModel = newChatModel;
+  const isLocked = (provider: string, requiresKey: boolean) =>
+    requiresKey && !apiKeys.some((key) => key.provider === provider);
 
   const currentModelName =
-    MODEL_CATALOG.find((m) => m.id === resolveModelId(selectedModel))?.label || getModelLabel(selectedModel);
+    getModelLabel(selectedModel);
 
   const handleNewChat = () => {
+    const model = MODEL_CATALOG.find((item) => item.id === newChatModel);
+    if (model && isLocked(model.provider, model.requiresKey)) {
+      router.push('/settings');
+      return;
+    }
     createConversation(
       { workspaceId: activeWorkspace?.id, model: newChatModel },
       {
@@ -180,7 +176,7 @@ export function Sidebar() {
                       variant="ghost"
                       size="sm"
                       className="h-6 text-[10px] gap-1 text-muted-foreground font-medium px-1.5 rounded-md hover:bg-accent focus-visible:ring-2"
-                      aria-label={`Select AI Model. Current model: ${currentModelName}`}
+                      aria-label={`Model for new chats. Current model: ${currentModelName}`}
                     >
                       {currentModelName}
                       <ChevronDown className="h-3 w-3 opacity-50" aria-hidden="true" />
@@ -190,13 +186,20 @@ export function Sidebar() {
                     {MODEL_CATALOG.map((model) => (
                       <DropdownMenuItem
                         key={model.id}
-                        onClick={() => setNewChatModel(model.id)}
+                        onClick={() => isLocked(model.provider, model.requiresKey)
+                          ? router.push('/settings')
+                          : setNewChatModel(model.id)}
                         className={cn(
                           "cursor-pointer text-xs",
                           selectedModel === model.id && "bg-accent text-accent-foreground font-medium"
                         )}
                       >
                         {model.label}
+                        {isLocked(model.provider, model.requiresKey) && (
+                          <span className="ml-auto inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+                            <Lock className="h-3 w-3" /> Add Key
+                          </span>
+                        )}
                       </DropdownMenuItem>
                     ))}
                   </DropdownMenuContent>
@@ -261,7 +264,7 @@ export function Sidebar() {
                         time={formatRelativeTime(chat.updatedAt)}
                         model={getModelLabel(chat.model)}
                         files={0}
-                        isActive={params?.id === chat.id}
+                        isActive={pathname === `/chat/${chat.id}`}
                         onRename={(newTitle) => {
                           updateConversation({ id: chat.id, data: { title: newTitle } });
                         }}

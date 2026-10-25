@@ -5,7 +5,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str
     INTERNAL_SERVICE_SECRET: str
     GOOGLE_API_KEY: str
-    GOOGLE_GENERATIVE_MODEL: str = "gemini-3.8-flash"
+    GOOGLE_GENERATIVE_MODEL: str = "gemini-3.5-flash-lite"
     SUPABASE_URL: str
     SUPABASE_SERVICE_ROLE_KEY: str
 
