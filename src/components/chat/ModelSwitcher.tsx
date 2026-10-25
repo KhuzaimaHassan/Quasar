@@ -27,7 +27,7 @@ export function ModelSwitcher({
   const { mutate: updateConversation } = useUpdateConversation();
 
   const selectedModel =
-    MODEL_CATALOG.find((m) => m.id === (currentModel || "gemini-3.5-flash")) ||
+    MODEL_CATALOG.find((m) => m.id === (currentModel || "gemini-3.6-flash")) ||
     MODEL_CATALOG[0];
 
   const handleSelect = (modelId: string, isLocked: boolean) => {

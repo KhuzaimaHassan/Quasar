@@ -66,7 +66,7 @@ export function UsageSection() {
                         <td className="px-3 sm:px-4 py-2.5 sm:py-3 font-medium whitespace-nowrap">{model.label}</td>
                         <td className="px-3 sm:px-4 py-2.5 sm:py-3 text-right whitespace-nowrap">{model.totalTokens.toLocaleString()}</td>
                         <td className="px-3 sm:px-4 py-2.5 sm:py-3 text-right font-medium whitespace-nowrap">
-                          {model.modelId === 'gemini-3.5-flash' ? (
+                          {model.modelId === 'gemini-3.6-flash' || model.modelId === 'gemini-3.5-flash-lite' ? (
                             <span className="text-green-600 dark:text-green-500">$0.00 (free tier)</span>
                           ) : (
                             `$${model.estimatedCost.toFixed(4)}`

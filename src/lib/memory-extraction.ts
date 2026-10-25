@@ -18,7 +18,7 @@ export async function extractMemories(recentMessages: any[]): Promise<ExtractedF
     const result = await generateObject({
       // We always use the server's default Google key for background extraction,
       // never a BYOK-resolved key to ensure it always runs reliably.
-      model: google('gemini-3.5-flash'), // Using actual flash model name
+      model: google('gemini-3.6-flash'),
       schema: z.object({
         facts: z.array(
           z.object({
