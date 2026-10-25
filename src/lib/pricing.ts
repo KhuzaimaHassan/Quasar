@@ -52,7 +52,7 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
  * Quasar has no visibility into a user's real invoice, caching discounts, or batch pricing.
  */
 export function estimateCost(modelId: string, inputTokens: number, outputTokens: number, _date: Date = new Date()): number {
-  let pricing = MODEL_PRICING[modelId];
+  const pricing = MODEL_PRICING[modelId];
   
   if (!pricing) {
     return 0;
