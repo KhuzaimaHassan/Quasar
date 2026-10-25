@@ -136,7 +136,7 @@ export async function resolveCitations(chunks: RetrievedChunk[]): Promise<Citati
   for (const doc of documents) {
     // Generate signed URL (same pattern as AttachmentChip uses / upload-url relies on)
     const { data, error } = await supabaseAdmin.storage
-      .from("documents")
+      .from("uploads")
       .createSignedUrl(doc.storagePath, 3600); // 1 hour
 
     if (error || !data) {

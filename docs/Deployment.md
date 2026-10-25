@@ -9,7 +9,6 @@ Quasar uses a split deployment:
 | Next.js frontend + API routes | Vercel | Push to `main` |
 | FastAPI backend (RAG + agents) | Docker → Render (Free Tier) | Push to `main` (Render auto-deploy) |
 | PostgreSQL + pgvector | Supabase | Managed |
-| Redis | Upstash (serverless Redis) | Managed |
 | File storage | Supabase Storage | Managed |
 
 ---
@@ -21,7 +20,7 @@ Quasar uses a split deployment:
 | Local | any | `localhost:3000` / `localhost:8000` |
 | Preview | feature branches | Vercel preview URL (auto-generated) |
 | Staging | `develop` | `staging.quasar.app` (optional) |
-| Production | `main` | `https://quasar-sand.vercel.app` |
+| Production | `main` | `https://qausar.vercel.app` |
 
 ---
 
@@ -54,10 +53,6 @@ SUPABASE_SERVICE_ROLE_KEY=eyJ...
 # FastAPI service (internal)
 FASTAPI_SERVICE_URL=http://localhost:8000   # or Render URL in production
 
-# Upstash Redis (Rate Limiting)
-UPSTASH_REDIS_REST_URL=https://...upstash.io
-UPSTASH_REDIS_REST_TOKEN=A...
-
 # LangSmith (M6)
 LANGCHAIN_API_KEY=ls_...
 LANGCHAIN_PROJECT=quasar
@@ -68,9 +63,9 @@ LANGCHAIN_TRACING_V2=true
 
 ```env
 DATABASE_URL=postgresql://...
-OPENAI_API_KEY=sk-...
-ANTHROPIC_API_KEY=sk-ant-...
-REDIS_URL=redis://...
+INTERNAL_SERVICE_SECRET=...
+GOOGLE_API_KEY=...
+GOOGLE_GENERATIVE_MODEL=gemini-3.8-flash
 SUPABASE_URL=https://...supabase.co
 SUPABASE_SERVICE_ROLE_KEY=eyJ...
 LANGCHAIN_API_KEY=ls_...
@@ -79,6 +74,10 @@ LANGCHAIN_TRACING_V2=true
 ```
 
 Never commit either file. Add to `.gitignore`. Set all variables in Vercel dashboard and GitHub Actions secrets.
+
+The Next.js Google SDK reads `GOOGLE_GENERATIVE_AI_API_KEY`; FastAPI reads `GOOGLE_API_KEY`. Configure the appropriate name in each service rather than assuming environment variables are shared. `INTERNAL_SERVICE_SECRET` must match between Vercel and Render. PostgreSQL quotas replace the Upstash dependency (ADR-020); old Upstash environment values are no longer used.
+
+Before this release, apply the additive quota migration with `npx prisma migrate deploy`. Vercel Preview does not apply production migrations automatically. Production Clerk keys must be scoped to Vercel's **Production** environment and use the matching production Clerk instance. `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` is embedded during the build, so changing it requires a fresh deployment; do not hardcode keys in application code.
 
 ---
 

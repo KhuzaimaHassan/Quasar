@@ -155,7 +155,7 @@ ruff check backend/   # Python linting
 mypy backend/         # Python type checking
 ```
 
-**Note:** Real automated test suites (pytest for backend, vitest/playwright for frontend) are explicitly deferred to future work. The current CI pipeline ensures type-safety, linting standards, and that database migrations (`npx prisma migrate deploy`) apply cleanly against a fresh `pgvector` instance.
+**Note:** Broad end-to-end and backend suites remain deferred. `npm test` runs focused request-pipeline regressions for model aliases, persisted SDK message format, pricing fallbacks, and quota failure behavior. The migration job supplies isolated `TEST_DATABASE_HOST`, `TEST_DATABASE_USER`, `TEST_DATABASE_PASSWORD`, and `TEST_DATABASE_NAME` fields to test actual PostgreSQL concurrency and sliding-window expiry. Alternatively, a local developer can supply `TEST_DATABASE_URL`. These tests never require a real model request. Integration tests refuse a non-local database URL and otherwise skip when no test database is supplied.
 
 ---
 

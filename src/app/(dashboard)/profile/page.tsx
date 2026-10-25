@@ -1,5 +1,6 @@
 import { User } from "lucide-react";
-import { PageHeader, EmptyState } from "@/components/layout/PageHeader";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { UserProfile } from "@clerk/nextjs";
 
 export default function ProfilePage() {
   return (
@@ -9,11 +10,7 @@ export default function ProfilePage() {
         description="Manage your personal profile and account security."
         icon={User}
       />
-      <EmptyState 
-        icon={User}
-        title="Coming Soon"
-        description="Profile management will be available when authentication is integrated."
-      />
+      <UserProfile routing="hash" />
     </div>
   );
 }

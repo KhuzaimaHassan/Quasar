@@ -7,7 +7,7 @@ export interface ModelPricing {
 }
 
 export const MODEL_PRICING: Record<string, ModelPricing> = {
-  'gemini-3.6-flash': {
+  'gemini-3.8-flash': {
     inputPerMillion: 0,
     outputPerMillion: 0,
     effectiveFrom: '2026-01-01',
@@ -46,16 +46,23 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   }
 };
 
+const HISTORICAL_FREE_MODELS = new Set(['gemini-1.5-flash', 'gemini-3.5-flash', 'gemini-3.6-flash']);
+
+export function isFreeTierModel(modelId: string): boolean {
+  return HISTORICAL_FREE_MODELS.has(modelId) || MODEL_PRICING[modelId]?.note === 'Free tier';
+}
+
 /**
  * Estimates the cost for a given model and token usage.
  * NOTE: This is list-price estimation, not actual billing data.
  * Quasar has no visibility into a user's real invoice, caching discounts, or batch pricing.
  */
-export function estimateCost(modelId: string, inputTokens: number, outputTokens: number, _date: Date = new Date()): number {
+export function estimateCost(modelId: string, inputTokens: number, outputTokens: number): number | null {
+  if (isFreeTierModel(modelId)) return 0;
   const pricing = MODEL_PRICING[modelId];
   
   if (!pricing) {
-    return 0;
+    return null;
   }
 
   const inputCost = (inputTokens / 1_000_000) * pricing.inputPerMillion;

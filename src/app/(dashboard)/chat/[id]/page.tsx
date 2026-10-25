@@ -7,7 +7,7 @@ import { DefaultChatTransport } from "ai";
 import { MessageList } from "@/components/chat/MessageList";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { useMessages, useConversation } from "@/lib/queries/conversations";
-import { toInitialMessages, getMessageText } from "@/lib/chat-utils";
+import { toInitialMessages, getMessageText, getChatErrorMessage } from "@/lib/chat-utils";
 import { TokenBadge } from "@/components/chat/TokenBadge";
 import { ModelSwitcher } from "@/components/chat/ModelSwitcher";
 import type { UploadedAttachment, PersistedAttachment } from "@/lib/attachment-types";
@@ -17,13 +17,15 @@ import { Provider } from "@/lib/models";
 import { useWorkspace } from "@/components/providers/workspace-provider";
 import { useWorkspaces } from "@/lib/queries/workspaces";
 import { AgentPanel } from "@/components/agents/AgentPanel";
+import Link from "next/link";
+import { ConversationQueryError } from "@/lib/queries/conversations";
 
 export default function DynamicChatPage({ params }: { params: Promise<{ id: string }> }) {
   // Unwrap the Promise params for Client Components in Next.js 15+
   const resolvedParams = use(params);
   const conversationId = resolvedParams.id;
 
-  const { data: persistedMessages = [], isLoading } = useMessages(conversationId);
+  const { data: persistedMessages = [], isLoading, error, refetch } = useMessages(conversationId);
 
   // Mount the actual chat only when initial messages are loaded, so useChat initializes correctly
   if (isLoading) {
@@ -36,7 +38,24 @@ export default function DynamicChatPage({ params }: { params: Promise<{ id: stri
     );
   }
 
-  return <ChatContainer conversationId={conversationId} persistedMessages={persistedMessages} />;
+  if (error) {
+    const isNotFound = error instanceof ConversationQueryError && error.status === 404;
+    return (
+      <div role="alert" className="flex flex-1 flex-col items-center justify-center gap-4 p-6 text-center">
+        <h1 className="text-xl font-semibold">{isNotFound ? 'Conversation not found' : 'Unable to load conversation'}</h1>
+        <p className="text-sm text-muted-foreground">
+          {isNotFound ? 'This conversation does not exist or is not available to your account.' : 'Your messages could not be loaded. Please try again.'}
+        </p>
+        {isNotFound ? (
+          <Link href="/chat" className="text-primary underline">Back to chats</Link>
+        ) : (
+          <button type="button" onClick={() => refetch()} className="text-primary underline">Try again</button>
+        )}
+      </div>
+    );
+  }
+
+  return <ChatContainer key={conversationId} conversationId={conversationId} persistedMessages={persistedMessages} />;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -56,8 +75,7 @@ function ChatContainer({ conversationId, persistedMessages }: { conversationId: 
 
   const { messages, setMessages, sendMessage, stop, status, error } = useChat({
     transport,
-    // @ts-expect-error - The ai/react vs @ai-sdk/react type definitions conflict in this setup
-    initialMessages: initMsgs,
+    messages: initMsgs,
   });
 
   // Sync useChat's internal state with the DB when not streaming.
@@ -74,7 +92,7 @@ function ChatContainer({ conversationId, persistedMessages }: { conversationId: 
 
   useEffect(() => {
     const wasActive = prevStatusRef.current === 'streaming' || prevStatusRef.current === 'submitted';
-    if (wasActive && status === 'ready') {
+    if (wasActive && (status === 'ready' || status === 'error')) {
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: ['conversation', conversationId] });
         queryClient.invalidateQueries({ queryKey: ['messages', conversationId] });
@@ -181,7 +199,7 @@ function ChatContainer({ conversationId, persistedMessages }: { conversationId: 
     draftMessages.push({
       id: 'error-stub',
       role: 'assistant',
-      content: `Error: ${error.message || 'Something went wrong.'}`,
+      content: `Error: ${getChatErrorMessage(error.message || 'Something went wrong.')}`,
       createdAt: new Date().toISOString(),
       isPending: false,
       isStreaming: false,

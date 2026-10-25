@@ -28,7 +28,7 @@ def generate(state: AgentState):
     task = state["task"]
     # Generate a short response
     response = client.models.generate_content(
-        model='gemini-3.6-flash',
+        model=settings.GOOGLE_GENERATIVE_MODEL,
         contents=f"Respond concisely to the following task:\n\n{task}"
     )
     return {"response": response.text}

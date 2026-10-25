@@ -1,6 +1,8 @@
 import { generateObject } from 'ai';
 import { google } from '@ai-sdk/google';
 import { z } from 'zod';
+import { BACKGROUND_MODEL_ID } from '@/lib/models';
+import { getMessageText } from '@/lib/chat-utils';
 
 export type ExtractedFact = {
   scope: 'preference' | 'project' | 'style' | 'fact';
@@ -13,12 +15,14 @@ export type ExtractedFact = {
 export async function extractMemories(recentMessages: any[]): Promise<ExtractedFact[]> {
   try {
     // Format messages for the prompt
-    const chatHistory = recentMessages.map(m => `${m.role}: ${m.content}`).join('\n');
+    const chatHistory = recentMessages.map(m => `${m.role}: ${getMessageText(m)}`).join('\n');
 
     const result = await generateObject({
       // We always use the server's default Google key for background extraction,
       // never a BYOK-resolved key to ensure it always runs reliably.
-      model: google('gemini-3.6-flash'),
+      model: google(BACKGROUND_MODEL_ID),
+      maxOutputTokens: 1024,
+      maxRetries: 0,
       schema: z.object({
         facts: z.array(
           z.object({

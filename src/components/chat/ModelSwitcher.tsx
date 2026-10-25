@@ -2,7 +2,7 @@
 
 import { Check, ChevronDown, Lock } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { MODEL_CATALOG, Provider } from "@/lib/models";
+import { DEFAULT_MODEL_ID, MODEL_CATALOG, Provider, resolveModelId } from "@/lib/models";
 import { useUpdateConversation } from "@/lib/queries/conversations";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,7 +27,7 @@ export function ModelSwitcher({
   const { mutate: updateConversation } = useUpdateConversation();
 
   const selectedModel =
-    MODEL_CATALOG.find((m) => m.id === (currentModel || "gemini-3.6-flash")) ||
+    MODEL_CATALOG.find((m) => m.id === resolveModelId(currentModel || DEFAULT_MODEL_ID)) ||
     MODEL_CATALOG[0];
 
   const handleSelect = (modelId: string, isLocked: boolean) => {

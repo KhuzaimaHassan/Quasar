@@ -46,8 +46,6 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (activeWorkspace) {
       localStorage.setItem('quasar-workspace-id', activeWorkspace.id)
-    } else {
-      localStorage.removeItem('quasar-workspace-id')
     }
   }, [activeWorkspace])
 

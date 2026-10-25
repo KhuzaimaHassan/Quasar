@@ -32,7 +32,7 @@ def planner(state: AgentState) -> dict:
     task = state["task"]
 
     response = client.models.generate_content(
-        model='gemini-3.6-flash',
+        model=settings.GOOGLE_GENERATIVE_MODEL,
         contents=f"Decompose the following task into clear, atomic steps. MAXIMUM 8 steps.\n\nTask: {task}",
         config={
             "response_mime_type": "application/json",
@@ -64,7 +64,7 @@ def coder(state: AgentState) -> dict:
     prompt += "\nGenerate the necessary code files to fulfill the task and address any reviewer feedback."
 
     response = client.models.generate_content(
-        model='gemini-3.6-flash',
+        model=settings.GOOGLE_GENERATIVE_MODEL,
         contents=prompt,
         config={
             "response_mime_type": "application/json",
@@ -99,7 +99,7 @@ def reviewer(state: AgentState):
     prompt += "Identify any bugs, missing requirements, or syntax errors. If issues are found, set approved to false and list them in notes. If the files perfectly fulfill the plan, set approved to true."
 
     response = client.models.generate_content(
-        model='gemini-3.6-flash',
+        model=settings.GOOGLE_GENERATIVE_MODEL,
         contents=prompt,
         config={
             "response_mime_type": "application/json",

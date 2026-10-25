@@ -5,6 +5,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { createDocumentUploadSchema } from '@/lib/validations/document'
 import { randomUUID } from 'crypto'
 import { uploadRateLimiter } from '@/lib/rate-limit'
+import { RateLimitUnavailableError } from '@/lib/rate-limit-store'
 
 export async function POST(req: Request) {
   try {
@@ -108,6 +109,9 @@ export async function POST(req: Request) {
       { status: 200 }
     )
   } catch (error) {
+    if (error instanceof RateLimitUnavailableError) {
+      return NextResponse.json({ error: 'Service Unavailable', message: error.message, statusCode: 503 }, { status: 503 })
+    }
     console.error('POST /api/documents/upload-url error:', error)
     return NextResponse.json(
       { error: 'Internal Server Error', message: 'Failed to process upload request', statusCode: 500 },

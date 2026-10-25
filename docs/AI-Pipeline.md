@@ -10,12 +10,12 @@ The AI pipeline is the core of Quasar. It handles everything from accepting a us
 
 | Model | Provider | Use case |
 |-------|----------|----------|
-| `gemini-3.6-flash` | Google | Default (free tier, server-provided key) |
+| `gemini-3.8-flash` | Google | Default (free tier, server-provided key) |
 | `gemini-3.5-flash-lite` | Google | Free-tier low-cost alternative |
 | `claude-sonnet-5` | Anthropic | Available only with BYOK |
 | `claude-sonnet-4-6` | Anthropic | Available only with BYOK |
 | `claude-haiku-4-5-20251001` | Anthropic | Available only with BYOK |
-| `gpt-4o` | OpenAI | Available once BYOK (Issue #13) ships |
+| `gpt-4o` | OpenAI | Available only with BYOK |
 
 Model is stored per-conversation and switchable mid-conversation by the user.
 
@@ -23,7 +23,7 @@ Model is stored per-conversation and switchable mid-conversation by the user.
 
 ## Model Strategy
 
-Quasar uses a default-free-plus-BYOK approach. By default, it uses Google's free tier for Gemini 3.5 Flash via a server-provided API key to manage development costs. Premium models like Claude and GPT-4o will be available once the Bring Your Own Key (BYOK) functionality is shipped (Issue #13). For full reasoning, see the new ADR in [Decisions.md](Decisions.md).
+Quasar defaults to Gemini 3.8 Flash using the server's free-tier key. Premium models require the user's encrypted BYOK credential at both the UI and API layers. `DEFAULT_MODEL_ID` and `BACKGROUND_MODEL_ID` in `src/lib/models.ts` keep frontend defaults and background calls consistent. Older free Gemini conversation IDs resolve to the active default without rewriting historical usage. See ADR-009, ADR-017, and ADR-021 in [Decisions.md](Decisions.md).
 
 ---
 
@@ -38,7 +38,7 @@ import { anthropic } from '@ai-sdk/anthropic';
 import { openai } from '@ai-sdk/openai';
 
 const modelMap = {
-  'gemini-3.6-flash': google('gemini-3.6-flash'),
+  'gemini-3.8-flash': google('gemini-3.8-flash'),
   'gemini-3.5-flash-lite': google('gemini-3.5-flash-lite'),
   'claude-sonnet-5': anthropic('claude-sonnet-5'),
   'claude-sonnet-4-6': anthropic('claude-sonnet-4-6'),
@@ -62,7 +62,7 @@ For every chat request, the pipeline assembles the prompt in this order:
 ```
 1. System prompt
 2. Long-term memory facts (from memories table, top 5 by relevance)
-3. Conversation history (from Redis buffer or DB, last N tokens)
+3. Conversation history (from PostgreSQL, capped at the last 30 messages)
 4. RAG context (retrieved chunks, if workspace has documents)
 5. User message
 ```
