@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "type-check": "tsc --noEmit",
-    "test": "tsx --test tests/request-pipeline.test.ts",
+    "test": "tsx --test tests/request-pipeline.test.ts tests/ingestion-request.test.ts",
     "format": "prettier --write src/",
     "eval": "backend\\.venv\\Scripts\\python.exe evals/run_eval.py",
     "postinstall": "prisma generate",
