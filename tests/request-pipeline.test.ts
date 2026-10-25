@@ -7,12 +7,15 @@ import { DEFAULT_MODEL_ID, MODEL_CATALOG, getModelLabel, resolveModelId } from '
 import { toInitialMessages, getMessageText, getChatErrorMessage } from '@/lib/chat-utils';
 import { createConversationSchema, updateConversationSchema } from '@/lib/validations/conversation';
 import { estimateCost, isFreeTierModel } from '@/lib/pricing';
+import { getGenerationErrorMessage } from '@/lib/generation-errors';
+import { canRetryMessage, chatMessagesSchema } from '@/lib/validations/chat';
 
 test('legacy free chat IDs resolve to the active free model without unlocking premium models', () => {
   for (const id of ['gemini-1.5-flash', 'gemini-3.5-flash', 'gemini-3.6-flash']) {
     assert.equal(resolveModelId(id), DEFAULT_MODEL_ID);
   }
-  assert.equal(DEFAULT_MODEL_ID, 'gemini-3.8-flash');
+  assert.equal(DEFAULT_MODEL_ID, 'gemini-3.5-flash-lite');
+  assert.equal(resolveModelId('gemini-3.8-flash'), 'gemini-3.8-flash');
   for (const model of MODEL_CATALOG.filter((item) => item.provider !== 'google' || item.id.includes('pro'))) {
     assert.equal(model.requiresKey, true);
     assert.equal(resolveModelId(model.id), model.id);
@@ -51,6 +54,27 @@ test('persisted history uses AI SDK UIMessage parts and retains user/assistant r
 test('API error bubbles display their message and reference instead of raw JSON', () => {
   assert.equal(getChatErrorMessage(JSON.stringify({ error: 'Quota service unavailable.', requestId: 'test-reference' })), 'Quota service unavailable. Reference: test-reference');
   assert.equal(getChatErrorMessage('Missing API key'), 'Missing API key');
+});
+
+test('provider failures distinguish timeouts and quota without exposing raw provider details', () => {
+  assert.match(getGenerationErrorMessage(new DOMException('private-detail', 'TimeoutError'), 'Gemini'), /time limit/);
+  assert.match(getGenerationErrorMessage({ statusCode: 429 }, 'Gemini'), /quota/);
+  assert.match(getGenerationErrorMessage({ statusCode: 403 }, 'Gemini'), /API key/);
+  assert.match(getGenerationErrorMessage({ statusCode: 503 }, 'Gemini'), /temporarily unavailable/);
+  assert.match(getGenerationErrorMessage({ cause: { statusCode: 503 } }, 'Gemini'), /temporarily unavailable/);
+  assert.doesNotMatch(getGenerationErrorMessage(new Error('private-detail'), 'Gemini'), /private-detail/);
+});
+
+test('chat rejects malformed history and only retries the latest owned orphan', () => {
+  assert.equal(chatMessagesSchema.safeParse([null]).success, false);
+  assert.equal(chatMessagesSchema.safeParse([{ role: 'assistant', content: 'old answer' }]).success, false);
+  assert.equal(chatMessagesSchema.safeParse([{ role: 'user', parts: [{ type: 'text', text: 'Hello' }] }]).success, true);
+  const latest = { id: 'owned-user-message', role: 'user', content: 'Hello' };
+  assert.equal(canRetryMessage(latest, latest.id, 'Hello'), true);
+  assert.equal(canRetryMessage(latest, 'other-conversation-message', 'Hello'), false);
+  assert.equal(canRetryMessage({ ...latest, role: 'assistant' }, latest.id, 'Hello'), false);
+  assert.equal(canRetryMessage(latest, latest.id, 'Changed content'), false);
+  assert.equal(canRetryMessage(null, latest.id, 'Hello'), false);
 });
 
 test('denied quotas stay denied with a meaningful reset and a scoped, hashed identifier', async () => {

@@ -7,7 +7,7 @@ export interface ModelConfig {
   requiresKey: boolean;
 }
 
-export const DEFAULT_MODEL_ID = 'gemini-3.8-flash';
+export const DEFAULT_MODEL_ID = 'gemini-3.5-flash-lite';
 export const BACKGROUND_MODEL_ID = 'gemini-3.5-flash-lite';
 
 const LEGACY_MODEL_ALIASES: Record<string, string> = {
@@ -37,13 +37,13 @@ export function getModelLabel(modelId: string): string {
 export const MODEL_CATALOG: ModelConfig[] = [
   {
     id: DEFAULT_MODEL_ID,
-    label: 'Gemini 3.8 Flash',
+    label: 'Gemini 3.5 Flash-Lite',
     provider: 'google',
     requiresKey: false,
   },
   {
-    id: 'gemini-3.5-flash-lite',
-    label: 'Gemini 3.5 Flash-Lite',
+    id: 'gemini-3.8-flash',
+    label: 'Gemini 3.8 Flash',
     provider: 'google',
     requiresKey: false,
   },

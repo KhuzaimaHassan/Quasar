@@ -73,7 +73,7 @@ function ChatContainer({ conversationId, persistedMessages }: { conversationId: 
   // Maps a "send index" to the attachments for that send
   const [pendingAttachments, setPendingAttachments] = useState<PersistedAttachment[]>([]);
 
-  const { messages, setMessages, sendMessage, stop, status, error } = useChat({
+  const { messages, setMessages, sendMessage, regenerate, clearError, stop, status, error } = useChat({
     transport,
     messages: initMsgs,
   });
@@ -81,9 +81,11 @@ function ChatContainer({ conversationId, persistedMessages }: { conversationId: 
   // Sync useChat's internal state with the DB when not streaming.
   // This prevents duplicates because useChat assigns temporary client-side IDs to new messages,
   // which won't match the new Prisma UUIDs once they are persisted and refetched.
+  const lastSyncedMessages = useRef(persistedMessages);
   useEffect(() => {
-    if (status === 'ready' && persistedMessages.length > 0) {
+    if ((status === 'ready' || status === 'error') && lastSyncedMessages.current !== persistedMessages) {
       setMessages(toInitialMessages(persistedMessages));
+      lastSyncedMessages.current = persistedMessages;
     }
   }, [persistedMessages, status, setMessages]);
 
@@ -195,7 +197,7 @@ function ChatContainer({ conversationId, persistedMessages }: { conversationId: 
   }
 
   // Surface any errors gracefully in the UI instead of hanging silently
-  if (error) {
+  if (error && !persistedMessages.at(-1)?.metadata?.generationError) {
     draftMessages.push({
       id: 'error-stub',
       role: 'assistant',
@@ -211,11 +213,9 @@ function ChatContainer({ conversationId, persistedMessages }: { conversationId: 
     if (persistedMessages.length > 0) {
       const lastMsg = persistedMessages[persistedMessages.length - 1];
       if (lastMsg.role === 'user' && lastMsg.content) {
-        sendMessage(
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          { text: lastMsg.content, files: undefined } as any,
-          { body: { conversationId } }
-        );
+        clearError();
+        setMessages(toInitialMessages(persistedMessages));
+        regenerate({ body: { conversationId, retryMessageId: lastMsg.id } });
       }
     }
   };
@@ -224,7 +224,7 @@ function ChatContainer({ conversationId, persistedMessages }: { conversationId: 
     <div className="flex h-full w-full min-w-0 overflow-hidden">
       <div className="flex flex-1 flex-col min-w-0 bg-muted/10 h-full relative">
         <ChatHeader conversationId={conversationId} />
-        <MessageList draftMessages={draftMessages} persistedMessages={persistedMessages} onRetry={handleRetry} />
+        <MessageList draftMessages={draftMessages} persistedMessages={persistedMessages} onRetry={handleRetry} isSending={isSending} />
         <ChatInput onSend={handleSend} isSending={isSending} onStop={stop} conversationId={conversationId} />
       </div>
     </div>

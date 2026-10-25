@@ -23,6 +23,7 @@ export async function extractMemories(recentMessages: any[]): Promise<ExtractedF
       model: google(BACKGROUND_MODEL_ID),
       maxOutputTokens: 1024,
       maxRetries: 0,
+      abortSignal: AbortSignal.timeout(10_000),
       schema: z.object({
         facts: z.array(
           z.object({

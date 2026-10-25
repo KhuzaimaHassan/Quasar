@@ -10,8 +10,8 @@ The AI pipeline is the core of Quasar. It handles everything from accepting a us
 
 | Model | Provider | Use case |
 |-------|----------|----------|
-| `gemini-3.8-flash` | Google | Default (free tier, server-provided key) |
-| `gemini-3.5-flash-lite` | Google | Free-tier low-cost alternative |
+| `gemini-3.5-flash-lite` | Google | Verified free-tier default, server-provided key |
+| `gemini-3.8-flash` | Google | Optional free-tier model; earlier requests timed out or returned provider 503 |
 | `claude-sonnet-5` | Anthropic | Available only with BYOK |
 | `claude-sonnet-4-6` | Anthropic | Available only with BYOK |
 | `claude-haiku-4-5-20251001` | Anthropic | Available only with BYOK |
@@ -23,7 +23,7 @@ Model is stored per-conversation and switchable mid-conversation by the user.
 
 ## Model Strategy
 
-Quasar defaults to Gemini 3.8 Flash using the server's free-tier key. Premium models require the user's encrypted BYOK credential at both the UI and API layers. `DEFAULT_MODEL_ID` and `BACKGROUND_MODEL_ID` in `src/lib/models.ts` keep frontend defaults and background calls consistent. Older free Gemini conversation IDs resolve to the active default without rewriting historical usage. See ADR-009, ADR-017, and ADR-021 in [Decisions.md](Decisions.md).
+Quasar defaults to Gemini 3.5 Flash-Lite, which returned a response successfully in the production browser smoke test. Gemini 3.8 Flash remains selectable, but earlier attempts timed out or returned provider HTTP 503. Premium models require the user's encrypted BYOK credential at both the UI and API layers, including the sidebar's new-chat picker. This picker controls new chats independently of existing conversation choices. `DEFAULT_MODEL_ID` and `BACKGROUND_MODEL_ID` in `src/lib/models.ts` keep frontend defaults and background calls consistent. Older free Gemini conversation IDs resolve to the active default without rewriting historical usage. There is no automatic model fallback or provider retry. Failures remain visible after reopening a chat; Retry reuses only the latest owned user message. Assistant text and token totals are saved atomically. See ADR-009, ADR-017, and ADR-021 in [Decisions.md](Decisions.md).
 
 ---
 

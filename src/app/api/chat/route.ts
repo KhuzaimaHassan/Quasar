@@ -10,13 +10,16 @@ import { BACKGROUND_MODEL_ID, MODEL_CATALOG, resolveModelId } from '@/lib/models
 import { decrypt } from '@/lib/encryption'
 import { chatRateLimiter } from '@/lib/rate-limit'
 import { RateLimitUnavailableError } from '@/lib/rate-limit-store'
+import { getGenerationErrorMessage } from '@/lib/generation-errors'
+import { chatMessagesSchema, canRetryMessage } from '@/lib/validations/chat'
 import { traceChatGeneration, sanitizeTraceMetadata } from '@/lib/langsmith'
 
-export const maxDuration = 60
+export const maxDuration = 90
 
 export async function POST(req: Request) {
   const requestId = crypto.randomUUID()
   let stage = 'authentication'
+  let recordFailure: ((message: string) => Promise<void>) | undefined
   try {
     const { userId: clerkId } = await auth()
     
@@ -36,14 +39,21 @@ export async function POST(req: Request) {
       return new NextResponse('User not found', { status: 404 })
     }
 
-    const json = await req.json().catch(() => ({}));
+    const json = await req.json().catch(() => null);
+    if (!json || typeof json !== 'object' || Array.isArray(json)) {
+      return NextResponse.json({ error: 'Invalid chat request.', requestId }, { status: 400 })
+    }
     
-    const messages = json.messages;
+    const validatedMessages = chatMessagesSchema.safeParse(json.messages)
+    if (!validatedMessages.success) {
+      return NextResponse.json({ error: 'Invalid chat messages.', requestId }, { status: 400 })
+    }
+    const messages = validatedMessages.data;
     const url = new URL(req.url);
-    const fallbackMessage = Array.isArray(messages) && messages.length > 0 ? messages[messages.length - 1] : {};
+    const fallbackMessage = messages[messages.length - 1];
     const conversationId = json.conversationId || json.data?.conversationId || url.searchParams.get('conversationId') || req.headers.get('x-conversation-id') || fallbackMessage?.conversationId;
 
-    if (!conversationId || !Array.isArray(messages) || messages.length === 0) {
+    if (typeof conversationId !== 'string' || !conversationId) {
       return new NextResponse('A conversation and at least one message are required.', { status: 400 })
     }
 
@@ -71,14 +81,21 @@ export async function POST(req: Request) {
     } else if (Array.isArray(lastMessage.parts)) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       userMessageContent = lastMessage.parts.map((p: any) => p.text || '').join('')
-    } else {
-      userMessageContent = JSON.stringify(lastMessage.content)
     }
 
     const attachments = Array.isArray(json.attachments) ? json.attachments : undefined
 
     stage = 'message_persistence'
-    await db.message.create({
+    const retryMessageId = typeof json.retryMessageId === 'string' ? json.retryMessageId : undefined
+    const retryMessage = retryMessageId ? await db.message.findFirst({
+      where: { conversationId },
+      orderBy: { createdAt: 'desc' },
+    }) : null
+    if (retryMessageId && !canRetryMessage(retryMessage, retryMessageId, userMessageContent)) {
+      return new NextResponse('The message to retry was not found in this conversation.', { status: 400 })
+    }
+
+    const persistedUserMessage = retryMessage ?? await db.message.create({
       data: {
         conversationId,
         role: 'user',
@@ -87,6 +104,20 @@ export async function POST(req: Request) {
         metadata: attachments && attachments.length > 0 ? { attachments } : {},
       },
     })
+
+    const recordGenerationFailure = async (message: string) => {
+      try {
+        const metadata = persistedUserMessage.metadata && typeof persistedUserMessage.metadata === 'object' && !Array.isArray(persistedUserMessage.metadata)
+          ? persistedUserMessage.metadata : {}
+        await db.message.update({
+          where: { id: persistedUserMessage.id },
+          data: { metadata: { ...metadata, generationError: { message, requestId } } },
+        })
+      } catch {
+        console.error('[GENERATION_ERROR_PERSISTENCE_FAILED]', { requestId })
+      }
+    }
+    recordFailure = recordGenerationFailure
 
     stage = 'context'
     // RAG Context Assembly
@@ -136,6 +167,7 @@ export async function POST(req: Request) {
       });
 
       if (!apiKeyRow) {
+        await recordGenerationFailure(`Add your ${provider} API key in Settings to use ${catalogEntry.label}.`)
         return new NextResponse(`Missing API key for provider: ${provider}. Please configure it in settings.`, { status: 400 });
       }
 
@@ -158,6 +190,7 @@ export async function POST(req: Request) {
           return new NextResponse(`Unsupported BYOK provider: ${provider}`, { status: 400 });
         }
       } catch (err) {
+        await recordGenerationFailure(`Unable to use the ${provider} API key. Check its configuration in Settings.`)
         console.error(`[CHAT_ERROR] Failed to initialize BYOK model provider=${provider} model=${modelId}`, err instanceof Error ? err.message : String(err));
         return new NextResponse(`Failed to initialize ${provider} model. Your API key might be invalid.`, { status: 400 });
       }
@@ -170,6 +203,7 @@ export async function POST(req: Request) {
     }
 
     stage = 'generation'
+    const generationTimeout = AbortSignal.timeout(45_000)
     const result = await traceChatGeneration(
       `chat-${modelId}`,
       () =>
@@ -178,13 +212,29 @@ export async function POST(req: Request) {
           system: systemPrompt,
           messages: modelMessages,
           maxRetries: 0,
-          abortSignal: AbortSignal.any([req.signal, AbortSignal.timeout(45_000)]),
+          abortSignal: AbortSignal.any([req.signal, generationTimeout]),
+          onError: async ({ error }) => {
+            await recordGenerationFailure(getGenerationErrorMessage(error, catalogEntry.label))
+          },
+          onAbort: async () => {
+            const message = generationTimeout.aborted
+              ? getGenerationErrorMessage(new DOMException('Timed out', 'TimeoutError'), catalogEntry.label)
+              : 'Generation was stopped before a complete response was received.'
+            await recordGenerationFailure(message)
+          },
           providerOptions: provider === 'google' ? {
             google: { thinkingConfig: { thinkingLevel: 'low' } },
           } : undefined,
           async onFinish({ text, usage }) {
+            if (!text.trim()) {
+              await recordGenerationFailure(`${catalogEntry.label} returned no answer. Choose another model or try again later.`)
+              return
+            }
             // Persist the assistant's response
-            await db.message.create({
+            // Keep the response and token total consistent if either write fails.
+            const previousMetadata = persistedUserMessage.metadata && typeof persistedUserMessage.metadata === 'object' && !Array.isArray(persistedUserMessage.metadata)
+              ? persistedUserMessage.metadata : {}
+            await db.$transaction([db.message.create({
               data: {
                 conversationId,
                 role: 'assistant',
@@ -195,17 +245,21 @@ export async function POST(req: Request) {
                   citations: citations.map(({ documentId, filename, url, similarity }) => ({ documentId, filename, url, similarity })),
                 },
               },
-            })
+            }),
 
             // Increment the conversation's total tokens
-            await db.conversation.update({
+            db.conversation.update({
               where: { id: conversationId },
               data: {
                 totalTokens: {
                   increment: usage.totalTokens,
                 },
               },
-            })
+            }),
+            db.message.update({
+              where: { id: persistedUserMessage.id },
+              data: { metadata: { ...previousMetadata, generationError: null } },
+            })])
 
             // Background memory extraction (Issue #95, Step 3)
             // Trigger every 5th message (using the request's messages array length)
@@ -253,6 +307,7 @@ export async function POST(req: Request) {
                   model: google(BACKGROUND_MODEL_ID),
                   maxOutputTokens: 64,
                   maxRetries: 0,
+                  abortSignal: AbortSignal.timeout(10_000),
                   system:
                     "Generate an extremely concise title (3-6 words) for this conversation based on the user's first message. Reply ONLY with the raw title text.",
                   prompt: userMessageContent,
@@ -287,13 +342,14 @@ export async function POST(req: Request) {
         stream: result.stream,
         onError: (err) => {
           console.error('[STREAM_GENERATION_ERROR]', { requestId, type: err instanceof Error ? err.name : 'UnknownError' })
-          return `The model could not finish its response. Please check the provider configuration or quota. Reference: ${requestId}`
+          return `${getGenerationErrorMessage(err, catalogEntry.label)} Reference: ${requestId}`
         }
       })
     })
     
   } catch (error) {
     console.error('[CHAT_ERROR]', { requestId, stage, type: error instanceof Error ? error.name : 'UnknownError' })
+    await recordFailure?.('The chat request could not complete. Please try again later.')
     if (error instanceof RateLimitUnavailableError) {
       return NextResponse.json({ error: error.message, requestId }, { status: 503 })
     }

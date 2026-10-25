@@ -61,7 +61,7 @@ model Conversation {
   workspaceId String?
   workspace   Workspace? @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
   title       String    @default("New conversation")
-  model       String    @default("gemini-3.8-flash")
+  model       String    @default("gemini-3.5-flash-lite")
   totalTokens Int       @default(0)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
