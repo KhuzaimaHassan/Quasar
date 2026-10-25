@@ -215,6 +215,7 @@ The `rate_limit_buckets` table stores bounded timestamp arrays under a scope and
 |-------------|-----------|-------|
 | `chat:{hashedUserId}` | Sliding window (1m) | 20 req/min |
 | `upload:{hashedUserId}` | Sliding window (1h) | 10 req/hr |
+| `ingest:{hashedUserId}` | Sliding window (1h) | 10 req/hr |
 | `agent:{hashedUserId}` | Sliding window (1h) | 5 req/hr |
 
 Apply `20261025120000_request_quota_buckets` with `prisma migrate deploy` before deploying code that uses this table. The follow-up `20261025140000_verified_free_default` selects the production-verified Gemini 3.5 Flash-Lite for future conversations. Existing conversations and their historical usage are not rewritten.

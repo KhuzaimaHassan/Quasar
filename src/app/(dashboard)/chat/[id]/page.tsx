@@ -32,7 +32,7 @@ export default function DynamicChatPage({ params }: { params: Promise<{ id: stri
     return (
       <div className="flex h-full w-full min-w-0 overflow-hidden">
         <div className="flex flex-1 items-center justify-center bg-muted/10">
-          <span className="w-6 h-6 border-4 border-primary border-t-transparent rounded-full animate-spin"></span>
+          <span role="status" aria-label="Loading conversation" className="w-6 h-6 border-4 border-primary border-t-transparent rounded-full animate-spin"></span>
         </div>
       </div>
     );
@@ -115,8 +115,7 @@ function ChatContainer({ conversationId, persistedMessages }: { conversationId: 
 
   const handleSend = async (content: string, attachments: UploadedAttachment[]) => {
     // Separate images (have .file) from non-images
-    // TODO: PDF/DOCX document content understanding is M3's RAG pipeline.
-    // For now, they are uploaded and shown in the UI but NOT fed into the model's context.
+    // PDF/DOCX chat attachments are downloadable files; document Q&A uses workspace indexing.
     const imageAttachments = attachments.filter(a => isImageMimeType(a.mimeType) && a.file);
     const allAttachmentMeta: PersistedAttachment[] = attachments.map(a => ({
       id: a.id,

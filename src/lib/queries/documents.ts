@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { readHttpError } from '@/lib/http-error'
+import { shouldPollDocument } from '@/lib/document-status'
 
 export type DocumentStatus = 'pending' | 'processing' | 'ready' | 'failed'
 
@@ -13,6 +14,7 @@ export interface Document {
   errorMessage?: string | null
   createdAt: string
   updatedAt: string
+  chunkCount?: number
 }
 
 export function useDocuments(workspaceId: string | null) {
@@ -29,9 +31,23 @@ export function useDocuments(workspaceId: string | null) {
       const docs = query.state.data
       if (!docs) return false
       const isPolling = docs.some(
-        (d) => d.status === 'pending' || d.status === 'processing'
+        (d) => shouldPollDocument(d)
       )
       return isPolling ? 3000 : false
+    },
+  })
+}
+
+export function useRetryDocument() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ documentId }: { documentId: string; workspaceId: string }) => {
+      const response = await fetch(`/api/documents/${documentId}/ingest`, { method: 'POST' })
+      if (!response.ok) throw new Error(await readHttpError(response, 'Failed to retry processing'))
+      return response.json()
+    },
+    onSettled: (_, __, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['documents', variables.workspaceId] })
     },
   })
 }

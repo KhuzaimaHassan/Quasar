@@ -40,4 +40,5 @@ function createLimiter(scope: string, maximum: number, windowMs: number) {
 
 export const chatRateLimiter = createLimiter('chat', 20, 60_000);
 export const uploadRateLimiter = createLimiter('upload', 10, 3_600_000);
+export const ingestionRateLimiter = createLimiter('ingest', 10, 3_600_000);
 export const agentRunRateLimiter = createLimiter('agent', 5, 3_600_000);

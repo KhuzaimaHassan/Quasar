@@ -74,6 +74,14 @@ jobs:
         working-directory: backend
         run: python -m unittest discover -s tests -p test_agent_execution.py
 
+      - name: Document Chunking Regression Tests
+        working-directory: backend
+        run: python -m unittest discover -s tests -p test_document_chunking.py
+
+      - name: Storage Path Boundary Tests
+        working-directory: backend
+        run: python -m unittest discover -s tests -p test_storage_paths.py
+
   migration-check:
     name: Database Migration Check
     runs-on: ubuntu-latest
@@ -128,7 +136,7 @@ jobs:
 
       - name: Atomic Agent Approval Test
         working-directory: backend
-        run: python -m unittest discover -s tests -p test_agent_claim.py
+        run: python -m unittest discover -s tests -p 'test_*claim.py'
         env:
           TEST_DATABASE_HOST: localhost
           TEST_DATABASE_USER: quasar

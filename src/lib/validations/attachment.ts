@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { filenameSchema } from './filename'
 
 /** Allowed MIME types for chat attachments */
 export const ALLOWED_MIME_TYPES = [
@@ -13,7 +14,7 @@ export const MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024 // 25MB
 
 export const uploadUrlSchema = z
   .object({
-    filename: z.string().min(1, 'Filename is required').max(255),
+    filename: filenameSchema,
     mimeType: z.enum(ALLOWED_MIME_TYPES, {
       message: `File type not allowed. Accepted: PNG, JPEG, PDF, DOCX`,
     }),

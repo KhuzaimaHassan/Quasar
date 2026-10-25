@@ -127,7 +127,7 @@ export function MessageBubble({ message, isPending, isStreaming }: MessageBubble
         {/* Hover Metadata & Feedback */}
         <div
           className={cn(
-            "absolute -bottom-5 flex items-center gap-2 text-[10px] text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap",
+            "absolute -bottom-5 flex items-center gap-2 text-[10px] text-muted-foreground opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity whitespace-nowrap",
             isUser ? "right-1" : "left-1"
           )}
         >
@@ -141,6 +141,8 @@ export function MessageBubble({ message, isPending, isStreaming }: MessageBubble
             <div className="flex items-center gap-1.5 ml-1">
               <button 
                 onClick={() => handleFeedback(1)}
+                aria-label="Helpful response"
+                aria-pressed={message.feedback?.rating === 1}
                 className={cn(
                   "hover:text-foreground transition-colors",
                   message.feedback?.rating === 1 && "text-primary hover:text-primary"
@@ -151,6 +153,8 @@ export function MessageBubble({ message, isPending, isStreaming }: MessageBubble
               </button>
               <button 
                 onClick={() => handleFeedback(-1)}
+                aria-label="Unhelpful response"
+                aria-pressed={message.feedback?.rating === -1}
                 className={cn(
                   "hover:text-foreground transition-colors",
                   message.feedback?.rating === -1 && "text-destructive hover:text-destructive"

@@ -40,8 +40,10 @@ try {
       }
     }
   }
-} catch (e) {
-  // Ignore env loading errors, fallback to existing process.env
+} catch (error) {
+  console.warn('Could not read .env.local; using the existing environment.', {
+    type: error instanceof Error ? error.name : 'UnknownError',
+  });
 }
 
 const BUCKET = "uploads";
@@ -134,7 +136,6 @@ async function main() {
     });
     const activeAttachmentPaths = new Set();
     for (const msg of messages) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const meta = msg.metadata;
       if (meta && Array.isArray(meta.attachments)) {
         for (const att of meta.attachments) {

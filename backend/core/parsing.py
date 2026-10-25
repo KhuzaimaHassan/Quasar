@@ -1,5 +1,5 @@
 import io
-import fitz  # type: ignore[import-untyped]
+import pymupdf as fitz  # type: ignore[import-untyped]
 from docx import Document
 
 def extract_text(file_bytes: bytes, mime_type: str) -> str:
@@ -19,8 +19,8 @@ def _extract_text_from_pdf(file_bytes: bytes) -> str:
     doc = fitz.open(stream=file_bytes, filetype="pdf")
     pages_text = []
     
-    for page in doc:
-        text = page.get_text()
+    for page_index in range(doc.page_count):
+        text = doc.load_page(page_index).get_text()
         if text:
             pages_text.append(text.strip())
             

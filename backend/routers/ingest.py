@@ -11,6 +11,7 @@ from core.storage import download_file
 from core.parsing import extract_text
 from core.chunking import chunk_text
 from core.embeddings import embed_chunks
+from core.ingestion_state import claim_document
 
 router = APIRouter()
 
@@ -38,16 +39,21 @@ async def process_document(document_id: str):
         # Offload sync I/O and CPU-bound work to threadpool to avoid blocking the event loop
         file_bytes = await asyncio.to_thread(download_file, storage_path)
         text = await asyncio.to_thread(extract_text, file_bytes, mime_type)
+        if not text.strip():
+            raise ValueError("No readable text was found. Upload a text-based PDF or DOCX; scanned PDFs require OCR first.")
         chunks = await asyncio.to_thread(chunk_text, text)
         
         if chunks:
             embeddings = await asyncio.to_thread(embed_chunks, chunks)
         else:
             embeddings = []
+        if len(embeddings) != len(chunks):
+            raise ValueError("The embedding service returned an incomplete result. Please retry processing.")
             
         # 6. Insert chunks and embeddings
         async with db.pool.acquire() as conn:
             async with conn.transaction():
+                await conn.execute('DELETE FROM "Chunk" WHERE "documentId" = $1', document_id)
                 for i, (chunk, emb) in enumerate(zip(chunks, embeddings)):
                     chunk_id = str(uuid.uuid4())
                     # Convert list of floats to pgvector string format '[1.1, 2.2, ...]'
@@ -64,7 +70,7 @@ async def process_document(document_id: str):
                     
                 # 7. Update status to 'ready'
                 await conn.execute(
-                    'UPDATE "Document" SET status = $1, "errorMessage" = NULL WHERE id = $2',
+                    'UPDATE "Document" SET status = $1, "errorMessage" = NULL, "updatedAt" = now() WHERE id = $2',
                     'ready', document_id
                 )
                 
@@ -74,7 +80,7 @@ async def process_document(document_id: str):
             try:
                 async with db.pool.acquire() as conn:
                     await conn.execute(
-                        'UPDATE "Document" SET status = $1, "errorMessage" = $2 WHERE id = $3',
+                        'UPDATE "Document" SET status = $1, "errorMessage" = $2, "updatedAt" = now() WHERE id = $3',
                         'failed', error_msg, document_id
                     )
             except Exception as inner_e:
@@ -93,8 +99,8 @@ async def ingest_document(req: IngestRequest, background_tasks: BackgroundTasks)
         if not row:
             raise HTTPException(status_code=404, detail="Document not found")
             
-        # Update status to processing
-        await conn.execute('UPDATE "Document" SET status = $1 WHERE id = $2', 'processing', req.document_id)
+        if not await claim_document(conn, req.document_id):
+            raise HTTPException(status_code=409, detail="Document is already processing or indexed")
         
     background_tasks.add_task(process_document, req.document_id)
     return {"documentId": req.document_id, "status": "processing"}

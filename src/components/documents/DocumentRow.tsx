@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { FileText, Loader2, CheckCircle, AlertCircle, Trash2 } from "lucide-react";
-import { Document, useDeleteDocument } from "@/lib/queries/documents";
+import { FileText, Loader2, CheckCircle, AlertCircle, Trash2, RotateCcw } from "lucide-react";
+import { Document, useDeleteDocument, useRetryDocument } from "@/lib/queries/documents";
+import { canRetryDocument, isStaleUpload } from "@/lib/document-status";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,8 +27,10 @@ function formatBytes(bytes: number, decimals = 2) {
 export function DocumentRow({ document }: { document: Document }) {
   const { mutate: deleteDocument, isPending: isDeleting } = useDeleteDocument();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const retry = useRetryDocument();
 
   const isProcessing = document.status === "processing";
+  const needsIndexing = document.status === 'ready' && document.chunkCount === 0;
 
   return (
     <div className={`flex items-center justify-between p-4 border rounded-lg bg-card transition-colors ${isDeleting ? 'opacity-50 pointer-events-none' : ''}`}>
@@ -45,11 +48,11 @@ export function DocumentRow({ document }: { document: Document }) {
         </div>
       </div>
 
-      <div className="flex items-center gap-2 shrink-0 ml-4">
+      <div className="flex flex-wrap justify-end items-center gap-2 shrink-0 ml-4 max-w-[60%]">
         {document.status === "pending" && (
           <div className="flex items-center gap-2 text-muted-foreground text-sm">
-            <Loader2 className="w-4 h-4 animate-spin" />
-            <span>Uploading...</span>
+            {isStaleUpload(document) ? <AlertCircle className="w-4 h-4" /> : <Loader2 className="w-4 h-4 animate-spin" />}
+            <span>{isStaleUpload(document) ? 'Upload interrupted' : 'Uploading...'}</span>
           </div>
         )}
         {document.status === "processing" && (
@@ -58,12 +61,13 @@ export function DocumentRow({ document }: { document: Document }) {
             <span>Processing...</span>
           </div>
         )}
-        {document.status === "ready" && (
+        {document.status === "ready" && !needsIndexing && (
           <div className="flex items-center gap-2 text-green-600 text-sm">
             <CheckCircle className="w-4 h-4" />
             <span>Ready</span>
           </div>
         )}
+        {needsIndexing && <span className="text-sm text-muted-foreground">Needs indexing</span>}
         {document.status === "failed" && (
           <div className="flex items-center gap-2 text-destructive text-sm" title={document.errorMessage || "Failed to process document"}>
             <AlertCircle className="w-4 h-4" />
@@ -72,6 +76,16 @@ export function DocumentRow({ document }: { document: Document }) {
             </span>
           </div>
         )}
+
+        {canRetryDocument(document) && (
+          <Button variant="outline" size="sm" disabled={retry.isPending || isDeleting}
+            aria-label={`Retry processing ${document.filename}`}
+            onClick={() => retry.mutate({ documentId: document.id, workspaceId: document.workspaceId })}>
+            {retry.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
+            <span className="ml-1">Retry</span>
+          </Button>
+        )}
+        {retry.isError && <span role="alert" className="max-w-48 text-xs text-destructive">{retry.error.message}</span>}
         
         <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
           <AlertDialogTrigger asChild>
@@ -79,7 +93,8 @@ export function DocumentRow({ document }: { document: Document }) {
               variant="ghost"
               size="icon"
               className="ml-2 h-8 w-8 text-muted-foreground hover:text-destructive"
-              disabled={isProcessing || isDeleting}
+              disabled={isProcessing || isDeleting || retry.isPending}
+              aria-label={`Delete ${document.filename}`}
               title={isProcessing ? "Cannot delete while processing" : "Delete document"}
             >
               {isDeleting ? (

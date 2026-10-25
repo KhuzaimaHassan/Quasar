@@ -10,6 +10,7 @@ import {
   formatFileSize,
 } from "@/lib/attachment-types";
 import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE_BYTES } from "@/lib/validations/attachment";
+import Link from "next/link";
 
 interface ChatInputProps {
   onSend: (content: string, attachments: UploadedAttachment[]) => void;
@@ -334,6 +335,12 @@ export function ChatInput({ onSend, isSending, onStop, conversationId }: ChatInp
           </div>
         </div>
       </div>
+      {attachments.some((attachment) => !isImageMimeType(attachment.mimeType)) && (
+        <p role="status" className="mt-2 text-xs text-muted-foreground">
+          PDF and DOCX attachments are shared as files. To ask about their contents, upload them in{' '}
+          <Link href="/documents" className="text-primary underline">Documents</Link> first.
+        </p>
+      )}
       <div className="text-center mt-2 text-[10px] text-muted-foreground opacity-70">
         AI models can make mistakes. Check important info.
       </div>

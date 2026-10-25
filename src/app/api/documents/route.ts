@@ -62,11 +62,12 @@ export async function GET(req: Request) {
         errorMessage: true,
         createdAt: true,
         updatedAt: true,
+        _count: { select: { chunks: true } },
         // Intentionally not selecting storagePath to not leak internal paths if not needed
       },
     })
 
-    return NextResponse.json(documents, { status: 200 })
+    return NextResponse.json(documents.map(({ _count, ...document }) => ({ ...document, chunkCount: _count.chunks })), { status: 200 })
   } catch (error) {
     console.error('GET /api/documents error:', error)
     return NextResponse.json(

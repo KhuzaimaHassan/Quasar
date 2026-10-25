@@ -31,12 +31,12 @@ Query
 
 | Type | Parser | Notes |
 |------|--------|-------|
-| PDF | `PyMuPDF` (fitz) | Fast, handles scanned PDFs with OCR fallback |
-| DOCX | `python-docx` | Preserves headings as chunk metadata |
-| TXT / MD | Built-in | Direct text, split on headings |
-| Code files | Built-in | Split by function/class boundary (AST-aware) |
+| Text-based PDF | `PyMuPDF` | Extracts page text; OCR is not implemented |
+| DOCX | `python-docx` | Extracts paragraph text |
 
-Start with PDF and DOCX. Add code file support in M5 (needed for codebase RAG).
+Scanned PDFs require OCR before upload. TXT, Markdown, and AST-aware code ingestion are planned capabilities, not current upload formats. PDF/DOCX files attached directly in chat are downloadable attachments; upload them in Documents to index their contents for Q&A.
+
+Failed documents, abandoned uploads older than five minutes, and historical ready documents with zero chunks can be retried manually without uploading another copy. Concurrent ingestion requests are admitted atomically; indexed documents are not re-embedded by Retry. Upload URL creation and ingestion requests each have a separate per-user limit of 10/hour. No retries are started automatically by the UI.
 
 ---
 
@@ -46,9 +46,9 @@ Start with PDF and DOCX. Add code file support in M5 (needed for codebase RAG).
 
 | Parameter | Default | Notes |
 |-----------|---------|-------|
-| Chunk size | 512 tokens | Smaller = more precise retrieval, larger = more context per chunk |
-| Overlap | 64 tokens | Prevents context loss at boundaries |
-| Min chunk size | 100 tokens | Discard tiny fragments |
+| Chunk size | 500 tokens | Target size for paragraph/sentence accumulation |
+| Overlap | 60 tokens | Preserves context across chunks |
+| Min fragment size | 30 tokens | Discard small fragments, but retain a whole short document when nothing else remains |
 
 ### Algorithm
 
@@ -56,30 +56,30 @@ We implement a manual recursive paragraph and sentence splitter:
 
 ```python
 from google.genai import local_tokenizer
+from functools import lru_cache
 
-tokenizer = local_tokenizer.LocalTokenizer("gemini-2.5-flash")
+@lru_cache(maxsize=1)
+def get_tokenizer():
+    return local_tokenizer.LocalTokenizer("gemini-2.5-flash")
 
 def count_tokens(text: str) -> int:
-    return tokenizer.count_tokens(text).total_tokens
+    return get_tokenizer().count_tokens(text).total_tokens
 ```
 
 Always split by **tokens**, not characters. We first split by double newlines (`\n\n`) to preserve paragraphs, and if a single paragraph exceeds the token limit, we recursively break it down by sentence boundaries (`.!?`). We greedily accumulate these units until the target token size is met.
 
 ### Metadata per chunk
 
-Store this in the `metadata` jsonb column:
+Chunks currently store an empty `metadata` object. Document filename and the chunk index are stored in dedicated columns and returned by the retrieval join:
 
 ```json
 {
-  "page_number": 3,
-  "section_heading": "Introduction",
   "document_filename": "technical_spec.pdf",
-  "char_start": 1240,
-  "char_end": 2800
+  "chunkIndex": 0
 }
 ```
 
-This metadata is used for citation display in the UI ("Source: technical_spec.pdf, page 3").
+The UI cites the filename with a signed source link. Page numbers, section headings, and character offsets are not currently persisted. Tokenizer model assets load on the first chunking request rather than during service startup.
 
 ---
 
