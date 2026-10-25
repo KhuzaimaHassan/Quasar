@@ -1,5 +1,6 @@
-// Leave time for the route to record a failure before Vercel's 120-second limit.
-export const INGESTION_TIMEOUT_MS = 90_000
+// Observed Render startup consumed ~87 seconds before the app became ready.
+// Allow handoff margin and leave 30 seconds for the route to return a safe error.
+export const INGESTION_TIMEOUT_MS = 150_000
 
 export async function requestIngestion(
   serviceUrl: string,

@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { requestIngestion } from '@/lib/ingestion-request'
 
-export const maxDuration = 120 // Fluid Hobby supports up to 300 seconds; allow Render to wake.
+export const maxDuration = 180 // Fluid Hobby supports up to 300 seconds; allow Render to wake.
 
 
 export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
