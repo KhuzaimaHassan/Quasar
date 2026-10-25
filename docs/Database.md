@@ -2,7 +2,7 @@
 
 ## Overview
 
-Quasar uses a single PostgreSQL database for all relational data. The `pgvector` extension is added for vector similarity search (RAG). Per ADR-011, short-term memory is handled via an in-memory message-count cap (last 30 messages) in the application layer rather than an external Redis buffer. (Upstash Redis is used independently for API rate limiting in M5/M6).
+Quasar uses a single PostgreSQL database for all relational data. The `pgvector` extension is added for vector similarity search (RAG). Per ADR-011, short-term memory is handled via a message-count cap (last 30 messages), not an external Redis buffer. Per ADR-020, PostgreSQL also owns durable API request quotas.
 
 ORM: **Prisma** (type-safe, migration-based, integrates cleanly with Next.js).
 
@@ -207,12 +207,14 @@ CREATE INDEX idx_documents_status ON documents(status);
 
 ---
 
-## Redis / Upstash (Rate Limiting — M5/M6)
+## PostgreSQL Request Quotas (ADR-020)
 
-Per ADR-011, Redis is **not** used as a conversation memory buffer (the app relies on a simple in-memory 30-message cap). Instead, Upstash Redis is used via `@upstash/ratelimit` for sliding-window rate limiting on API endpoints (`/api/chat`, `/api/documents/upload-url`, `/api/agents/run`).
+The `rate_limit_buckets` table stores bounded timestamp arrays under a scope and a SHA-256 hash of the authenticated Clerk user ID. A single atomic `INSERT ... ON CONFLICT DO UPDATE ... WHERE` prunes expired timestamps and admits a request only when capacity remains. Row locking prevents concurrent server instances from exceeding the quota. An unavailable database fails closed with HTTP 503; there is no unlimited or per-process fallback. Each user needs at most one bounded row per scope; expired events are pruned on the next request.
 
 | Key pattern | Algorithm | Limit |
 |-------------|-----------|-------|
-| `@upstash/ratelimit:chat:{userId}` | Sliding window (1m) | 20 req/min |
-| `@upstash/ratelimit:upload:{userId}` | Sliding window (1h) | 10 req/hr |
-| `@upstash/ratelimit:agent:{userId}` | Sliding window (1h) | 5 req/hr |
+| `chat:{hashedUserId}` | Sliding window (1m) | 20 req/min |
+| `upload:{hashedUserId}` | Sliding window (1h) | 10 req/hr |
+| `agent:{hashedUserId}` | Sliding window (1h) | 5 req/hr |
+
+Apply `20261025120000_request_quota_buckets` with `prisma migrate deploy` before deploying code that uses this table. Existing conversations are not rewritten; only the database default for new conversations changes to Gemini 3.8 Flash.

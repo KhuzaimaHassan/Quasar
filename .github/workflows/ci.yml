@@ -33,6 +33,9 @@ jobs:
       - name: Run Type Check
         run: npm run type-check
 
+      - name: Request Pipeline Regression Tests
+        run: npm test
+
       - name: Run Build
         run: npm run build
         env:
@@ -102,3 +105,11 @@ jobs:
         env:
           DATABASE_URL: "postgresql://quasar:quasar_password@localhost:5432/quasar_db"
           DIRECT_URL: "postgresql://quasar:quasar_password@localhost:5432/quasar_db"
+
+      - name: Atomic Quota Integration Test
+        run: npm test
+        env:
+          TEST_DATABASE_HOST: localhost
+          TEST_DATABASE_USER: quasar
+          TEST_DATABASE_PASSWORD: quasar_password
+          TEST_DATABASE_NAME: quasar_db

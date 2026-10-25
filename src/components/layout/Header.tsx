@@ -37,7 +37,7 @@ function HeaderUserButton() {
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { activeWorkspace } = useWorkspace();
-  const { theme, setTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useTheme();
   const pathname = usePathname();
 
   // Close the mobile menu whenever the route changes
@@ -78,7 +78,7 @@ export function Header() {
               size="icon" 
               className="relative h-8 w-8 text-muted-foreground rounded-full hover:bg-accent/60 focus-visible:ring-2" 
               aria-label="Toggle theme"
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
             >
               <Sun className="h-[18px] w-[18px] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
               <Moon className="absolute h-[18px] w-[18px] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />

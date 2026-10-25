@@ -10,6 +10,8 @@ function getClient(): Client {
     clientInstance = new Client({
       apiKey: process.env.LANGCHAIN_API_KEY,
       apiUrl: process.env.LANGCHAIN_ENDPOINT || 'https://api.smith.langchain.com',
+      timeout_ms: 2000,
+      callerOptions: { maxRetries: 0 },
     })
   }
   return clientInstance
@@ -50,7 +52,13 @@ export async function traceChatGeneration<T>(
   }
 
   const runId = crypto.randomUUID()
-  const client = getClient()
+  let client: Client
+  try {
+    client = getClient()
+  } catch {
+    console.warn('[LANGSMITH_UNAVAILABLE] Continuing without tracing')
+    return await executor()
+  }
   const startTime = Date.now()
 
   try {

@@ -61,7 +61,7 @@ model Conversation {
   workspaceId String?
   workspace   Workspace? @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
   title       String    @default("New conversation")
-  model       String    @default("gemini-3.5-flash")
+  model       String    @default("gemini-3.8-flash")
   totalTokens Int       @default(0)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -159,4 +159,12 @@ model MessageFeedback {
   comment   String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model RateLimitBucket {
+  key        String   @id
+  timestamps BigInt[] @default([])
+  updatedAt  DateTime @default(now()) @updatedAt
+
+  @@map("rate_limit_buckets")
 }

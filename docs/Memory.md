@@ -53,7 +53,7 @@ We run a background extraction step every 5th user message in a conversation. It
 
 ```typescript
 const { object } = await generateObject({
-  model: google('gemini-3.6-flash'), // Always uses server default key, never BYOK
+  model: google(BACKGROUND_MODEL_ID), // Gemini 3.5 Flash-Lite; server key, never BYOK
   schema: z.object({
     memories: z.array(z.object({
       scope: z.enum(['preference', 'project', 'style', 'fact']),

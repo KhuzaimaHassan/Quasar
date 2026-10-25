@@ -1,18 +1,18 @@
 import { db } from './db';
 import { estimateCost } from './pricing';
-import { MODEL_CATALOG } from './models';
+import { getModelLabel } from './models';
 
 export interface ModelUsage {
   modelId: string;
   label: string;
   totalTokens: number;
-  estimatedCost: number;
+  estimatedCost: number | null;
 }
 
 export interface DailyTrend {
   date: string;
   totalTokens: number;
-  estimatedCost: number;
+  estimatedCost: number | null;
 }
 
 export interface UsageAggregation {
@@ -32,6 +32,7 @@ export async function getUsageStats(userId: string): Promise<UsageAggregation> {
     },
     select: {
       tokenCount: true,
+      metadata: true,
       createdAt: true,
       conversation: {
         select: {
@@ -45,10 +46,11 @@ export async function getUsageStats(userId: string): Promise<UsageAggregation> {
   });
 
   const modelStats: Record<string, { tokens: number }> = {};
-  const trendStats: Record<string, { tokens: number; cost: number }> = {};
+  const trendStats: Record<string, { tokens: number; cost: number; incomplete: boolean }> = {};
 
   messages.forEach((msg) => {
-    const modelId = msg.conversation.model;
+    const metadata = msg.metadata && typeof msg.metadata === 'object' && !Array.isArray(msg.metadata) ? msg.metadata : {};
+    const modelId = typeof metadata.modelId === 'string' ? metadata.modelId : msg.conversation.model;
     const tokens = msg.tokenCount;
     const dateStr = msg.createdAt.toISOString().split('T')[0]; // YYYY-MM-DD
 
@@ -58,18 +60,18 @@ export async function getUsageStats(userId: string): Promise<UsageAggregation> {
     modelStats[modelId].tokens += tokens;
 
     // We use total tokenCount as outputTokens for estimation since DB doesn't split them
-    const cost = estimateCost(modelId, 0, tokens, msg.createdAt);
+    const cost = estimateCost(modelId, 0, tokens);
 
     if (!trendStats[dateStr]) {
-      trendStats[dateStr] = { tokens: 0, cost: 0 };
+      trendStats[dateStr] = { tokens: 0, cost: 0, incomplete: false };
     }
     trendStats[dateStr].tokens += tokens;
-    trendStats[dateStr].cost += cost;
+    trendStats[dateStr].cost += cost ?? 0;
+    trendStats[dateStr].incomplete ||= cost === null;
   });
 
   const byModel: ModelUsage[] = Object.keys(modelStats).map((modelId) => {
-    const catalogEntry = MODEL_CATALOG.find((m) => m.id === modelId);
-    const label = catalogEntry ? catalogEntry.label : modelId;
+    const label = getModelLabel(modelId);
     const tokens = modelStats[modelId].tokens;
     // We treat stored tokenCount as output tokens for cost estimation
     const cost = estimateCost(modelId, 0, tokens);
@@ -87,7 +89,7 @@ export async function getUsageStats(userId: string): Promise<UsageAggregation> {
     .map((date) => ({
       date,
       totalTokens: trendStats[date].tokens,
-      estimatedCost: trendStats[date].cost,
+      estimatedCost: trendStats[date].incomplete ? null : trendStats[date].cost,
     }));
 
   return {

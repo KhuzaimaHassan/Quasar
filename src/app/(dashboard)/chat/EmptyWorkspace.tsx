@@ -7,6 +7,7 @@ import { RecentActivityItem } from "./RecentActivityItem";
 import { useWorkspace } from "@/components/providers/workspace-provider";
 import { useConversations, useCreateConversation } from "@/lib/queries/conversations";
 import { formatRelativeTime } from "@/lib/utils";
+import { DEFAULT_MODEL_ID } from "@/lib/models";
 
 export function EmptyWorkspace() {
   const router = useRouter();
@@ -18,7 +19,7 @@ export function EmptyWorkspace() {
 
   const handleStartNewChat = () => {
     createConversation(
-      { workspaceId: activeWorkspace?.id, model: "gemini-3.6-flash" },
+      { workspaceId: activeWorkspace?.id, model: DEFAULT_MODEL_ID },
       {
         onSuccess: (data) => {
           router.push(`/chat/${data.id}`);

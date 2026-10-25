@@ -16,7 +16,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useWorkspace } from "@/components/providers/workspace-provider";
 import { useConversations, useCreateConversation, useUpdateConversation } from "@/lib/queries/conversations";
-import { MODEL_CATALOG } from "@/lib/models";
+import { DEFAULT_MODEL_ID, MODEL_CATALOG, getModelLabel, resolveModelId } from "@/lib/models";
 import { ConversationCard } from "./ConversationCard";
 
 export function Sidebar() {
@@ -25,7 +25,7 @@ export function Sidebar() {
   const params = useParams();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [newChatModel, setNewChatModel] = useState("gemini-3.6-flash");
+  const [newChatModel, setNewChatModel] = useState(DEFAULT_MODEL_ID);
 
   const { activeWorkspace } = useWorkspace();
   const { data: conversations = [], isLoading, error } = useConversations(activeWorkspace?.id);
@@ -42,12 +42,12 @@ export function Sidebar() {
   useEffect(() => {
     if (activeConversation?.model) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setNewChatModel(activeConversation.model);
+      setNewChatModel(resolveModelId(activeConversation.model));
     }
   }, [activeConversation?.model]);
 
   const currentModelName =
-    MODEL_CATALOG.find((m) => m.id === selectedModel)?.label || MODEL_CATALOG[0]?.label;
+    MODEL_CATALOG.find((m) => m.id === resolveModelId(selectedModel))?.label || getModelLabel(selectedModel);
 
   const handleNewChat = () => {
     createConversation(
@@ -259,7 +259,7 @@ export function Sidebar() {
                       <ConversationCard
                         title={chat.title}
                         time={formatRelativeTime(chat.updatedAt)}
-                        model={MODEL_CATALOG.find((m) => m.id === chat.model)?.label || chat.model}
+                        model={getModelLabel(chat.model)}
                         files={0}
                         isActive={params?.id === chat.id}
                         onRename={(newTitle) => {

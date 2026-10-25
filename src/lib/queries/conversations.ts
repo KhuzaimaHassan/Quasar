@@ -1,6 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import type { Conversation } from '@prisma/client'
 
+export class ConversationQueryError extends Error {
+  constructor(message: string, public readonly status: number) {
+    super(message)
+    this.name = 'ConversationQueryError'
+  }
+}
+
 export function useConversations(workspaceId?: string | null) {
   return useQuery<Conversation[]>({
     queryKey: ['conversations', workspaceId],
@@ -20,7 +27,7 @@ export function useConversation(conversationId?: string | null) {
     queryKey: ['conversation', conversationId],
     queryFn: async () => {
       const res = await fetch(`/api/conversations/${conversationId}`)
-      if (!res.ok) throw new Error('Failed to fetch conversation')
+      if (!res.ok) throw new ConversationQueryError('Failed to fetch conversation', res.status)
       return res.json()
     },
     enabled: !!conversationId,
@@ -53,7 +60,7 @@ export function useMessages(conversationId: string) {
     queryKey: ['messages', conversationId],
     queryFn: async () => {
       const res = await fetch(`/api/conversations/${conversationId}/messages`)
-      if (!res.ok) throw new Error('Failed to fetch messages')
+      if (!res.ok) throw new ConversationQueryError('Failed to fetch messages', res.status)
       return res.json()
     },
     enabled: !!conversationId,
@@ -74,7 +81,8 @@ export function useUpdateConversation() {
       if (!res.ok) throw new Error('Failed to update conversation')
       return res.json()
     },
-    onSuccess: () => {
+    onSuccess: (updated: Conversation) => {
+      queryClient.setQueryData(['conversation', updated.id], updated)
       queryClient.invalidateQueries({ queryKey: ['conversations'] })
     },
   })

@@ -323,3 +323,33 @@ Each decision is recorded here with the context, options considered, and rationa
 
 **Consequences**: Traces in LangSmith safely capture agent execution structure, step timings, and tool names while guaranteeing that user credentials never appear in plain text or nested objects within LangSmith.
 
+---
+
+## ADR-020: PostgreSQL Owns Durable Request Quotas
+
+**Status**: Accepted
+**Date**: 2026-10-25
+
+**Context**: Browser tests found failures in chat, document upload, and agent creation while ordinary PostgreSQL CRUD still worked. All three expensive routes contacted Upstash before doing their main work. A read-only diagnostic of the project's configured Upstash hostname failed with DNS `ENOTFOUND`, before any HTTP response. This explains the failure with those credentials, although production runtime logs were not available to prove its deployed configuration independently.
+
+**Decision**: Remove Redis from request admission and store bounded sliding-window timestamp arrays in PostgreSQL's `rate_limit_buckets` table. Use one atomic upsert with a conditional update, not a read/count followed by a separate write. Keep the existing per-user quotas: 20 chats/minute, 10 uploads/hour, and 5 agent starts/hour. Hash the Clerk identifier in the bucket key. If storage is unavailable, return HTTP 503 rather than admitting unlimited requests.
+
+**Rationale**: In-memory fallback is inconsistent across Vercel workers, while separate Redis and database counters can grant extra quota during failover. PostgreSQL is already required for every affected workflow and provides row-locking admission across workers. One bounded row per scope/user adds modest database work without another free-tier service or silent removal of spend protection.
+
+**Consequences**: Apply the additive migration before deploying the new code. This increases PostgreSQL traffic slightly and removes Upstash analytics. CI tests parallel admission across independent connections and exact window expiry against its disposable database. ADR-011's choice not to use Redis for memory remains unchanged.
+
+---
+
+## ADR-021: Central Model Defaults and Legacy Compatibility
+
+**Status**: Accepted
+**Date**: 2026-10-25
+
+**Context**: Replacing a catalog entry alone leaves existing conversations pointing at legacy IDs, historical usage labels unresolved, and independently hardcoded background/agent models out of sync. The installed AI SDK also expects UIMessage `parts` and the `messages` initialization option rather than the older `content`/`initialMessages` shapes.
+
+**Decision**: Use `gemini-3.8-flash` as the default (Google documents free-tier availability and the project's key returned its model metadata). Keep `gemini-3.5-flash-lite` for low-cost background naming and extraction using the server key, preserving ADR-012's cost isolation from BYOK. Resolve old free Gemini conversation IDs at request time; retain exact historical model labels for usage instead of bulk rewriting conversations. Premium provider models remain key-gated under ADR-017. FastAPI uses a configurable `GOOGLE_GENERATIVE_MODEL`, defaulting to Gemini 3.8 Flash.
+
+**Consequences**: Metadata availability is not proof of successful generation: the initial direct generation diagnostics timed out and must be distinguished from later deployed-app verification. New assistant messages record their actual model ID in metadata, so later conversation model changes do not reattribute those tokens. Missing historical pricing is displayed as unavailable rather than zero. Persisted history uses the current SDK message format, with regression coverage.
+
+**Sources**: https://ai.google.dev/gemini-api/docs/models/gemini-3.8-flash and https://ai.google.dev/gemini-api/docs/pricing.
+

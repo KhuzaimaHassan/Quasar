@@ -4,6 +4,7 @@ import { db } from '@/lib/db'
 import { createAgentRunSchema } from '@/lib/validations/agent-run'
 import { getGithubToken } from '@/lib/github-token'
 import { agentRunRateLimiter } from '@/lib/rate-limit'
+import { RateLimitUnavailableError } from '@/lib/rate-limit-store'
 
 export const maxDuration = 60
 
@@ -176,6 +177,9 @@ export async function POST(req: Request) {
     }
   } catch (error) {
     console.error('POST /api/agents/run error:', error)
+    if (error instanceof RateLimitUnavailableError) {
+      return NextResponse.json({ error: 'Service Unavailable', message: error.message, statusCode: 503 }, { status: 503 })
+    }
     return NextResponse.json({ error: 'Internal Server Error', message: 'Failed to start agent run', statusCode: 500 }, { status: 500 })
   }
 }

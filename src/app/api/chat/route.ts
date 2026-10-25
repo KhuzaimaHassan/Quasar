@@ -6,14 +6,17 @@ import { google } from '@ai-sdk/google'
 import { convertToModelMessages } from '@/lib/chat-utils'
 import { retrieveContext, buildSystemPrompt, resolveCitations } from '@/lib/rag'
 import { extractMemories } from '@/lib/memory-extraction'
-import { MODEL_CATALOG } from '@/lib/models'
+import { BACKGROUND_MODEL_ID, MODEL_CATALOG, resolveModelId } from '@/lib/models'
 import { decrypt } from '@/lib/encryption'
 import { chatRateLimiter } from '@/lib/rate-limit'
+import { RateLimitUnavailableError } from '@/lib/rate-limit-store'
 import { traceChatGeneration, sanitizeTraceMetadata } from '@/lib/langsmith'
 
-export const maxDuration = 30
+export const maxDuration = 60
 
 export async function POST(req: Request) {
+  const requestId = crypto.randomUUID()
+  let stage = 'authentication'
   try {
     const { userId: clerkId } = await auth()
     
@@ -21,11 +24,13 @@ export async function POST(req: Request) {
       return new NextResponse('Unauthorized', { status: 401 })
     }
 
+    stage = 'request_quota'
     const { success } = await chatRateLimiter.limit(clerkId)
     if (!success) {
       return new NextResponse('Too Many Requests: You have exceeded the rate limit of 20 requests per minute.', { status: 429 })
     }
 
+    stage = 'conversation'
     const user = await db.user.findUnique({ where: { clerkId } })
     if (!user) {
       return new NextResponse('User not found', { status: 404 })
@@ -38,8 +43,8 @@ export async function POST(req: Request) {
     const fallbackMessage = Array.isArray(messages) && messages.length > 0 ? messages[messages.length - 1] : {};
     const conversationId = json.conversationId || json.data?.conversationId || url.searchParams.get('conversationId') || req.headers.get('x-conversation-id') || fallbackMessage?.conversationId;
 
-    if (!conversationId || !messages || !Array.isArray(messages)) {
-      return new NextResponse(`Invalid request payload: ${JSON.stringify(json)}`, { status: 400 })
+    if (!conversationId || !Array.isArray(messages) || messages.length === 0) {
+      return new NextResponse('A conversation and at least one message are required.', { status: 400 })
     }
 
     const conversation = await db.conversation.findUnique({
@@ -48,6 +53,12 @@ export async function POST(req: Request) {
 
     if (!conversation || conversation.userId !== user.id) {
       return new NextResponse('Conversation not found', { status: 404 })
+    }
+
+    const modelId = resolveModelId(conversation.model)
+    const catalogEntry = MODEL_CATALOG.find((model) => model.id === modelId)
+    if (!catalogEntry) {
+      return new NextResponse('This conversation uses an unavailable model. Select a model from the menu.', { status: 400 })
     }
 
     // Persist the new user message immediately BEFORE calling the model
@@ -66,6 +77,7 @@ export async function POST(req: Request) {
 
     const attachments = Array.isArray(json.attachments) ? json.attachments : undefined
 
+    stage = 'message_persistence'
     await db.message.create({
       data: {
         conversationId,
@@ -76,6 +88,7 @@ export async function POST(req: Request) {
       },
     })
 
+    stage = 'context'
     // RAG Context Assembly
     const chunks = conversation.workspaceId 
       ? await retrieveContext(conversation.workspaceId, userMessageContent)
@@ -107,16 +120,7 @@ export async function POST(req: Request) {
       modelMessages = modelMessages.slice(-30);
     }
     
-    console.log('[CHAT] Final Model Messages:', JSON.stringify(modelMessages.map(m => ({ role: m.role, len: m.content?.length, isArray: Array.isArray(m.content) })), null, 2));
-
-    // Look up the conversation's model provider
-    const modelId = conversation.model;
-    const catalogEntry = MODEL_CATALOG.find(m => m.id === modelId);
-    
-    if (!catalogEntry) {
-      return new NextResponse(`Unknown model ID: ${modelId}`, { status: 400 });
-    }
-
+    stage = 'model_initialization'
     const { provider } = catalogEntry;
     let languageModel;
 
@@ -165,6 +169,7 @@ export async function POST(req: Request) {
       }
     }
 
+    stage = 'generation'
     const result = await traceChatGeneration(
       `chat-${modelId}`,
       () =>
@@ -172,6 +177,11 @@ export async function POST(req: Request) {
           model: languageModel,
           system: systemPrompt,
           messages: modelMessages,
+          maxRetries: 0,
+          abortSignal: AbortSignal.any([req.signal, AbortSignal.timeout(45_000)]),
+          providerOptions: provider === 'google' ? {
+            google: { thinkingConfig: { thinkingLevel: 'low' } },
+          } : undefined,
           async onFinish({ text, usage }) {
             // Persist the assistant's response
             await db.message.create({
@@ -180,8 +190,10 @@ export async function POST(req: Request) {
                 role: 'assistant',
                 content: text,
                 tokenCount: usage.totalTokens,
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                metadata: (citations.length > 0 ? { citations } : {}) as any,
+                metadata: {
+                  modelId,
+                  citations: citations.map(({ documentId, filename, url, similarity }) => ({ documentId, filename, url, similarity })),
+                },
               },
             })
 
@@ -238,7 +250,9 @@ export async function POST(req: Request) {
             if (conversation.title === 'New conversation') {
               after(() =>
                 generateText({
-                  model: google('gemini-3.6-flash'),
+                  model: google(BACKGROUND_MODEL_ID),
+                  maxOutputTokens: 64,
+                  maxRetries: 0,
                   system:
                     "Generate an extremely concise title (3-6 words) for this conversation based on the user's first message. Reply ONLY with the raw title text.",
                   prompt: userMessageContent,
@@ -272,16 +286,19 @@ export async function POST(req: Request) {
       stream: toUIMessageStream({ 
         stream: result.stream,
         onError: (err) => {
-          console.error('[STREAM_GENERATION_ERROR]', err)
-          return err instanceof Error ? err.message : String(err)
+          console.error('[STREAM_GENERATION_ERROR]', { requestId, type: err instanceof Error ? err.name : 'UnknownError' })
+          return `The model could not finish its response. Please check the provider configuration or quota. Reference: ${requestId}`
         }
       })
     })
     
   } catch (error) {
-    console.error('[CHAT_ERROR]', error)
+    console.error('[CHAT_ERROR]', { requestId, stage, type: error instanceof Error ? error.name : 'UnknownError' })
+    if (error instanceof RateLimitUnavailableError) {
+      return NextResponse.json({ error: error.message, requestId }, { status: 503 })
+    }
     return NextResponse.json(
-      { error: 'Internal server error processing chat' },
+      { error: 'Unable to process the chat request. Please try again shortly.', requestId },
       { status: 500 }
     )
   }

@@ -1,4 +1,18 @@
 import { Message as PrismaMessage } from '@prisma/client'
+import type { UIMessage } from 'ai'
+
+export function getChatErrorMessage(message: string): string {
+  try {
+    const data: unknown = JSON.parse(message);
+    if (data && typeof data === 'object' && 'error' in data && typeof data.error === 'string') {
+      const reference = 'requestId' in data && typeof data.requestId === 'string' ? ` Reference: ${data.requestId}` : '';
+      return `${data.error}${reference}`;
+    }
+  } catch {
+    // Provider streams and plain-text API errors are already human-readable.
+  }
+  return message;
+}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function getMessageText(message: any): string {
@@ -20,13 +34,14 @@ export function getMessageText(message: any): string {
   return ''
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function toInitialMessages(dbMessages: PrismaMessage[]): any[] {
-  return dbMessages.map((msg) => ({
-    id: msg.id,
-    role: msg.role as 'user' | 'assistant' | 'system' | 'data',
-    content: msg.content,
-  }))
+export function toInitialMessages(dbMessages: PrismaMessage[]): UIMessage[] {
+  return dbMessages
+    .filter((msg) => ['user', 'assistant', 'system'].includes(msg.role))
+    .map((msg) => ({
+      id: msg.id,
+      role: msg.role as UIMessage['role'],
+      parts: [{ type: 'text', text: msg.content }],
+    }))
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

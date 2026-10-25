@@ -13,7 +13,7 @@ const ALLOWED_TYPES = [
 
 export function DocumentUploadZone() {
   const { activeWorkspace } = useWorkspace();
-  const { mutate: uploadDocument } = useUploadDocument();
+  const { mutate: uploadDocument, isPending: isUploading, error: uploadError, reset } = useUploadDocument();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [isDragging, setIsDragging] = useState(false);
@@ -26,6 +26,7 @@ export function DocumentUploadZone() {
     }
 
     setError(null);
+    reset();
 
     const validFiles: File[] = [];
     const newErrors: string[] = [];
@@ -49,7 +50,7 @@ export function DocumentUploadZone() {
     validFiles.forEach((file) => {
       uploadDocument({ file, workspaceId: activeWorkspace.id });
     });
-  }, [activeWorkspace, uploadDocument]);
+  }, [activeWorkspace, uploadDocument, reset]);
 
   const onDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -113,9 +114,12 @@ export function DocumentUploadZone() {
         />
       </div>
       
-      {error && (
-        <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md border border-destructive/20">
-          {error}
+      {isUploading && (
+        <p role="status" className="text-sm text-muted-foreground">Uploading and processing your document...</p>
+      )}
+      {(error || uploadError) && (
+        <div role="alert" className="p-3 text-sm text-destructive bg-destructive/10 rounded-md border border-destructive/20">
+          {error || uploadError?.message || 'Document upload failed. Please try again.'}
         </div>
       )}
     </div>

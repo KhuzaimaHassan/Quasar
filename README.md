@@ -19,7 +19,7 @@
 
 Quasar is a production-deployed AI developer workspace demonstrating full-stack engineering discipline:
 
-- **Stream Chat Across AI Providers** — Gemini 3.6 Flash and Gemini 3.5 Flash-Lite (free tier), Gemini 2.5 Pro, Claude Sonnet 5/4.6, Claude Haiku 4.5, and GPT-4o (premium models unlocked via BYOK encrypted keys).
+- **Stream Chat Across AI Providers** — Gemini 3.8 Flash and Gemini 3.5 Flash-Lite (free tier), Gemini 2.5 Pro, Claude Sonnet 5/4.6, Claude Haiku 4.5, and GPT-4o (premium models unlocked via BYOK encrypted keys).
 - **RAG Document Engine with Cited Sources** — Upload PDF or DOCX files, auto-chunk and embed into PostgreSQL (`pgvector`), and receive streaming answers backed by explicit source citations.
 - **Autonomous Multi-Agent System** — LangGraph state machine (Planner, Coder, Reviewer) executing tools with a human-in-the-loop approval gate before committing validated changes to GitHub.
 - **Long-Term Memory Extraction** — Automatically surface user preferences across sessions and inject relevant memory context into conversations.

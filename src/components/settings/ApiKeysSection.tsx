@@ -10,12 +10,17 @@ const PROVIDERS = [
   {
     id: "anthropic",
     name: "Anthropic (Claude)",
-    description: "Requires an active billing account with Anthropic. Claude 3.5 Sonnet is a premium model.",
+    description: "Unlocks Claude Sonnet 5, Sonnet 4.6, and Haiku 4.5 with your own Anthropic API key and billing account.",
   },
   {
     id: "openai",
-    name: "OpenAI (GPT-4)",
+    name: "OpenAI (GPT-4o)",
     description: "Requires an active billing account with OpenAI.",
+  },
+  {
+    id: "google",
+    name: "Google (Gemini Pro)",
+    description: "A Google API key is required for premium Gemini models. Free Flash models use the server's key.",
   },
 ];
 

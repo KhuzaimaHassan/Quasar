@@ -24,8 +24,13 @@ export function useCreateWorkspace() {
       if (!res.ok) throw new Error('Failed to create workspace')
       return res.json()
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['workspaces'] })
+    onSuccess: async (workspace) => {
+      // Put the created row in the cache before the switcher activates it.
+      // Otherwise the provider sees an unknown workspace and resets selection.
+      queryClient.setQueryData(['workspaces'], (current: typeof workspace[] | undefined) =>
+        [...(current ?? []).filter((item) => item.id !== workspace.id), workspace]
+      )
+      await queryClient.invalidateQueries({ queryKey: ['workspaces'] })
     },
   })
 }
