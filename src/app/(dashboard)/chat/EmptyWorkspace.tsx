@@ -18,7 +18,7 @@ export function EmptyWorkspace() {
 
   const handleStartNewChat = () => {
     createConversation(
-      { workspaceId: activeWorkspace?.id, model: "gemini-3.5-flash" },
+      { workspaceId: activeWorkspace?.id, model: "gemini-3.6-flash" },
       {
         onSuccess: (data) => {
           router.push(`/chat/${data.id}`);

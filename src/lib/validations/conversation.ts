@@ -3,7 +3,7 @@ import { z } from 'zod'
 export const createConversationSchema = z
   .object({
     workspaceId: z.string().uuid().optional(),
-    model: z.string().optional().default('gemini-3.5-flash'),
+    model: z.string().optional().default('gemini-3.6-flash'),
   })
   .strict()
 

@@ -238,7 +238,7 @@ export async function POST(req: Request) {
             if (conversation.title === 'New conversation') {
               after(() =>
                 generateText({
-                  model: google('gemini-3.5-flash'),
+                  model: google('gemini-3.6-flash'),
                   system:
                     "Generate an extremely concise title (3-6 words) for this conversation based on the user's first message. Reply ONLY with the raw title text.",
                   prompt: userMessageContent,

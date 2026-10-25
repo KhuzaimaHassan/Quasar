@@ -10,8 +10,11 @@ The AI pipeline is the core of Quasar. It handles everything from accepting a us
 
 | Model | Provider | Use case |
 |-------|----------|----------|
-| `gemini-3.5-flash` | Google | Default (free tier, server-provided key, used unless user adds key) |
-| `claude-sonnet-4-5` | Anthropic | Available once BYOK (Issue #13) ships |
+| `gemini-3.6-flash` | Google | Default (free tier, server-provided key) |
+| `gemini-3.5-flash-lite` | Google | Free-tier low-cost alternative |
+| `claude-sonnet-5` | Anthropic | Available only with BYOK |
+| `claude-sonnet-4-6` | Anthropic | Available only with BYOK |
+| `claude-haiku-4-5-20251001` | Anthropic | Available only with BYOK |
 | `gpt-4o` | OpenAI | Available once BYOK (Issue #13) ships |
 
 Model is stored per-conversation and switchable mid-conversation by the user.
@@ -35,8 +38,11 @@ import { anthropic } from '@ai-sdk/anthropic';
 import { openai } from '@ai-sdk/openai';
 
 const modelMap = {
-  'gemini-3.5-flash': google('gemini-3.5-flash'),
-  'claude-sonnet-4-5': anthropic('claude-sonnet-4-5'),
+  'gemini-3.6-flash': google('gemini-3.6-flash'),
+  'gemini-3.5-flash-lite': google('gemini-3.5-flash-lite'),
+  'claude-sonnet-5': anthropic('claude-sonnet-5'),
+  'claude-sonnet-4-6': anthropic('claude-sonnet-4-6'),
+  'claude-haiku-4-5-20251001': anthropic('claude-haiku-4-5-20251001'),
   'gpt-4o': openai('gpt-4o'),
 };
 ```

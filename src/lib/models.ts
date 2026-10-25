@@ -9,8 +9,14 @@ export interface ModelConfig {
 
 export const MODEL_CATALOG: ModelConfig[] = [
   {
-    id: 'gemini-3.5-flash',
-    label: 'Gemini 3.5 Flash',
+    id: 'gemini-3.6-flash',
+    label: 'Gemini 3.6 Flash',
+    provider: 'google',
+    requiresKey: false,
+  },
+  {
+    id: 'gemini-3.5-flash-lite',
+    label: 'Gemini 3.5 Flash-Lite',
     provider: 'google',
     requiresKey: false,
   },
@@ -23,6 +29,18 @@ export const MODEL_CATALOG: ModelConfig[] = [
   {
     id: 'claude-sonnet-5',
     label: 'Claude Sonnet 5',
+    provider: 'anthropic',
+    requiresKey: true,
+  },
+  {
+    id: 'claude-sonnet-4-6',
+    label: 'Claude Sonnet 4.6',
+    provider: 'anthropic',
+    requiresKey: true,
+  },
+  {
+    id: 'claude-haiku-4-5-20251001',
+    label: 'Claude Haiku 4.5',
     provider: 'anthropic',
     requiresKey: true,
   },

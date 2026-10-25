@@ -25,7 +25,7 @@ export function Sidebar() {
   const params = useParams();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [newChatModel, setNewChatModel] = useState("gemini-3.5-flash");
+  const [newChatModel, setNewChatModel] = useState("gemini-3.6-flash");
 
   const { activeWorkspace } = useWorkspace();
   const { data: conversations = [], isLoading, error } = useConversations(activeWorkspace?.id);
