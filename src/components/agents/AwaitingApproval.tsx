@@ -97,6 +97,11 @@ export function AwaitingApproval({ run }: { run: AgentRun }) {
           </AlertDialogContent>
         </AlertDialog>
       </div>
+      {(resumeRun.isError || cancelRun.isError) && (
+        <p role="alert" className="text-sm text-destructive">
+          {resumeRun.error?.message || cancelRun.error?.message || 'The action could not complete. Please try again.'}
+        </p>
+      )}
     </div>
   );
 }

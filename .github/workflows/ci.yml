@@ -70,6 +70,10 @@ jobs:
       - name: Mypy Check
         run: mypy backend/
 
+      - name: Agent Execution Regression Tests
+        working-directory: backend
+        run: python -m unittest discover -s tests -p test_agent_execution.py
+
   migration-check:
     name: Database Migration Check
     runs-on: ubuntu-latest
@@ -108,6 +112,23 @@ jobs:
 
       - name: Atomic Quota Integration Test
         run: npm test
+        env:
+          TEST_DATABASE_HOST: localhost
+          TEST_DATABASE_USER: quasar
+          TEST_DATABASE_PASSWORD: quasar_password
+          TEST_DATABASE_NAME: quasar_db
+
+      - name: Setup Python for Agent Approval Concurrency Test
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Agent Approval Test Dependency
+        run: pip install asyncpg
+
+      - name: Atomic Agent Approval Test
+        working-directory: backend
+        run: python -m unittest discover -s tests -p test_agent_claim.py
         env:
           TEST_DATABASE_HOST: localhost
           TEST_DATABASE_USER: quasar

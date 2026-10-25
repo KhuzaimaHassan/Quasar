@@ -60,7 +60,8 @@ export function AgentPanel({ conversationId, workspaceId }: { conversationId: st
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
             <div className="space-y-1">
               <h3 className="font-medium text-sm">Agent is working</h3>
-              <p className="text-xs text-muted-foreground">Planning and generating — this can take up to a minute.</p>
+              <p className="text-xs text-muted-foreground">Planning and generating. The first run may take longer while the service starts.</p>
+              {startRun.isError && <p role="alert" className="text-xs text-destructive">{startRun.error.message}</p>}
             </div>
           </div>
         ) : activeRun?.status === 'awaiting_approval' ? (

@@ -26,7 +26,10 @@ class AgentState(TypedDict, total=False):
     final_output: str
     error: Optional[str]
 
-client = genai.Client(api_key=settings.GOOGLE_API_KEY)
+client = genai.Client(
+    api_key=settings.GOOGLE_API_KEY,
+    http_options={"timeout": 60_000, "retry_options": {"attempts": 1}},
+)
 
 def planner(state: AgentState) -> dict:
     task = state["task"]

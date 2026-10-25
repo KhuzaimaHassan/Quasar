@@ -152,18 +152,22 @@ Read-only. Useful for "implement this Figma component" tasks.
 State is natively managed by LangGraph's `PostgresSaver` checkpointer using the `threadId`. The `AgentRun` table in our database acts as a lightweight index, not a state-snapshot table, with one exception: `pendingApproval`. 
 When the run is interrupted for human approval, we write the proposed files to `pendingApproval` in the `AgentRun` row. This allows the Next.js polling endpoint (`GET /api/agents/run/:id`) to read the pending files without querying FastAPI, maintaining a single source of truth.
 
-> **Note on cancellation**: True mid-computation cancellation is not supported by this design. The `cancel` action is only meaningful while a run is paused at the approval gate (status `awaiting_approval`). It is effectively identical to resuming with `approved: false`, cleanly rejecting the run. If the service crashes mid-run, the run can be seamlessly resumed from the exact node where it left off.
+> **Note on cancellation**: True mid-computation cancellation is not supported by this design. The `cancel` action is only meaningful while a run is paused at the approval gate (status `awaiting_approval`). It is effectively identical to resuming with `approved: false`, cleanly rejecting the run. Checkpoints survive service restarts, but there is no automatic worker recovery for a service crash mid-run; checkpoint persistence alone does not guarantee automatic resumption.
+
+Approval and rejection atomically change `awaiting_approval` to `running` before graph execution. A competing request receives HTTP 409, preventing duplicate file writes or GitHub commits. Completion copies the redacted `tool_calls` into the run index so the result UI lists the files actually written.
 
 ---
 
 ## UI
 
-The agent panel in the chat page is designed around a synchronous execution model. Because the LangGraph pipeline runs as a single blocking request to FastAPI without streaming live node transitions, the UI does NOT display an animated step tracker (which would incorrectly imply real-time progress).
+The agent panel uses a synchronous HTTP request/response without streaming live node transitions. Graph execution runs in a worker thread so its synchronous SDK and checkpoint calls do not block FastAPI's event loop. The UI does not imply real-time node progress.
 
 Instead, the UI provides:
-1. **Honest Loading State**: While the graph executes synchronously (Planning, Coding, Reviewing), the UI shows a single clear loading spinner indicating "Planning and generating — this can take up to a minute".
+1. **Honest Loading State**: While the graph executes (Planning, Coding, Reviewing), the UI shows a single loading spinner and explains that service startup can add latency. Start/resume/reject use one 150-second overall backend deadline within a 180-second Vercel budget. Run history polls only while work is active and refreshes after failed handoffs as well as successful ones. A timeout does not imply that the backend stopped; users are told to check history before starting another run.
 2. **Awaiting Approval**: When the graph pauses via LangGraph `interrupt()`, the UI displays the generated plan and syntax-highlighted code for the proposed files, with explicit "Approve & Write Files" and "Reject" actions.
 3. **Run Result**: Once approved and execution finishes, a success summary lists the files that were actually written to the workspace sandbox.
+
+Each agent model call has a 60-second request deadline and one attempt (no automatic provider retries). The graph's existing maximum revision count remains unchanged. Human approval and token redaction remain required.
 
 *(Note: GitHub commit integration is fully implemented. The user can select their execution target (Sandbox vs GitHub) and provide a target repo when starting the run.)*
 

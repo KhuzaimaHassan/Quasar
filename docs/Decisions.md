@@ -247,6 +247,8 @@ Each decision is recorded here with the context, options considered, and rationa
 
 **Consequences**: This creates a conscious exception to our rule that "Prisma owns all database schema." The `langgraph-checkpoint-postgres` library creates and manages its own internal checkpoint tables (`checkpoints`, `checkpoint_writes`, etc.) in the PostgreSQL database. Nothing else in the application should ever query these tables directly.
 
+**Reliability update (2026-10-25)**: The request/response protocol and human approval gate remain synchronous, but blocking graph work runs in a worker thread to preserve FastAPI responsiveness. An atomic PostgreSQL status transition admits only one resume/rejection; competing approvals receive 409 before side effects. Tool-call results are copied into the AgentRun index on completion. Next.js uses the same bounded 150-second backend deadline/180-second function budget as ingestion. The existing checkpoint mechanism does not provide an automatically restarted job worker after a Render process crash; documentation no longer claims that guarantee.
+
 ---
 
 ## ADR-014: Filesystem Tool Backed by Storage, Not Local Disk
