@@ -5,8 +5,9 @@ import { createAgentRunSchema } from '@/lib/validations/agent-run'
 import { getGithubToken } from '@/lib/github-token'
 import { agentRunRateLimiter } from '@/lib/rate-limit'
 import { RateLimitUnavailableError } from '@/lib/rate-limit-store'
+import { postToBackend, BACKEND_REQUEST_TIMEOUT_MS } from '@/lib/backend-request'
 
-export const maxDuration = 60
+export const maxDuration = 180
 
 export async function GET(req: Request) {
   try {
@@ -66,7 +67,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Not Found', message: 'User not found', statusCode: 404 }, { status: 404 })
     }
 
-    const body = await req.json()
+    const body = await req.json().catch(() => null)
     const validated = createAgentRunSchema.safeParse(body)
 
     if (!validated.success) {
@@ -77,15 +78,16 @@ export async function POST(req: Request) {
 
     // Verify BOTH conversationId and workspaceId belong to this user
     const [conversation, workspace] = await Promise.all([
-      db.conversation.findUnique({ where: { id: conversationId }, select: { userId: true } }),
+      db.conversation.findUnique({ where: { id: conversationId }, select: { userId: true, workspaceId: true } }),
       db.workspace.findUnique({ where: { id: workspaceId }, select: { userId: true } })
     ])
 
-    if (!conversation || conversation.userId !== user.id || !workspace || workspace.userId !== user.id) {
+    if (!conversation || conversation.userId !== user.id || conversation.workspaceId !== workspaceId || !workspace || workspace.userId !== user.id) {
       return NextResponse.json({ error: 'Not Found', message: 'Conversation or Workspace not found or unauthorized', statusCode: 404 }, { status: 404 })
     }
 
     let githubToken: string | undefined = undefined;
+    const deadline = AbortSignal.timeout(BACKEND_REQUEST_TIMEOUT_MS)
     if (executionTarget === 'github') {
       const token = await getGithubToken(clerkId);
       if (!token) {
@@ -115,17 +117,10 @@ export async function POST(req: Request) {
         }, { status: 400 })
       }
       try {
-        const checkRes = await fetch(`${fastApiUrl}/agents/run/check-repo-access`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Internal-Secret': internalSecret,
-          },
-          body: JSON.stringify({ 
+        const checkRes = await postToBackend(fastApiUrl, internalSecret, '/agents/run/check-repo-access', {
             github_token: githubToken,
             target_repo: targetRepo
-          }),
-        })
+          }, { signal: deadline })
 
         if (!checkRes.ok) {
           console.error('Failed to check repo access')
@@ -147,33 +142,29 @@ export async function POST(req: Request) {
     }
 
     try {
-      const response = await fetch(`${fastApiUrl}/agents/run/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Internal-Secret': internalSecret,
-        },
-        body: JSON.stringify({ 
+      const response = await postToBackend(fastApiUrl, internalSecret, '/agents/run/', {
           conversation_id: conversationId, 
           workspace_id: workspaceId, 
           task,
           execution_target: executionTarget,
           target_repo: targetRepo ?? null
-        }),
-      })
+        }, { signal: deadline })
 
       if (!response.ok) {
-        const errorText = await response.text()
-        console.error('FastAPI agent run error:', response.status, errorText)
+        console.error('FastAPI agent run error:', response.status)
         return NextResponse.json({ error: 'Bad Gateway', message: 'Agent service failed', statusCode: 502 }, { status: 502 })
       }
 
       const data = await response.json()
       return NextResponse.json(data, { status: 200 })
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (fetchError: any) {
-      console.error('Fetch to FastAPI failed:', fetchError)
-      return NextResponse.json({ error: 'Service Unavailable', message: 'Agent service is down', statusCode: 503 }, { status: 503 })
+    } catch (fetchError: unknown) {
+      const timedOut = fetchError instanceof Error && fetchError.name === 'TimeoutError'
+      console.error('Agent start handoff failed:', { type: fetchError instanceof Error ? fetchError.name : 'UnknownError' })
+      return NextResponse.json({
+        error: timedOut ? 'Gateway Timeout' : 'Service Unavailable',
+        message: timedOut ? 'The agent request timed out. Check run history before starting another run.' : 'Agent service is unavailable',
+        statusCode: timedOut ? 504 : 503,
+      }, { status: timedOut ? 504 : 503 })
     }
   } catch (error) {
     console.error('POST /api/agents/run error:', error)

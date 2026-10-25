@@ -1,6 +1,9 @@
 import { auth } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { postToBackend } from '@/lib/backend-request'
+
+export const maxDuration = 180
 
 // We provide this cancel endpoint rather than just having clients call `resume` with `approved: false` 
 // to give callers (and the frontend UI) a clean, explicitly named action for rejection. 
@@ -17,7 +20,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
 
     const user = await db.user.findUnique({ where: { clerkId }, select: { id: true } })
     if (!user) {
-      return NextResponse.json({ error: 'Not Found', message: 'DEBUG: User not found for clerkId ' + clerkId, statusCode: 404 }, { status: 404 })
+      return NextResponse.json({ error: 'Not Found', message: 'User not found', statusCode: 404 }, { status: 404 })
     }
 
     const run = await db.agentRun.findUnique({
@@ -25,13 +28,10 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
       include: { conversation: { select: { userId: true } } },
     })
 
-    if (!run) {
-      return NextResponse.json({ error: 'Not Found', message: 'DEBUG: AgentRun not found in DB with id ' + agentRunId, statusCode: 404 }, { status: 404 })
+    if (!run || run.conversation.userId !== user.id) {
+      return NextResponse.json({ error: 'Not Found', message: 'Agent run not found', statusCode: 404 }, { status: 404 })
     }
-    
-    if (run.conversation.userId !== user.id) {
-      return NextResponse.json({ error: 'Not Found', message: 'DEBUG: AgentRun conversation userId mismatch', statusCode: 404 }, { status: 404 })
-    }
+    if (run.status !== 'awaiting_approval') return NextResponse.json({ message: 'Agent run is not awaiting approval' }, { status: 409 })
 
     const fastApiUrl = process.env.FASTAPI_SERVICE_URL
     const internalSecret = process.env.INTERNAL_SERVICE_SECRET
@@ -43,27 +43,20 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
 
     try {
       // Call the exact same resume mechanism but explicitly with { approved: false }
-      const response = await fetch(`${fastApiUrl}/agents/run/${run.threadId}/resume`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Internal-Secret': internalSecret,
-        },
-        body: JSON.stringify({ approved: false }),
-      })
+      const response = await postToBackend(fastApiUrl, internalSecret, `/agents/run/${run.threadId}/resume`, { approved: false })
 
       if (!response.ok) {
-        const errorText = await response.text()
-        console.error('FastAPI agent cancel error:', response.status, errorText)
+        if (response.status === 409) return NextResponse.json({ message: 'This run was already resumed or rejected' }, { status: 409 })
+        console.error('FastAPI agent cancel error:', response.status)
         return NextResponse.json({ error: 'Bad Gateway', message: 'Agent service failed to cancel', statusCode: 502 }, { status: 502 })
       }
 
       const data = await response.json()
       return NextResponse.json(data, { status: 200 })
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (fetchError: any) {
-      console.error('Fetch to FastAPI failed:', fetchError)
-      return NextResponse.json({ error: 'Service Unavailable', message: 'Agent service is down', statusCode: 503 }, { status: 503 })
+    } catch (fetchError: unknown) {
+      console.error('Agent cancel handoff failed:', { type: fetchError instanceof Error ? fetchError.name : 'UnknownError' })
+      const timedOut = fetchError instanceof Error && fetchError.name === 'TimeoutError'
+      return NextResponse.json({ message: timedOut ? 'The rejection request timed out. Check run history before trying again.' : 'Agent service is unavailable' }, { status: timedOut ? 504 : 503 })
     }
   } catch (error) {
     console.error('POST /api/agents/run/[id]/cancel error:', error)

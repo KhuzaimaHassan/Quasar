@@ -27,6 +27,7 @@ export function useAgentRuns(conversationId: string | null) {
       return res.json()
     },
     enabled: !!conversationId,
+    refetchInterval: (query) => query.state.data?.some((run) => run.status === 'running' || run.status === 'pending') ? 3000 : false,
   })
 }
 
@@ -43,7 +44,7 @@ export function useAgentRun(id: string | null) {
     refetchInterval: (query) => {
       const run = query.state.data
       if (!run) return false
-      const isPolling = run.status === 'running' || run.status === 'awaiting_approval'
+      const isPolling = run.status === 'running' || run.status === 'pending'
       return isPolling ? 3000 : false
     },
   })
@@ -71,7 +72,7 @@ export function useStartAgentRun() {
 
       return res.json()
     },
-    onSuccess: (_, variables) => {
+    onSettled: (_, __, variables) => {
       queryClient.invalidateQueries({ queryKey: ['agentRuns', variables.conversationId] })
     },
   })
@@ -99,7 +100,7 @@ export function useResumeAgentRun() {
 
       return res.json()
     },
-    onSuccess: (_, variables) => {
+    onSettled: (_, __, variables) => {
       queryClient.invalidateQueries({ queryKey: ['agentRun', variables.id] })
       queryClient.invalidateQueries({ queryKey: ['agentRuns'] })
     },
@@ -126,7 +127,7 @@ export function useCancelAgentRun() {
 
       return res.json()
     },
-    onSuccess: (_, variables) => {
+    onSettled: (_, __, variables) => {
       queryClient.invalidateQueries({ queryKey: ['agentRun', variables.id] })
       queryClient.invalidateQueries({ queryKey: ['agentRuns'] })
     },
