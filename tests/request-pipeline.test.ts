@@ -9,6 +9,9 @@ import { createConversationSchema, updateConversationSchema } from '@/lib/valida
 import { estimateCost, isFreeTierModel } from '@/lib/pricing';
 import { getGenerationErrorMessage } from '@/lib/generation-errors';
 import { canRetryMessage, chatMessagesSchema } from '@/lib/validations/chat';
+import { canRetryDocument, shouldPollDocument, STALE_UPLOAD_MS } from '@/lib/document-status';
+import { createDocumentUploadSchema } from '@/lib/validations/document';
+import { uploadUrlSchema } from '@/lib/validations/attachment';
 
 test('legacy free chat IDs resolve to the active free model without unlocking premium models', () => {
   for (const id of ['gemini-1.5-flash', 'gemini-3.5-flash', 'gemini-3.6-flash']) {
@@ -75,6 +78,30 @@ test('chat rejects malformed history and only retries the latest owned orphan', 
   assert.equal(canRetryMessage({ ...latest, role: 'assistant' }, latest.id, 'Hello'), false);
   assert.equal(canRetryMessage(latest, latest.id, 'Changed content'), false);
   assert.equal(canRetryMessage(null, latest.id, 'Hello'), false);
+});
+
+test('document recovery avoids infinite stale-upload polling and does not retry indexed files', () => {
+  const now = Date.now();
+  const stale = { status: 'pending', updatedAt: new Date(now - STALE_UPLOAD_MS).toISOString() };
+  assert.equal(shouldPollDocument(stale, now), false);
+  assert.equal(canRetryDocument(stale, now), true);
+  assert.equal(shouldPollDocument({ ...stale, updatedAt: new Date(now).toISOString() }, now), true);
+  assert.equal(canRetryDocument({ ...stale, status: 'ready', chunkCount: 1 }, now), false);
+  assert.equal(canRetryDocument({ ...stale, status: 'ready', chunkCount: 0 }, now), true);
+  assert.equal(canRetryDocument({ ...stale, status: 'failed' }, now), true);
+  assert.equal(canRetryDocument({ ...stale, status: 'processing' }, now), false);
+});
+
+test('both upload APIs reject path-bearing filenames before signing storage URLs', () => {
+  const base = { filename: 'QA notes.pdf', mimeType: 'application/pdf', sizeBytes: 100 };
+  const workspaceId = randomUUID();
+  assert.equal(uploadUrlSchema.safeParse(base).success, true);
+  assert.equal(createDocumentUploadSchema.safeParse({ ...base, workspaceId }).success, true);
+  for (const filename of ['../private.pdf', 'folder/private.pdf', 'folder\\private.pdf', 'folder%2fprivate.pdf', '.', '..', 'file' + String.fromCharCode(0) + '.pdf']) {
+    assert.equal(uploadUrlSchema.safeParse({ ...base, filename }).success, false);
+    assert.equal(createDocumentUploadSchema.safeParse({ ...base, workspaceId, filename }).success, false);
+  }
+  assert.equal(createDocumentUploadSchema.safeParse({ ...base, workspaceId, sizeBytes: 1.5 }).success, false);
 });
 
 test('denied quotas stay denied with a meaningful reset and a scoped, hashed identifier', async () => {

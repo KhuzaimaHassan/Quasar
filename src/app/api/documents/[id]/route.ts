@@ -29,7 +29,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
     const document = await db.document.findUnique({
       where: { id: documentId },
-      include: { workspace: { select: { userId: true } } },
+      include: { workspace: { select: { userId: true } }, _count: { select: { chunks: true } } },
     })
 
     if (!document || document.workspace.userId !== user.id) {
@@ -50,6 +50,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         errorMessage: document.errorMessage,
         createdAt: document.createdAt,
         updatedAt: document.updatedAt,
+        chunkCount: document._count.chunks,
       },
       { status: 200 }
     )

@@ -4,6 +4,8 @@ import { db } from '@/lib/db'
 import { supabaseAdmin } from '@/lib/supabase'
 import { uploadUrlSchema } from '@/lib/validations/attachment'
 import { randomUUID } from 'crypto'
+import { uploadRateLimiter } from '@/lib/rate-limit'
+import { RateLimitUnavailableError } from '@/lib/rate-limit-store'
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -40,6 +42,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         { error: 'Not Found', message: 'Conversation not found', statusCode: 404 },
         { status: 404 }
       )
+    }
+
+    if (!(await uploadRateLimiter.limit(clerkId)).success) {
+      return NextResponse.json({ message: 'You have exceeded the rate limit of 10 uploads per hour.' }, { status: 429 })
     }
 
     // Validate request body
@@ -95,6 +101,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       { status: 200 }
     )
   } catch (error) {
+    if (error instanceof RateLimitUnavailableError) return NextResponse.json({ message: error.message }, { status: 503 })
     console.error('POST /api/conversations/[id]/attachments/upload-url error:', error)
     return NextResponse.json(
       { error: 'Internal Server Error', message: 'Failed to process upload request', statusCode: 500 },

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 import traceback
+import asyncio
 
 from core.security import verify_internal_secret
 from core.embeddings import embed_query
@@ -12,7 +13,7 @@ router = APIRouter()
 class RetrieveRequest(BaseModel):
     workspace_id: str
     query: str = Field(..., min_length=1)
-    top_k: int = 5
+    top_k: int = Field(default=5, ge=1, le=20)
 
 @router.post("/retrieve", dependencies=[Depends(verify_internal_secret)])
 async def retrieve_documents(req: RetrieveRequest):
@@ -21,7 +22,7 @@ async def retrieve_documents(req: RetrieveRequest):
         
     try:
         # 1. Embed the user's query
-        query_embedding = embed_query(req.query)
+        query_embedding = await asyncio.to_thread(embed_query, req.query)
         
         # 2. Retrieve relevant chunks from the database (requesting 2x for reranking candidates)
         chunks = await retrieve_chunks(

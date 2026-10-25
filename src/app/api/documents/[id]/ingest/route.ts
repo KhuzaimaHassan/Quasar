@@ -2,6 +2,9 @@ import { auth } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { requestIngestion } from '@/lib/ingestion-request'
+import { canRetryDocument } from '@/lib/document-status'
+import { ingestionRateLimiter } from '@/lib/rate-limit'
+import { RateLimitUnavailableError } from '@/lib/rate-limit-store'
 
 export const maxDuration = 180 // Fluid Hobby supports up to 300 seconds; allow Render to wake.
 
@@ -32,7 +35,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
 
     const document = await db.document.findUnique({
       where: { id: documentId },
-      include: { workspace: { select: { userId: true } } },
+      include: { workspace: { select: { userId: true } }, _count: { select: { chunks: true } } },
     })
 
     if (!document || document.workspace.userId !== user.id) {
@@ -42,11 +45,17 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
       )
     }
 
-    if (document.status !== 'pending') {
+    const isRetry = canRetryDocument({ ...document, chunkCount: document._count.chunks })
+    if (document.status !== 'pending' && !isRetry) {
       return NextResponse.json(
         { error: 'Conflict', message: 'Document is already processing or finished', statusCode: 409 },
         { status: 409 }
       )
+    }
+
+    // Bound actual processing requests independently of upload-URL admission, including retries.
+    if (!(await ingestionRateLimiter.limit(clerkId)).success) {
+      return NextResponse.json({ message: 'You have exceeded the rate limit of 10 processing requests per hour.' }, { status: 429 })
     }
 
     const fastApiUrl = process.env.FASTAPI_SERVICE_URL
@@ -69,10 +78,13 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
       const response = await requestIngestion(fastApiUrl, internalSecret, documentId)
 
       if (!response.ok) {
+        if (response.status === 409) {
+          return NextResponse.json({ message: 'Document is already processing or indexed.' }, { status: 409 })
+        }
         const errorText = await response.text()
         console.error('FastAPI ingestion error:', response.status, errorText)
         await db.document.updateMany({
-          where: { id: documentId, status: 'pending' },
+          where: { id: documentId, status: { in: ['pending', 'failed'] } },
           data: { status: 'failed', errorMessage: `Ingestion service returned ${response.status}` },
         })
         return NextResponse.json(
@@ -91,7 +103,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
       })
       // A lost response must not overwrite processing/ready set by FastAPI.
       await db.document.updateMany({
-        where: { id: documentId, status: 'pending' },
+        where: { id: documentId, status: { in: ['pending', 'failed'] } },
         data: {
           status: 'failed',
           errorMessage: timedOut ? 'Ingestion service response timed out' : 'Ingestion service is unreachable',
@@ -109,6 +121,9 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
       )
     }
   } catch (error) {
+    if (error instanceof RateLimitUnavailableError) {
+      return NextResponse.json({ message: error.message }, { status: 503 })
+    }
     console.error('POST /api/documents/[id]/ingest error:', error)
     return NextResponse.json(
       { error: 'Internal Server Error', message: 'Failed to process ingest request', statusCode: 500 },

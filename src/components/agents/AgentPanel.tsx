@@ -49,7 +49,7 @@ export function AgentPanel({ conversationId, workspaceId }: { conversationId: st
           <Bot className="h-4 w-4 text-primary" />
           Agent Runs
         </div>
-        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsOpen(false)}>
+        <Button aria-label="Close agent panel" variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsOpen(false)}>
           <ChevronUp className="h-4 w-4" />
         </Button>
       </div>
@@ -71,6 +71,7 @@ export function AgentPanel({ conversationId, workspaceId }: { conversationId: st
             {activeRun && isResolved && <RunResult run={activeRun} />}
             <div className="space-y-2">
               <textarea 
+                aria-label="Agent task"
                 placeholder="Give the agent a complex, multi-step task..."
                 value={task}
                 onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setTask(e.target.value)}
@@ -107,6 +108,7 @@ export function AgentPanel({ conversationId, workspaceId }: { conversationId: st
                 {executionTarget === 'github' && (
                   <input
                     type="text"
+                    aria-label="GitHub repository"
                     placeholder="owner/repo-name"
                     value={targetRepo}
                     onChange={(e) => setTargetRepo(e.target.value)}

@@ -361,3 +361,22 @@ Each decision is recorded here with the context, options considered, and rationa
 
 **Production verification update (2026-10-25)**: The quota fix allowed chat requests to reach Google; the user independently confirmed a request appeared in AI Studio. Gemini 3.8 timed out in earlier attempts and a later direct streaming diagnostic returned provider HTTP 503 in 3.5 seconds, independently of Vercel. One deployed Flash-Lite comparison returned `LITE_OK` with persisted assistant text and token usage. The default for new chats and agents is therefore Gemini 3.5 Flash-Lite, based on verified generation rather than metadata availability alone. Gemini 3.8 remains an explicit optional choice; a transient provider failure is not evidence that its model ID is invalid. A second migration changes only the database default for future conversations; existing explicit model choices remain unchanged. There is no automatic model fallback or provider retry, preserving user choice and free-tier quota. Provider timeouts, unavailability, and quota errors are retained with a safe reference in the failed user message's metadata, so reopening a chat does not erase the failure reason. Retrying only the latest owned orphan reuses its existing record; successful responses and token totals commit in one transaction. Background naming/extraction calls have ten-second deadlines. Clerk development mode is intentional for this project's current users and is unchanged.
 
+---
+
+## ADR-022: Manual Document Recovery Without Duplicate Indexing
+
+**Status**: Accepted
+**Date**: 2026-10-25
+
+**Context**: A real tiny PDF reached ready with zero chunks because the minimum-fragment filter discarded the entire document. A request terminated before ingestion left a pending row that the UI polled indefinitely. Failed files had no recovery action except another upload.
+
+**Decision**: Keep the fragment filter, but retain the complete text when a short document would otherwise have no chunks. Blank/scanned documents fail with an explanation rather than becoming ready with no text. Validate that the embedding result count matches the chunk count. Allow manual recovery of failed, stale-pending (five minutes), and ready-but-unindexed documents. An atomic PostgreSQL claim prevents concurrent processing or re-embedding of an already indexed document; replacement chunks and ready status commit together. The UI shows the real chunk count and stops polling abandoned pending uploads. Retry never starts automatically.
+
+**Quota policy**: Keep upload URL creation at 10/hour, shared by document and chat-attachment uploads. Independently cap every ingestion request, including manual retries, at 10/hour using ADR-020's durable store. This protects against duplicate in-flight HTTP requests bypassing expensive-work admission. Processing/ready states are not overwritten by a timed-out caller.
+
+**Storage boundary**: Both signed-upload schemas accept only a single filename component and reject path separators/control characters. Agent storage paths normalize backslashes before checking traversal and reject absolute/drive paths, so Linux behavior cannot weaken the workspace boundary. These guards are tested locally without accessing another user's storage.
+
+**Startup and deployment evidence**: Construct the local tokenizer lazily because its SDK loader can download a public model asset; a local diagnostic failed on that download's DNS lookup during import. This is direct evidence of a local startup dependency, not proof of the precise duration spent on Render. Health responses expose only Render's public Git commit SHA when available, allowing deployed backend revisions to be compared with GitHub without exposing environment secrets. See https://render.com/docs/environment-variables.
+
+**Consequences**: No migration or automatic re-embedding is required. Historical zero-chunk documents remain available for a user-triggered retry. OCR and chat-attachment document indexing are not implemented; the UI and RAG documentation make the Documents workflow explicit. Existing process-restart limitations of FastAPI background tasks remain; this is not a durable job queue.
+

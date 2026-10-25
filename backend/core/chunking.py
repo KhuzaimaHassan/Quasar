@@ -1,13 +1,18 @@
 import re
+from functools import lru_cache
 from google.genai import local_tokenizer
 
-tokenizer = local_tokenizer.LocalTokenizer("gemini-2.5-flash")
+
+@lru_cache(maxsize=1)
+def _get_tokenizer():
+    # Its model file may need downloading. Do not block service startup on it.
+    return local_tokenizer.LocalTokenizer("gemini-2.5-flash")
 
 def get_token_count(text: str) -> int:
     """Helper to safely get token count from LocalTokenizer."""
     if not text.strip():
         return 0
-    res = tokenizer.count_tokens(text)
+    res = _get_tokenizer().count_tokens(text)
     if hasattr(res, "total_tokens"):
         return res.total_tokens
     return int(res)
@@ -72,4 +77,7 @@ def chunk_text(text: str, target_tokens: int = 500, overlap_tokens: int = 60) ->
         if get_token_count(chunk_str) >= 30:
             chunks.append(chunk_str)
             
+    # The minimum-size filter removes fragments, not an entire short document.
+    if not chunks and text.strip():
+        return [text.strip()]
     return chunks
