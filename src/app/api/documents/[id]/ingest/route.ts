@@ -1,8 +1,9 @@
 import { auth } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { requestIngestion } from '@/lib/ingestion-request'
 
-export const maxDuration = 60 // Vercel hobby plan max, needed to outlast Render cold starts
+export const maxDuration = 120 // Fluid Hobby supports up to 300 seconds; allow Render to wake.
 
 
 export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -65,20 +66,13 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
 
     // Server-to-server call to FastAPI
     try {
-      const response = await fetch(`${fastApiUrl}/ingest`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Internal-Secret': internalSecret,
-        },
-        body: JSON.stringify({ document_id: documentId }),
-      })
+      const response = await requestIngestion(fastApiUrl, internalSecret, documentId)
 
       if (!response.ok) {
         const errorText = await response.text()
         console.error('FastAPI ingestion error:', response.status, errorText)
-        await db.document.update({
-          where: { id: documentId },
+        await db.document.updateMany({
+          where: { id: documentId, status: 'pending' },
           data: { status: 'failed', errorMessage: `Ingestion service returned ${response.status}` },
         })
         return NextResponse.json(
@@ -89,16 +83,29 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
 
       const data = await response.json()
       return NextResponse.json(data, { status: 202 })
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (fetchError: any) {
-      console.error('Fetch to FastAPI failed:', fetchError)
-      await db.document.update({
-        where: { id: documentId },
-        data: { status: 'failed', errorMessage: 'Ingestion service is unreachable' },
+    } catch (fetchError: unknown) {
+      const timedOut = fetchError instanceof Error && fetchError.name === 'TimeoutError'
+      console.error('Fetch to FastAPI failed:', {
+        documentId,
+        errorType: fetchError instanceof Error ? fetchError.name : 'UnknownError',
+      })
+      // A lost response must not overwrite processing/ready set by FastAPI.
+      await db.document.updateMany({
+        where: { id: documentId, status: 'pending' },
+        data: {
+          status: 'failed',
+          errorMessage: timedOut ? 'Ingestion service response timed out' : 'Ingestion service is unreachable',
+        },
       })
       return NextResponse.json(
-        { error: 'Service Unavailable', message: 'Ingestion service is down', statusCode: 503 },
-        { status: 503 }
+        {
+          error: timedOut ? 'Gateway Timeout' : 'Service Unavailable',
+          message: timedOut
+            ? 'The ingestion service took too long to respond. Please try again later.'
+            : 'Ingestion service is unavailable',
+          statusCode: timedOut ? 504 : 503,
+        },
+        { status: timedOut ? 504 : 503 }
       )
     }
   } catch (error) {

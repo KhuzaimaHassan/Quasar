@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { readHttpError } from '@/lib/http-error'
 
 export type DocumentStatus = 'pending' | 'processing' | 'ready' | 'failed'
 
@@ -53,8 +54,7 @@ export function useUploadDocument() {
       })
 
       if (!uploadUrlRes.ok) {
-        const err = await uploadUrlRes.json()
-        throw new Error(err.message || 'Failed to get upload URL')
+        throw new Error(await readHttpError(uploadUrlRes, 'Failed to get upload URL'))
       }
 
       const { uploadUrl, documentId } = await uploadUrlRes.json()
@@ -81,8 +81,7 @@ export function useUploadDocument() {
       })
 
       if (!ingestRes.ok) {
-        const err = await ingestRes.json()
-        throw new Error(err.message || 'Failed to trigger ingestion')
+        throw new Error(await readHttpError(ingestRes, 'Failed to trigger ingestion'))
       }
 
       return { documentId }

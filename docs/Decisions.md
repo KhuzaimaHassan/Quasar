@@ -132,11 +132,13 @@ Each decision is recorded here with the context, options considered, and rationa
 
 **Decision**: Render free tier.
 
-**Rationale**: Both Railway and Fly.io dropped their free tiers since this ADR was originally written. Render provides a completely free tier for Docker containers. We knowingly accepted Render's cold-start tradeoff (service sleeps after 15 minutes of inactivity, causing a 30-60 second cold start on the next request) because this is a portfolio project and cost-efficiency is the priority. We mitigated the UX impact by adding a 6-second timeout with graceful degradation on the frontend chat retrieval call, while giving the ingestion endpoint a generous 60-second budget to outlast cold starts.
+**Rationale**: Both Railway and Fly.io dropped their free tiers since this ADR was originally written. Render provides a completely free tier for Docker containers. We knowingly accepted Render's cold-start tradeoff (service sleeps after 15 minutes of inactivity, taking about one minute to restart) because this is a portfolio project and cost-efficiency is the priority. Chat retrieval uses a 6-second timeout with graceful degradation. The original 60-second ingestion budget did not leave sufficient margin for a delayed service response.
 
 **When to revisit**: If the cold starts become unacceptable for real users, migrate to a paid tier on Render or Railway.
 
-**Mitigation implemented**: Chat retrieval has a 6-second timeout with graceful degradation (missing context is non-fatal). The `/ingest` endpoint has a 60-second budget, which comfortably outlasts Render's cold-start window. A banner in the README warns users about the first-request latency.
+**Mitigation implemented**: Chat retrieval has a 6-second timeout with graceful degradation (missing context is non-fatal). The Next.js ingestion route has a 120-second function budget and a single 90-second upstream request deadline, leaving time to record a failure and return JSON. Failure updates only affect a still-pending document, preserving processing/ready states already written by FastAPI. The frontend handles non-JSON platform errors without exposing their body. There are no automatic ingestion retries. A banner in the README warns users about the first-request latency.
+
+**Verification update (2026-10-25)**: Vercel's runtime log for document `d7576689-cab9-445e-a976-0ea49a027b02` showed an outgoing POST to `quasar-vqp2.onrender.com/ingest`, HTTP 504, `FUNCTION_INVOCATION_TIMEOUT`, and termination after 60.2 seconds. The uploaded file existed in storage while the document remained pending. This verifies exhaustion of the handoff budget; the log does not establish whether Render was cold-starting. Vercel Fluid Hobby supports up to 300 seconds, so this change requires no plan upgrade. See https://render.com/docs/free and https://vercel.com/docs/functions/configuring-functions/duration.
 
 ---
 
