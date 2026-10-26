@@ -302,8 +302,10 @@ export function ChatInput({ onSend, isSending, onStop, conversationId }: ChatInp
             value={content}
             onChange={(e) => setContent(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Message... (Cmd/Ctrl + Enter to send)"
-            className="flex-1 max-h-40 min-h-[44px] w-full resize-none bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+            placeholder="Message..."
+            title="Send with Cmd/Ctrl + Enter"
+            aria-keyshortcuts="Control+Enter Meta+Enter"
+            className="flex-1 min-w-0 max-h-40 min-h-[44px] w-full resize-none bg-transparent py-3 text-base sm:text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
             aria-label="Message input"
             rows={1}
           />

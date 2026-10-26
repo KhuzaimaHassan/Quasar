@@ -124,11 +124,11 @@ export function MessageBubble({ message, isPending, isStreaming }: MessageBubble
           </div>
         )}
 
-        {/* Hover Metadata & Feedback */}
+        {/* Keep metadata and feedback available without hover on touch screens. */}
         <div
           className={cn(
-            "absolute -bottom-5 flex items-center gap-2 text-[10px] text-muted-foreground opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity whitespace-nowrap",
-            isUser ? "right-1" : "left-1"
+            "mt-2 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[10px]",
+            isUser ? "text-primary-foreground/80" : "text-muted-foreground"
           )}
         >
           <span>
@@ -138,13 +138,13 @@ export function MessageBubble({ message, isPending, isStreaming }: MessageBubble
 
           {/* Feedback Controls - Only for resolved assistant messages */}
           {!isUser && !isStreaming && !isPending && message.conversationId && (
-            <div className="flex items-center gap-1.5 ml-1">
+            <div className="flex items-center gap-1 ml-auto">
               <button 
                 onClick={() => handleFeedback(1)}
                 aria-label="Helpful response"
                 aria-pressed={message.feedback?.rating === 1}
                 className={cn(
-                  "hover:text-foreground transition-colors",
+                  "flex h-8 w-8 items-center justify-center rounded hover:bg-background/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors",
                   message.feedback?.rating === 1 && "text-primary hover:text-primary"
                 )}
                 disabled={setFeedback.isPending || clearFeedback.isPending}
@@ -156,7 +156,7 @@ export function MessageBubble({ message, isPending, isStreaming }: MessageBubble
                 aria-label="Unhelpful response"
                 aria-pressed={message.feedback?.rating === -1}
                 className={cn(
-                  "hover:text-foreground transition-colors",
+                  "flex h-8 w-8 items-center justify-center rounded hover:bg-background/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors",
                   message.feedback?.rating === -1 && "text-destructive hover:text-destructive"
                 )}
                 disabled={setFeedback.isPending || clearFeedback.isPending}

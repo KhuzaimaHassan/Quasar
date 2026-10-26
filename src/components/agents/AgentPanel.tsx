@@ -34,7 +34,7 @@ export function AgentPanel({ conversationId, workspaceId }: { conversationId: st
 
   if (!isOpen) {
     return (
-      <Button variant="outline" size="sm" onClick={() => setIsOpen(true)} className="h-8 gap-2">
+      <Button aria-label="Open agent panel" variant="outline" size="sm" onClick={() => setIsOpen(true)} className="h-8 gap-2">
         <Bot className="h-4 w-4 shrink-0" />
         <span className="hidden sm:inline">Agent</span>
         <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0 hidden sm:block" />
@@ -43,18 +43,18 @@ export function AgentPanel({ conversationId, workspaceId }: { conversationId: st
   }
 
   return (
-    <div className="absolute top-14 right-4 z-20 w-[450px] max-w-[calc(100vw-32px)] bg-background border border-border shadow-xl rounded-xl flex flex-col max-h-[80vh] overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 border-b bg-muted/30">
+    <div className="absolute top-14 right-3 sm:right-4 z-20 w-[450px] max-w-[calc(100%-1.5rem)] sm:max-w-[calc(100%-2rem)] bg-background border border-border shadow-xl rounded-xl flex flex-col max-h-[calc(100dvh-13rem)] overflow-hidden">
+      <div className="flex shrink-0 items-center justify-between px-4 py-3 border-b bg-muted/30">
         <div className="flex items-center gap-2 font-medium text-sm">
           <Bot className="h-4 w-4 text-primary" />
           Agent Runs
         </div>
-        <Button aria-label="Close agent panel" variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsOpen(false)}>
+        <Button aria-label="Close agent panel" variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsOpen(false)}>
           <ChevronUp className="h-4 w-4" />
         </Button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-6">
+      <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-6">
         {startRun.isPending || activeRun?.status === 'pending' || activeRun?.status === 'running' ? (
           <div className="flex flex-col items-center justify-center py-12 text-center space-y-4">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -80,7 +80,7 @@ export function AgentPanel({ conversationId, workspaceId }: { conversationId: st
               />
               
               <div className="flex flex-col gap-2 pt-1 pb-2">
-                <div className="flex items-center gap-4 text-sm">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
                   <label className="flex items-center gap-1.5 cursor-pointer">
                     <input 
                       type="radio" 

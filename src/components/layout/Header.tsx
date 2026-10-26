@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { Menu, Moon, Sun } from "lucide-react";
+import { Menu, Moon, Sun, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 import { Sidebar } from "./Sidebar";
@@ -46,12 +46,21 @@ export function Header() {
     setIsMobileMenuOpen(false);
   }, [pathname]);
 
+  useEffect(() => {
+    if (!isMobileMenuOpen) return;
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsMobileMenuOpen(false);
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [isMobileMenuOpen]);
+
   return (
     <>
       <header className="flex h-14 items-center justify-between border-b bg-background px-4 lg:px-6 z-30 shrink-0">
         
         {/* Left Side: Mobile Hamburger & Workspace Context */}
-        <div className="flex items-center gap-4">
+        <div className="flex min-w-0 flex-1 items-center gap-4">
           <Button
             variant="ghost"
             size="icon"
@@ -63,10 +72,10 @@ export function Header() {
             <Menu className="h-5 w-5" />
           </Button>
 
-          <nav aria-label="Breadcrumb" className="hidden sm:flex items-center gap-2 text-sm">
-            <span className="text-muted-foreground">Quasar</span>
-            <span className="text-muted-foreground" aria-hidden="true">/</span>
-            <span className="font-medium text-foreground">{activeWorkspace?.name || 'Loading...'}</span>
+          <nav aria-label="Breadcrumb" className="hidden min-w-0 sm:flex items-center gap-2 text-sm">
+            <span className="shrink-0 text-muted-foreground">Quasar</span>
+            <span className="shrink-0 text-muted-foreground" aria-hidden="true">/</span>
+            <span className="truncate font-medium text-foreground" title={activeWorkspace?.name}>{activeWorkspace?.name || 'Loading...'}</span>
           </nav>
         </div>
 
@@ -99,12 +108,16 @@ export function Header() {
         />
       )}
       <div
+        inert={!isMobileMenuOpen}
         className={cn(
           "fixed inset-y-0 left-0 z-50 w-[280px] sm:w-[300px] transform transition-transform duration-300 ease-in-out md:hidden shadow-xl",
           isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
         <div className="h-full w-full bg-card flex flex-col [&>aside]:flex [&>aside]:w-full">
+           <Button aria-label="Close navigation menu" variant="ghost" size="icon" className="absolute right-3 top-3 z-10" onClick={() => setIsMobileMenuOpen(false)}>
+             <X className="h-5 w-5" />
+           </Button>
            <Sidebar />
         </div>
       </div>
