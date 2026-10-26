@@ -38,21 +38,22 @@ function MemoryRow({ memory }: { memory: Memory }) {
 
   return (
     <div className="flex items-start justify-between py-3 px-4 border-b last:border-0 group">
-      <div className="flex flex-col gap-1 w-full mr-4">
-        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{memory.key}</span>
+      <div className="flex min-w-0 flex-1 flex-col gap-1 mr-2">
+        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground [overflow-wrap:anywhere]">{memory.key}</span>
         {isEditing ? (
           <div className="flex items-center gap-2 mt-1">
             <Input 
               value={editValue} 
               onChange={(e) => setEditValue(e.target.value)} 
-              className="h-8 text-sm"
+              aria-label={`Value for ${memory.key}`}
+              className="h-10 min-w-0 text-base sm:text-sm"
               onKeyDown={(e) => e.key === 'Enter' && handleSave()}
               autoFocus
             />
-            <Button size="icon" variant="ghost" className="h-8 w-8 text-green-600" onClick={handleSave} disabled={isUpdating}>
+            <Button aria-label={`Save ${memory.key} memory`} size="icon" variant="ghost" className="h-10 w-10 shrink-0 text-green-600" onClick={handleSave} disabled={isUpdating}>
               {isUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
             </Button>
-            <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground" onClick={() => { setIsEditing(false); setEditValue(memory.value); }} disabled={isUpdating}>
+            <Button aria-label={`Cancel editing ${memory.key}`} size="icon" variant="ghost" className="h-10 w-10 shrink-0 text-muted-foreground" onClick={() => { setIsEditing(false); setEditValue(memory.value); }} disabled={isUpdating}>
               <X className="w-4 h-4" />
             </Button>
           </div>
@@ -63,15 +64,15 @@ function MemoryRow({ memory }: { memory: Memory }) {
             onClick={() => setIsEditing(true)}
             aria-label={`Edit ${memory.key}: ${memory.value}`}
           >
-            <span className="text-sm font-medium">{memory.value}</span>
-            <Edit2 className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+            <span className="min-w-0 text-sm font-medium [overflow-wrap:anywhere]">{memory.value}</span>
+            <Edit2 className="w-3 h-3 text-muted-foreground shrink-0" />
           </button>
         )}
       </div>
       <Button 
         variant="ghost" 
         size="icon" 
-        className="h-8 w-8 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mt-2" 
+        className="h-10 w-10 text-muted-foreground hover:text-destructive transition-colors shrink-0 mt-2"
         onClick={() => deleteMemory(memory.id)}
         disabled={isDeleting || isEditing}
         aria-label={`Delete ${memory.key} memory`}
@@ -100,12 +101,12 @@ function AddMemoryForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row items-center gap-3 p-4 bg-muted/30 rounded-lg border">
-      <div className="flex flex-col w-full sm:w-[150px] gap-1.5">
-        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground ml-1">Scope</span>
+    <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-[150px_200px_minmax(0,1fr)_auto] items-end gap-3 p-4 bg-muted/30 rounded-lg border">
+      <div className="flex min-w-0 flex-col gap-1.5">
+        <label htmlFor="memory-scope" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground ml-1">Scope</label>
         {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
         <Select value={scope} onValueChange={(v: any) => setScope(v)}>
-          <SelectTrigger>
+          <SelectTrigger id="memory-scope" className="w-full">
             <SelectValue placeholder="Scope" />
           </SelectTrigger>
           <SelectContent>
@@ -116,15 +117,15 @@ function AddMemoryForm() {
           </SelectContent>
         </Select>
       </div>
-      <div className="flex flex-col w-full sm:w-[200px] gap-1.5">
-        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground ml-1">Key</span>
-        <Input placeholder="e.g. language" value={key} onChange={(e) => setKey(e.target.value)} />
+      <div className="flex min-w-0 flex-col gap-1.5">
+        <label htmlFor="memory-key" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground ml-1">Key</label>
+        <Input id="memory-key" className="min-w-0 text-base sm:text-sm" placeholder="e.g. language" value={key} onChange={(e) => setKey(e.target.value)} />
       </div>
-      <div className="flex flex-col w-full flex-1 gap-1.5">
-        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground ml-1">Value</span>
-        <Input placeholder="e.g. TypeScript" value={value} onChange={(e) => setValue(e.target.value)} />
+      <div className="flex min-w-0 flex-col gap-1.5">
+        <label htmlFor="memory-value" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground ml-1">Value</label>
+        <Input id="memory-value" className="min-w-0 text-base sm:text-sm" placeholder="e.g. TypeScript" value={value} onChange={(e) => setValue(e.target.value)} />
       </div>
-      <Button type="submit" disabled={isPending || !key.trim() || !value.trim()} className="w-full sm:w-auto mt-auto mb-[2px]">
+      <Button type="submit" disabled={isPending || !key.trim() || !value.trim()} className="w-full h-10">
         {isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
         Add manually
       </Button>

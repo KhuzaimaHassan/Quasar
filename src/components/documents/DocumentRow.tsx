@@ -33,13 +33,13 @@ export function DocumentRow({ document }: { document: Document }) {
   const needsIndexing = document.status === 'ready' && document.chunkCount === 0;
 
   return (
-    <div className={`flex items-center justify-between p-4 border rounded-lg bg-card transition-colors ${isDeleting ? 'opacity-50 pointer-events-none' : ''}`}>
-      <div className="flex items-center gap-4 overflow-hidden">
+    <div className={`flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 border rounded-lg bg-card transition-colors ${isDeleting ? 'opacity-50 pointer-events-none' : ''}`}>
+      <div className="flex min-w-0 flex-1 items-center gap-3">
         <div className="p-2 rounded-md bg-muted text-muted-foreground shrink-0">
           <FileText className="w-5 h-5" />
         </div>
-        <div className="flex flex-col overflow-hidden">
-          <span className="font-medium truncate" title={document.filename}>
+        <div className="flex min-w-0 flex-col">
+          <span className="font-medium [overflow-wrap:anywhere]" title={document.filename}>
             {document.filename}
           </span>
           <span className="text-xs text-muted-foreground">
@@ -48,7 +48,7 @@ export function DocumentRow({ document }: { document: Document }) {
         </div>
       </div>
 
-      <div className="flex flex-wrap justify-end items-center gap-2 shrink-0 ml-4 max-w-[60%]">
+      <div className="flex min-w-0 flex-wrap justify-end items-center gap-2 sm:max-w-[50%]">
         {document.status === "pending" && (
           <div className="flex items-center gap-2 text-muted-foreground text-sm">
             {isStaleUpload(document) ? <AlertCircle className="w-4 h-4" /> : <Loader2 className="w-4 h-4 animate-spin" />}
@@ -71,7 +71,7 @@ export function DocumentRow({ document }: { document: Document }) {
         {document.status === "failed" && (
           <div className="flex items-center gap-2 text-destructive text-sm" title={document.errorMessage || "Failed to process document"}>
             <AlertCircle className="w-4 h-4" />
-            <span className="max-w-[120px] truncate hidden sm:inline-block">
+            <span className="max-w-full text-xs [overflow-wrap:anywhere]">
               {document.errorMessage || "Failed"}
             </span>
           </div>
@@ -92,7 +92,7 @@ export function DocumentRow({ document }: { document: Document }) {
             <Button
               variant="ghost"
               size="icon"
-              className="ml-2 h-8 w-8 text-muted-foreground hover:text-destructive"
+              className="h-10 w-10 shrink-0 text-muted-foreground hover:text-destructive"
               disabled={isProcessing || isDeleting || retry.isPending}
               aria-label={`Delete ${document.filename}`}
               title={isProcessing ? "Cannot delete while processing" : "Delete document"}

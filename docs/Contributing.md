@@ -159,6 +159,14 @@ mypy backend/         # Python type checking
 
 ---
 
+## Responsive UI verification
+
+For layout changes, inspect the signed-in chat (including an existing agent run), Documents, Memory, Settings, and Clerk profile at 320×568, 390×844, 768×1024, and 1024×768, then check desktop at 1280×900. Confirm that fields remain usable beside the sidebar, long filenames/keys wrap, page content does not scroll horizontally, and intended table/code scrolling stays inside its container. Check the phone drawer's close button and Escape behavior, plus keyboard labels for icon controls.
+
+Reuse existing messages and documents for these visual checks; resizing and opening a completed agent run do not require new model calls or document processing. Browser viewport tests do not simulate a physical device's on-screen keyboard or touch input.
+
+---
+
 ## Running Locally
 
 See [Deployment.md](Deployment.md) for full local setup instructions.
