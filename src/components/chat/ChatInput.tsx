@@ -34,12 +34,24 @@ export function ChatInput({ onSend, isSending, onStop, conversationId }: ChatInp
     const textarea = textareaRef.current;
     if (!textarea) return;
     
-    // Reset height to minimum to recalculate scrollHeight
-    textarea.style.height = "auto";
-    
-    // The max-h-40 class handles the max height, so we just set it to scrollHeight
-    // It will overflow and become scrollable automatically if scrollHeight > max-height
-    textarea.style.height = `${textarea.scrollHeight}px`;
+    const resize = () => {
+      textarea.style.height = "auto";
+      textarea.style.height = `${textarea.scrollHeight}px`;
+    };
+    resize();
+
+    // Rotation and sidebar changes can reflow text without changing its content.
+    // Ignore height-only notifications caused by our own sizing.
+    let previousWidth = textarea.getBoundingClientRect().width;
+    const observer = new ResizeObserver(() => {
+      const width = textarea.getBoundingClientRect().width;
+      if (width !== previousWidth) {
+        previousWidth = width;
+        resize();
+      }
+    });
+    observer.observe(textarea);
+    return () => observer.disconnect();
   }, [content]);
 
   // Cleanup object URLs on unmount to prevent memory leaks
