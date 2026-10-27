@@ -65,7 +65,7 @@ export function Sidebar() {
     <TooltipProvider delayDuration={0}>
       <aside 
         className={cn(
-          "flex h-full flex-col border-r bg-card transition-all duration-300 min-w-0",
+          "flex h-full flex-col overflow-y-auto border-r bg-card transition-all duration-300 min-w-0",
           isCollapsed ? "w-[68px]" : "w-[280px] md:w-[320px]"
         )}
         aria-label="Sidebar Navigation"
@@ -166,7 +166,7 @@ export function Sidebar() {
 
         {/* Conversation List Integration */}
         {!isCollapsed && (
-          <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+          <div className="flex flex-col flex-1 min-h-60 overflow-hidden">
             <div className="p-4 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2">
                 <h2 className="text-sm font-semibold tracking-tight">Chats</h2>
