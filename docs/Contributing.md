@@ -163,6 +163,8 @@ mypy backend/         # Python type checking
 
 For layout changes, inspect the signed-in chat (including an existing agent run), Documents, Memory, Settings, and Clerk profile at 320×568, 390×844, 768×1024, and 1024×768, then check desktop at 1280×900. Confirm that fields remain usable beside the sidebar, long filenames/keys wrap, page content does not scroll horizontally, and intended table/code scrolling stays inside its container. Check the phone drawer's close button and Escape behavior, plus keyboard labels for icon controls.
 
+Also check a short landscape viewport such as 667×375 and the 767px/769px navigation breakpoint. On short screens, scroll the sidebar to confirm chat search, history, and the account menu remain reachable; fixed navigation sections must not collapse the conversation region to zero height.
+
 Reuse existing messages and documents for these visual checks; resizing and opening a completed agent run do not require new model calls or document processing. Browser viewport tests do not simulate a physical device's on-screen keyboard or touch input.
 
 ---
