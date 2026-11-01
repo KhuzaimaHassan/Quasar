@@ -16,9 +16,9 @@ An AI developer workspace for streaming conversations, answers with sources, and
 </div>
 
 <p align="center">
-  <img src="public/screenshots/readme-desktop-chat.jpg" alt="Quasar desktop chat showing a document-backed answer, source citations, model selection, and token usage" width="100%">
+  <img src="public/screenshots/01_chat_streaming.png" alt="Quasar Chat page with full workspace navigation, a formatted response, a Python code block, model selection, and the message composer" width="100%">
   <br>
-  <sub>Desktop · 1280 × 900 · Answers connected to your documents.</sub>
+  <sub>Chat · Streaming responses, formatted code, and conversation history.</sub>
 </p>
 
 ## What you can do
@@ -32,26 +32,38 @@ An AI developer workspace for streaming conversations, answers with sources, and
 | 🗂️ **Separate your work** | Keep conversations, documents, memory, and agent runs scoped to individual workspaces. |
 | 🔑 **Control your keys and usage** | Add encrypted provider keys in Settings and inspect recorded token and cost usage. |
 
-## A look across screens
+## Explore the workspace
 
-Real screenshots from the deployed app, using a synthetic QA workspace. Three views, from a full chat workspace to a compact mobile form.
+Actual pages from the deployed app. Each image opens at its original size.
 
-<table>
-  <tr>
-    <td align="center" width="50%"><strong>Tablet · Document library</strong></td>
-    <td align="center" width="50%"><strong>Mobile · Memory</strong></td>
-  </tr>
-  <tr>
-    <td align="center" valign="top">
-      <img src="public/screenshots/readme-tablet-documents.jpg" alt="Quasar document library at a 768 by 1024 tablet viewport, showing PDF uploads and ready statuses" width="320">
-      <br><sub>768 × 1024 · Uploads and indexing status.</sub>
-    </td>
-    <td align="center" valign="top">
-      <img src="public/screenshots/readme-mobile-memory.jpg" alt="Quasar memory page in a 390px-wide mobile layout, showing a stacked preference form and saved memory" width="200">
-      <br><sub>390px wide · Preferences within reach.</sub>
-    </td>
-  </tr>
-</table>
+### Documents
+
+Upload files, follow their indexing status, and keep reference material together in a workspace.
+
+![Quasar Documents page with workspace navigation, upload area, and three indexed PDFs](public/screenshots/readme-documents.jpg)
+
+### Memory
+
+Review and manage the preferences, project details, styles, and facts used in future conversations.
+
+![Quasar Memory page with the preference form and all four memory categories](public/screenshots/readme-memory.jpg)
+
+### Settings
+
+Manage provider keys and review token usage and estimated costs in one place.
+
+![Quasar Settings page showing provider key controls and usage analytics](public/screenshots/readme-settings.jpg)
+
+[View the daily usage table →](public/screenshots/readme-settings-usage.jpg)
+
+<details>
+<summary><strong>Also on mobile</strong> — a compact view of Memory</summary>
+
+<p align="center">
+  <img src="public/screenshots/readme-mobile-memory.jpg" alt="Quasar Memory on mobile with stacked preference fields" width="260">
+</p>
+
+</details>
 
 ## Under the hood
 
