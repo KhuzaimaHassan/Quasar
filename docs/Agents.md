@@ -11,7 +11,7 @@ Quasar's agent system lets users give complex, multi-step instructions — "buil
 ```
 User task (from chat)
   ↓
-Agent run created (agent_runs table, status: pending)
+Agent run created (AgentRun table, status: running)
   ↓
 LangGraph state machine starts
   ↓
@@ -25,7 +25,7 @@ LangGraph state machine starts
   ↓
 Agent run completed (status: completed)
   ↓
-Result streamed back to chat
+Result returned to the agent panel
 ```
 
 ---
@@ -167,7 +167,9 @@ Instead, the UI provides:
 2. **Awaiting Approval**: When the graph pauses via LangGraph `interrupt()`, the UI displays the generated plan and syntax-highlighted code for the proposed files, with explicit "Approve & Write Files" and "Reject" actions.
 3. **Run Result**: Once approved and execution finishes, a success summary lists the files that were actually written to the workspace sandbox.
 
-Each agent model call has a 60-second request deadline and one attempt (no automatic provider retries). The graph's existing maximum revision count remains unchanged. Human approval and token redaction remain required.
+Planner, coder and reviewer share a 120-second generation budget, including revisions and recovery delays. Each model request has a timeout of at most 60 seconds, reduced to the remaining generation budget. Responses arriving after that budget are rejected before continuing to approval. These checks bound generation work; they do not cancel arbitrary checkpoint/storage operations or guarantee completion within the frontend deadline during a free-tier cold start.
+
+A failed model call gets one retry after one second only for HTTP 500, 502, 503 or 504, using the same configured model and schema. SDK retries are disabled to avoid multiplying attempts. Quota/auth/validation errors and transport failures are not retried. This recovery never replays the graph, an approval request, a sandbox write or a GitHub commit. Persistent errors stay failed with a safe reference; budget exhaustion asks the user to try a smaller task. The maximum revision count, human approval gate and token redaction remain unchanged. See [agent recovery verification](Agent-Recovery-Verification.md) and ADR-023 in [Decisions.md](Decisions.md).
 
 *(Note: GitHub commit integration is fully implemented. The user can select their execution target (Sandbox vs GitHub) and provide a target repo when starting the run.)*
 
