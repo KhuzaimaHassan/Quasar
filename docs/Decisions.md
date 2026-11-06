@@ -380,3 +380,18 @@ Each decision is recorded here with the context, options considered, and rationa
 
 **Consequences**: No migration or automatic re-embedding is required. Historical zero-chunk documents remain available for a user-triggered retry. OCR and chat-attachment document indexing are not implemented; the UI and RAG documentation make the Documents workflow explicit. Existing process-restart limitations of FastAPI background tasks remain; this is not a durable job queue.
 
+---
+
+## ADR-023: Recover a Failed Agent Generation Without Replaying Execution
+
+**Status**: Proposed
+**Date**: 2026-11-06
+
+**Context**: Three recorded agent starts failed on provider HTTP 503 while document chat worked. Each synchronous agent generation explicitly disabled SDK retries. A later live baseline reached approval and completed a single sandbox file after the provider recovered; that success does not demonstrate within-run error recovery.
+
+**Decision**: Retry an individual planner/coder/reviewer generation once after a one-second delay for HTTP 500/502/503/504. Preserve the model and response schema. Do not retry quota/auth/validation errors, ambiguous transport failures, complete graph runs, approval requests or tool writes. Keep SDK retries disabled. Share a 120-second monotonic generation budget across all nodes/revisions, cap each request at the lesser of 60 seconds and remaining budget, and reject late responses. Keep persistent failures visible with safe references and offer smaller tasks on generation-budget exhaustion.
+
+**Consequences**: A transient error may cost one additional generation attempt, but cannot duplicate approved writes through this retry policy. This supersedes the no-provider-retry policy for agent generation only; chat and ingestion retry policies remain unchanged. Cold starts and checkpoint/storage latency still count against the existing frontend deadline, and this does not implement cancellation or a durable job worker. Local regression tests include the real graph's approval boundary with mocked model/storage operations. See [verification evidence](Agent-Recovery-Verification.md).
+
+**Source**: [Google Gen AI SDK retry implementation](https://github.com/googleapis/python-genai/blob/main/google/genai/_api_client.py). Explicit per-call retry settings prevent the SDK's own retry loop from multiplying this policy.
+

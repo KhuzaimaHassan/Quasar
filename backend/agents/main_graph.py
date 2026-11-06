@@ -4,6 +4,7 @@ from google import genai
 
 from core.config import settings
 from .schemas import PlanOutput, CodeOutput, ReviewOutput
+from .generation import generate_content
 from langgraph.types import Command, interrupt
 from langgraph.graph import StateGraph, START, END
 from langgraph.checkpoint.postgres import PostgresSaver
@@ -34,7 +35,7 @@ client = genai.Client(
 def planner(state: AgentState) -> dict:
     task = state["task"]
 
-    response = client.models.generate_content(
+    response = generate_content(client,
         model=settings.GOOGLE_GENERATIVE_MODEL,
         contents=f"Decompose the following task into clear, atomic steps. MAXIMUM 8 steps.\n\nTask: {task}",
         config={
@@ -66,7 +67,7 @@ def coder(state: AgentState) -> dict:
 
     prompt += "\nGenerate the necessary code files to fulfill the task and address any reviewer feedback."
 
-    response = client.models.generate_content(
+    response = generate_content(client,
         model=settings.GOOGLE_GENERATIVE_MODEL,
         contents=prompt,
         config={
@@ -101,7 +102,7 @@ def reviewer(state: AgentState):
 
     prompt += "Identify any bugs, missing requirements, or syntax errors. If issues are found, set approved to false and list them in notes. If the files perfectly fulfill the plan, set approved to true."
 
-    response = client.models.generate_content(
+    response = generate_content(client,
         model=settings.GOOGLE_GENERATIVE_MODEL,
         contents=prompt,
         config={

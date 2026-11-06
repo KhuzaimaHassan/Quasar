@@ -72,7 +72,7 @@ jobs:
 
       - name: Agent Execution Regression Tests
         working-directory: backend
-        run: python -m unittest discover -s tests -p test_agent_execution.py
+        run: python -m unittest discover -s tests -p 'test_agent_*.py'
 
       - name: Document Chunking Regression Tests
         working-directory: backend
