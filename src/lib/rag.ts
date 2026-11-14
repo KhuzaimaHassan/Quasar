@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { supabaseAdmin } from "@/lib/supabase";
+import { documentDownloadPath } from "@/lib/document-links";
 
 export interface RetrievedChunk {
   id: string;
@@ -119,14 +119,13 @@ export async function resolveCitations(chunks: RetrievedChunk[]): Promise<Citati
 
   const documentIds = Array.from(topChunkPerDoc.keys());
 
-  // Batch query to get storage paths
+  // Batch query document names; storage capabilities are resolved on click.
   const documents = await db.document.findMany({
     where: {
       id: { in: documentIds }
     },
     select: {
       id: true,
-      storagePath: true,
       filename: true
     }
   });
@@ -134,22 +133,12 @@ export async function resolveCitations(chunks: RetrievedChunk[]): Promise<Citati
   const citations: Citation[] = [];
 
   for (const doc of documents) {
-    // Generate signed URL (same pattern as AttachmentChip uses / upload-url relies on)
-    const { data, error } = await supabaseAdmin.storage
-      .from("uploads")
-      .createSignedUrl(doc.storagePath, 3600); // 1 hour
-
-    if (error || !data) {
-      console.error(`Failed to create signed URL for document ${doc.id}:`, error);
-      continue;
-    }
-
     const chunk = topChunkPerDoc.get(doc.id);
     if (chunk) {
       citations.push({
         documentId: doc.id,
         filename: doc.filename,
-        url: data.signedUrl,
+        url: documentDownloadPath(doc.id),
         similarity: chunk.similarity
       });
     }
