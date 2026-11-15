@@ -43,7 +43,7 @@ export function AgentPanel({ conversationId, workspaceId }: { conversationId: st
   }
 
   return (
-    <div className="absolute top-14 right-3 sm:right-4 z-20 w-[450px] max-w-[calc(100%-1.5rem)] sm:max-w-[calc(100%-2rem)] bg-background border border-border shadow-xl rounded-xl flex flex-col max-h-[calc(100dvh-13rem)] overflow-hidden">
+    <div className="absolute top-full mt-2 right-3 sm:right-4 z-20 w-[450px] max-w-[calc(100%-1.5rem)] sm:max-w-[calc(100%-2rem)] bg-background border border-border shadow-xl rounded-xl flex flex-col max-h-[calc(100dvh-13rem)] overflow-hidden">
       <div className="flex shrink-0 items-center justify-between px-4 py-3 border-b bg-muted/30">
         <div className="flex items-center gap-2 font-medium text-sm">
           <Bot className="h-4 w-4 text-primary" />
