@@ -83,7 +83,7 @@ export function MessageBubble({ message, isPending, isStreaming }: MessageBubble
         {message.attachments && message.attachments.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-3">
             {message.attachments.map((attachment) => (
-              <AttachmentChip key={attachment.id} {...attachment} />
+              <AttachmentChip key={attachment.id} {...attachment} conversationId={message.conversationId} />
             ))}
           </div>
         )}

@@ -10,7 +10,7 @@ export interface UploadedAttachment {
   sizeBytes: number
   /** Path in Supabase Storage */
   storagePath: string
-  /** Signed download URL for display */
+  /** Upload-time URL for draft display; saved messages resolve a fresh link. */
   url: string
   /** 
    * Raw File object — only present for images.
@@ -51,6 +51,10 @@ export interface PersistedAttachment {
   sizeBytes: number
   storagePath: string
   url: string
+}
+
+export function attachmentFilePath(conversationId: string, attachmentId: string): string {
+  return `/api/conversations/${encodeURIComponent(conversationId)}/attachments/${encodeURIComponent(attachmentId)}`
 }
 
 /** Helper: is this MIME type an image? */

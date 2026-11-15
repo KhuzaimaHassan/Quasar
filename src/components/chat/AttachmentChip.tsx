@@ -1,27 +1,32 @@
 import { FileText } from "lucide-react";
-import { formatFileSize, isImageMimeType } from "@/lib/attachment-types";
+import { attachmentFilePath, formatFileSize, isImageMimeType } from "@/lib/attachment-types";
 
 interface AttachmentChipProps {
+  id: string;
+  conversationId?: string;
   filename: string;
   mimeType: string;
   sizeBytes: number;
   url: string;
 }
 
-export function AttachmentChip({ filename, mimeType, sizeBytes, url }: AttachmentChipProps) {
+export function AttachmentChip({ id, conversationId, filename, mimeType, sizeBytes, url }: AttachmentChipProps) {
   const isImage = isImageMimeType(mimeType);
+  // Persisted messages resolve a fresh capability on every open/image load.
+  // Optimistic drafts retain their just-uploaded URL until message persistence.
+  const fileUrl = conversationId ? attachmentFilePath(conversationId, id) : url;
 
   if (isImage) {
     return (
       <a
-        href={url}
+        href={fileUrl}
         target="_blank"
         rel="noopener noreferrer"
         className="block group relative overflow-hidden rounded-lg border bg-muted/50 transition-opacity hover:opacity-90 max-w-[200px]"
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={url}
+          src={fileUrl}
           alt={filename}
           className="h-auto w-full object-cover max-h-48"
           loading="lazy"
@@ -37,7 +42,7 @@ export function AttachmentChip({ filename, mimeType, sizeBytes, url }: Attachmen
   // Non-image attachments (PDF/DOCX)
   return (
     <a
-      href={url}
+      href={fileUrl}
       target="_blank"
       rel="noopener noreferrer"
       className="flex items-center gap-2 rounded-lg border bg-muted/50 px-3 py-2 transition-colors hover:bg-muted max-w-[250px]"
