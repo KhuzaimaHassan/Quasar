@@ -271,20 +271,22 @@ function ChatHeader({ conversationId }: { conversationId: string }) {
   const availableProviders = (apiKeys?.map((k: { provider: string }) => k.provider) || []) as Provider[];
 
   return (
-    <header className="flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 border-b bg-background/50 backdrop-blur-sm shrink-0 z-10 relative min-w-0">
-      <div className="flex items-center min-w-0 flex-1 mr-2 sm:mr-4">
-        <h2 className="text-xs sm:text-sm font-semibold text-foreground truncate">
-          {conversation.title || 'New Conversation'}
-        </h2>
-      </div>
-      <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-        <AgentPanel conversationId={conversationId} workspaceId={conversation.workspaceId} />
-        <ModelSwitcher 
-          conversationId={conversationId} 
-          currentModel={conversation.model} 
-          availableProviders={availableProviders} 
-        />
-        <TokenBadge conversationId={conversationId} />
+    <header className="@container px-3 sm:px-4 py-2.5 sm:py-3 border-b bg-background/50 backdrop-blur-sm shrink-0 z-10 relative min-w-0">
+      <div className="flex flex-col gap-2.5 @3xl:flex-row @3xl:items-center @3xl:justify-between @3xl:gap-4">
+        <div className="min-w-0 flex-1">
+          <h2 className="text-xs sm:text-sm font-semibold text-foreground truncate" title={conversation.title || 'New Conversation'}>
+            {conversation.title || 'New Conversation'}
+          </h2>
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 shrink-0">
+          <AgentPanel conversationId={conversationId} workspaceId={conversation.workspaceId} />
+          <ModelSwitcher
+            conversationId={conversationId}
+            currentModel={conversation.model}
+            availableProviders={availableProviders}
+          />
+          <TokenBadge conversationId={conversationId} />
+        </div>
       </div>
     </header>
   );
