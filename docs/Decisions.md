@@ -399,7 +399,7 @@ Each decision is recorded here with the context, options considered, and rationa
 
 ## ADR-024: User-Managed Memories Take Precedence Over Extraction
 
-**Status**: Proposed — implementation on `fix/protect-manual-memory`, not yet released
+**Status**: Accepted — [PR #128](https://github.com/KhuzaimaHassan/Quasar/pull/128); see its release verification for deployment status
 **Date**: 2026-11-16
 
 **Context**: Background extraction unconditionally upserted a matching user/scope/key. A later inference could overwrite a value a user entered or corrected, including when extraction and editing raced. Confidence did not record provenance: the extractor could return 1, and older manual edits did not change confidence.
