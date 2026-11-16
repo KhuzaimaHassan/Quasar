@@ -5,6 +5,7 @@ import { MockLanguageModelV4 } from 'ai/test'
 import type { LanguageModelV4StreamPart } from '@ai-sdk/provider'
 import { classifyCompletion, createReplyRecorder, readCompletion, type SavedReply } from '@/lib/chat-completion'
 import { buildChatInstructions } from '@/lib/chat-instructions'
+import { createChatTransport } from '@/lib/chat-transport'
 
 test('only a confirmed stop is complete; limits, safety, errors and unknown finishes remain explicit', () => {
   assert.equal(classifyCompletion('stop').status, 'complete')
@@ -114,4 +115,25 @@ test('empty failures remain retryable; overlapping callbacks cannot write or cha
   ])
   assert.equal(saved.length, 1)
   assert.equal(saved[0].completion.status, 'incomplete')
+})
+
+test('real chat transport tracks the server generation header and clears stale identity on rejection', async () => {
+  let calls = 0
+  const tracked = createChatTransport('owned-conversation', async (_input, init) => {
+    assert.equal(tracked.getGenerationId(), null)
+    assert.equal(new Headers(init?.headers).get('x-conversation-id'), 'owned-conversation')
+    assert.equal(JSON.parse(String(init?.body)).conversationId, 'owned-conversation')
+    calls += 1
+    return calls === 1
+      ? new Response('data: [DONE]\n\n', { headers: { 'x-generation-id': 'server-generation' } })
+      : new Response('Quota reached', { status: 429 })
+  })
+  const input = { trigger: 'submit-message' as const, chatId: 'chat-ui', messageId: undefined,
+    abortSignal: undefined, messages: [], body: { conversationId: 'owned-conversation' } }
+  const stream = await tracked.transport.sendMessages(input)
+  await stream.cancel()
+  assert.equal(tracked.getGenerationId(), 'server-generation')
+  await assert.rejects(tracked.transport.sendMessages(input), /Quota reached/)
+  assert.equal(tracked.getGenerationId(), null)
+  assert.equal(calls, 2)
 })

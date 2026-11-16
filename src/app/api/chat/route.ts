@@ -13,6 +13,7 @@ import { chatRateLimiter } from '@/lib/rate-limit'
 import { RateLimitUnavailableError } from '@/lib/rate-limit-store'
 import { getGenerationErrorMessage } from '@/lib/generation-errors'
 import { createReplyRecorder } from '@/lib/chat-completion'
+import { beginRetryGeneration, setGenerationCitations, settleChatGeneration } from '@/lib/chat-generation-store'
 import { chatMessagesSchema, canRetryMessage } from '@/lib/validations/chat'
 import { traceChatGeneration, sanitizeTraceMetadata } from '@/lib/langsmith'
 
@@ -97,24 +98,24 @@ export async function POST(req: Request) {
       return new NextResponse('The message to retry was not found in this conversation.', { status: 400 })
     }
 
+    const generation = { id: requestId, state: 'active', modelId }
     const persistedUserMessage = retryMessage ?? await db.message.create({
       data: {
         conversationId,
         role: 'user',
         content: userMessageContent,
         tokenCount: 0,
-        metadata: attachments && attachments.length > 0 ? { attachments } : {},
+        metadata: { ...(attachments && attachments.length > 0 ? { attachments } : {}), generation },
       },
     })
 
+    const generationIdentity = { userId: user.id, conversationId, generationId: requestId }
+    if (retryMessage && !await beginRetryGeneration(user.id, conversationId, persistedUserMessage.id, generation)) {
+      return new NextResponse('The previous response is still running or already saved. Reload the chat before retrying.', { status: 409 })
+    }
     const recordGenerationFailure = async (message: string) => {
       try {
-        const metadata = persistedUserMessage.metadata && typeof persistedUserMessage.metadata === 'object' && !Array.isArray(persistedUserMessage.metadata)
-          ? persistedUserMessage.metadata : {}
-        await db.message.update({
-          where: { id: persistedUserMessage.id },
-          data: { metadata: { ...metadata, generationError: { message, requestId } } },
-        })
+        await settleChatGeneration(generationIdentity, { error: { message, requestId } })
       } catch {
         console.error('[GENERATION_ERROR_PERSISTENCE_FAILED]', { requestId })
       }
@@ -142,6 +143,9 @@ export async function POST(req: Request) {
     
     // Resolve citations for display
     const citations = await resolveCitations(chunks);
+    if (!await setGenerationCitations(generationIdentity, citations.map(({ documentId, filename, url, similarity }) => ({ documentId, filename, url, similarity })))) {
+      return new NextResponse('This response has already been stopped.', { status: 409 })
+    }
 
     let modelMessages = await convertToModelMessages(messages);
 
@@ -211,38 +215,8 @@ export async function POST(req: Request) {
       timedOut: () => generationTimeout.aborted,
       recordFailure: recordGenerationFailure,
       async saveReply({ text, tokenCount, tokenUsageAvailable, completion }) {
-        // Persist the assistant's response
-        // Keep the response and token total consistent if either write fails.
-        const previousMetadata = persistedUserMessage.metadata && typeof persistedUserMessage.metadata === 'object' && !Array.isArray(persistedUserMessage.metadata)
-          ? persistedUserMessage.metadata : {}
-        await db.$transaction([db.message.create({
-          data: {
-            conversationId,
-            role: 'assistant',
-            content: text,
-            tokenCount,
-            metadata: {
-              modelId,
-              completion,
-              tokenUsageAvailable,
-              citations: citations.map(({ documentId, filename, url, similarity }) => ({ documentId, filename, url, similarity })),
-            },
-          },
-        }),
-
-        // Increment the conversation's total tokens
-        db.conversation.update({
-          where: { id: conversationId },
-          data: {
-            totalTokens: {
-              increment: tokenCount,
-            },
-          },
-        }),
-        db.message.update({
-          where: { id: persistedUserMessage.id },
-          data: { metadata: { ...previousMetadata, generationError: null } },
-        })])
+        const outcome = await settleChatGeneration(generationIdentity, { reply: { text, tokenCount, tokenUsageAvailable, completion } })
+        if (outcome !== 'saved') return
 
         // Background memory extraction (Issue #95, Step 3)
         // Trigger every 5th message (using the request's messages array length)
@@ -316,6 +290,7 @@ export async function POST(req: Request) {
     )
 
     return createUIMessageStreamResponse({
+      headers: { 'X-Generation-Id': requestId },
       stream: toUIMessageStream({ 
         stream: result.stream,
         onError: (err) => {

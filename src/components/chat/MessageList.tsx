@@ -16,10 +16,11 @@ interface MessageListProps {
   persistedMessages?: any[];
   onRetry?: () => void;
   onContinue?: (messageId: string) => void;
+  onStopPending?: () => void;
   isSending?: boolean;
 }
 
-export function MessageList({ draftMessages, persistedMessages = [], onRetry, onContinue, isSending = false }: MessageListProps) {
+export function MessageList({ draftMessages, persistedMessages = [], onRetry, onContinue, onStopPending, isSending = false }: MessageListProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isUserScrolledUp, setIsUserScrolledUp] = useState(false);
 
@@ -52,6 +53,7 @@ export function MessageList({ draftMessages, persistedMessages = [], onRetry, on
   // and there are no draft messages (streaming/pending) in progress
   const lastPersisted = mappedPersisted[mappedPersisted.length - 1];
   const generationError = lastPersisted?.metadata?.generationError;
+  const pendingGeneration = lastPersisted?.metadata?.generation?.state === 'active';
   const hasOrphanedMessage =
     lastPersisted?.role === "user" &&
     !isSending && draftMessages.length === 0;
@@ -113,10 +115,14 @@ export function MessageList({ draftMessages, persistedMessages = [], onRetry, on
             <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded-lg px-3 py-2">
               <AlertCircle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
               <span>
-                {typeof generationError?.message === 'string' ? generationError.message : 'No response received'}
+                {pendingGeneration ? 'Response is still finishing. Reload shortly or stop this response.' : typeof generationError?.message === 'string' ? generationError.message : 'No response received'}
                 {typeof generationError?.requestId === 'string' ? ` Reference: ${generationError.requestId}` : ''}
               </span>
-              {onRetry && (
+              {pendingGeneration && onStopPending && <button type="button" onClick={onStopPending}
+                className="ml-1 rounded text-xs font-medium text-primary hover:underline focus-visible:ring-2 focus-visible:ring-ring">
+                Stop pending response
+              </button>}
+              {!pendingGeneration && onRetry && (
                 <button
                   onClick={onRetry}
                   className="inline-flex items-center gap-1 ml-1 text-xs font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"

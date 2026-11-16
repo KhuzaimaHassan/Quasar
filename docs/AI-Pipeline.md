@@ -46,9 +46,17 @@ The application uses `streamText`, `DefaultChatTransport` and `useChat` from the
 | Error, user stop, timeout | Preserve already received text with an incomplete notice; retain a retryable user-message error if no text arrived. |
 | Other/unconfirmed finish | Preserve text with an explicit unconfirmed-completion notice. |
 
-Saved assistant metadata includes `modelId`, `citations`, `completion` (`status`, `finishReason`, safe message) and `tokenUsageAvailable`. The response, conversation token increment and clearing of the corresponding user error commit in one transaction. Overlapping end/error/abort callbacks share a single settlement; they cannot persist/count the same response twice. No memory extraction is scheduled from an incomplete response.
+Saved assistant metadata includes `modelId`, `citations`, `completion` (`status`, `finishReason`, safe message) and `tokenUsageAvailable`. The response, conversation token increment and clearing of the corresponding user error commit in one transaction. Overlapping end/error/abort callbacks share a local settlement. In addition, model callbacks and the authenticated Stop endpoint compete under a database lock on the owned user message, keyed by a server-generated generation ID. Only an active generation may create its assistant row and increment tokens; later callbacks cannot overwrite a stopped answer or create a duplicate. No memory extraction is scheduled from an incomplete response.
 
 A provider can report a normal stop for a semantically unfinished answer. This is not reliably detectable from a finish code. Historical replies have no completion metadata and are not retroactively labeled complete or incomplete. The exact cutoff cause of the originally reported answer is unknown.
+
+## Stop persistence
+
+A real serverless preview test showed that aborting browser fetch alone could leave only the question saved: cancellation did not reliably reach the worker's abort callback. The client therefore reads the server-generated `X-Generation-Id` response header and sends its visible partial text to `POST /api/conversations/:id/stop` **before** closing the local stream. The endpoint verifies account/conversation/generation ownership and bounds the text. It shares the same transactional generation claim as model completion. If completion won first, Stop preserves that completed answer; if Stop won, later callbacks are ignored. Citations and model identity come from the server's stored generation context, not the Stop payload.
+
+The generation context is stored in existing user-message JSON metadata (`id`, `state`, `modelId`, `citations`); no migration is needed. States are `active`, `settled` and `failed`. A stop with no text marks the user turn failed/retryable without creating an empty assistant row. After reload, an active pending turn keeps a Stop control available. Retry cannot supersede an active or already settled generation. Stop has its own durable 60/minute account quota so exhausting ordinary chat quota does not immediately prevent stopping.
+
+Stopping finalizes the saved response and closes its client stream; it does not guarantee immediate cancellation of provider computation in another serverless invocation. That worker remains bounded by its generation deadline. If Stop cannot be saved, the client displays a recovery error and leaves the stream running rather than discarding visible text. Before response headers or any text arrive, early local cancellation remains best effort; a subsequently saved pending turn can be stopped explicitly after refresh.
 
 ## Continue and retry
 
@@ -66,6 +74,6 @@ LangSmith tracing is optional and degrades gracefully. The current wrapper recor
 
 ## Verification and release
 
-`tests/chat-completion.test.ts` exercises real SDK callbacks with synthetic provider streams for normal stop, output limit, content filtering, partial-stream error, user stop and timeout. It also checks single settlement, empty-failure recovery, safe metadata display and current-events instructions. Other suites cover model validation, BYOK restrictions, history conversion, attachments, citations and protected memory writes.
+`tests/chat-completion.test.ts` exercises real SDK callbacks with synthetic provider streams for normal stop, output limit, content filtering, partial-stream error, user stop and timeout. It also checks single settlement, empty-failure recovery, safe metadata display and current-events instructions. The generation-store suite uses isolated PostgreSQL to test Stop versus late completion races, ownership, repeated stops, retained citations, empty-stop retry, active/settled retry rejection and transaction rollback. Other suites cover model validation, BYOK restrictions, history conversion, attachments, citations and protected memory writes.
 
 Local mocked/fixture results, authenticated preview checks and production results must be reported separately in [Fix-History.md](Fix-History.md). A provider's free-tier documentation or a successful build does not by itself establish live access for this deployment.

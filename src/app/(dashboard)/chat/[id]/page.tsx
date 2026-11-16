@@ -3,7 +3,7 @@
 import { use, useMemo, useRef, useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport } from "ai";
+import { createChatTransport } from "@/lib/chat-transport";
 import { MessageList } from "@/components/chat/MessageList";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { useMessages, useConversation } from "@/lib/queries/conversations";
@@ -62,12 +62,7 @@ export default function DynamicChatPage({ params }: { params: Promise<{ id: stri
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function ChatContainer({ conversationId, persistedMessages }: { conversationId: string, persistedMessages: any[] }) {
-  const transport = useMemo(() => new DefaultChatTransport({
-    api: '/api/chat',
-    headers: {
-      'x-conversation-id': conversationId
-    }
-  }), [conversationId]);
+  const { transport, getGenerationId } = useMemo(() => createChatTransport(conversationId), [conversationId]);
 
   const initMsgs = useMemo(() => toInitialMessages(persistedMessages), [persistedMessages]);
 
@@ -75,6 +70,8 @@ function ChatContainer({ conversationId, persistedMessages }: { conversationId: 
   // Maps a "send index" to the attachments for that send
   const [pendingAttachments, setPendingAttachments] = useState<PersistedAttachment[]>([]);
   const [isContinuing, setIsContinuing] = useState(false);
+  const [isStopping, setIsStopping] = useState(false);
+  const stopLock = useRef(false);
   const [continuationError, setContinuationError] = useState<string | null>(null);
   const continuationLock = useRef(false);
   const [requestStartCount, setRequestStartCount] = useState(persistedMessages.length);
@@ -117,7 +114,9 @@ function ChatContainer({ conversationId, persistedMessages }: { conversationId: 
     prevStatusRef.current = status;
   }, [status, conversationId, queryClient]);
 
-  const isSending = status === 'submitted' || status === 'streaming' || isContinuing;
+  const hasPendingGeneration = persistedMessages.at(-1)?.role === 'user' &&
+    persistedMessages.at(-1)?.metadata?.generation?.state === 'active';
+  const isSending = status === 'submitted' || status === 'streaming' || isContinuing || isStopping || hasPendingGeneration;
 
   const handleSend = async (content: string, attachments: UploadedAttachment[]) => {
     setRequestStartCount(persistedMessages.length);
@@ -274,13 +273,51 @@ function ChatContainer({ conversationId, persistedMessages }: { conversationId: 
     }
   };
 
+  const handleStop = async () => {
+    if (stopLock.current) return;
+    const pending = persistedMessages.at(-1);
+    const generationId = getGenerationId() ||
+      (pending?.role === 'user' && pending.metadata?.generation?.state === 'active' ? pending.metadata.generation.id : null);
+    // Before response headers arrive there is no received text to preserve.
+    if (!generationId) { await stop(); return; }
+    stopLock.current = true;
+    setIsStopping(true);
+    setContinuationError(null);
+    try {
+      const last = messages.at(-1);
+      const text = last?.role === 'assistant' ? getMessageText(last) : '';
+      const response = await fetch(`/api/conversations/${conversationId}/stop`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ generationId, text }),
+      });
+      if (!response.ok) throw new Error(getChatErrorMessage(await response.text()));
+      // Save first: aborting fetch alone does not reliably reach a serverless worker.
+      await stop();
+      const saved = await queryClient.fetchQuery({
+        queryKey: ['messages', conversationId], staleTime: 0,
+        queryFn: async () => {
+          const res = await fetch(`/api/conversations/${conversationId}/messages`);
+          if (!res.ok) throw new Error('The stop was saved, but messages could not be refreshed. Reload this chat.');
+          return res.json();
+        },
+      });
+      setMessages(toInitialMessages(saved));
+      queryClient.invalidateQueries({ queryKey: ['conversation', conversationId] });
+    } catch (err) {
+      setContinuationError(err instanceof Error ? err.message : 'Unable to save the stopped response. Please try again.');
+    } finally {
+      stopLock.current = false;
+      setIsStopping(false);
+    }
+  };
+
   return (
     <div className="flex h-full w-full min-w-0 overflow-hidden">
       <div className="flex flex-1 flex-col min-w-0 bg-muted/10 h-full relative">
         <ChatHeader conversationId={conversationId} />
-        <MessageList draftMessages={draftMessages} persistedMessages={persistedMessages} onRetry={handleRetry} onContinue={handleContinue} isSending={isSending} />
+        <MessageList draftMessages={draftMessages} persistedMessages={persistedMessages} onRetry={handleRetry} onContinue={handleContinue} onStopPending={handleStop} isSending={isSending} />
         {continuationError && <p role="alert" className="px-4 py-2 text-sm text-destructive">{continuationError}</p>}
-        <ChatInput onSend={handleSend} isSending={isSending} onStop={stop} conversationId={conversationId} />
+        <ChatInput onSend={handleSend} isSending={isSending} onStop={handleStop} canStop={!isStopping && (status === 'submitted' || status === 'streaming' || hasPendingGeneration)} conversationId={conversationId} />
       </div>
     </div>
   );

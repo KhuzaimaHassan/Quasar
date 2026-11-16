@@ -190,6 +190,18 @@ Continue response uses the same endpoint as an explicit new user turn after the 
 
 ---
 
+#### `POST /api/conversations/:id/stop`
+
+Save a stopped response before closing the client stream. Requires authentication and ownership of the conversation and matching server-generated generation ID (available in the chat stream's `X-Generation-Id` header or the saved pending user-message metadata).
+
+```json
+{ "generationId": "uuid", "text": "Already visible partial answer" }
+```
+
+The strict payload accepts only the UUID and text (maximum 100,000 characters). Model identity/citations and terminal state are server controlled. `200 {"status":"saved"}` means this request finalized the generation; `200 {"status":"settled"}` preserves a prior terminal result without rewriting it. Empty text creates a retryable stopped user turn, not an empty assistant answer. Missing/foreign generations return the same 404, invalid input 400, account stop quota 429 and persistence failure a safe 500/503. Responses are private/no-store. Stop and model completion share a row-lock transaction, so only one assistant result/token increment is admitted. Stop does not guarantee immediate provider-side computation cancellation; see [stop persistence](AI-Pipeline.md#stop-persistence).
+
+---
+
 ### Documents
 
 #### `GET /api/documents?workspaceId=:id`
