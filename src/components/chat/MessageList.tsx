@@ -99,7 +99,7 @@ export function MessageList({ draftMessages, persistedMessages = [], onRetry, on
             isStreaming={(msg as DraftMessage).isStreaming}
           />
         ))}
-        {lastPersisted?.role === 'assistant' && !isSending && draftMessages.length === 0 && onContinue &&
+        {lastPersisted?.role === 'assistant' && !isSending && draftMessages.every(msg => msg.id === 'error-stub') && onContinue &&
           lastPersisted.completion?.finishReason !== 'content-filter' && (
           <div className="mb-4 flex justify-start">
             <button type="button" onClick={() => onContinue(lastPersisted.id)}

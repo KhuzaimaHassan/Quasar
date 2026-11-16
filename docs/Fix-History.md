@@ -6,7 +6,7 @@ The backfill covers the recent repair and presentation PRs #112–127. Earlier f
 
 ## In review: CHAT-001 — incomplete replies and current-model support
 
-**Status:** Implemented on `fix/chat-completion-and-current-model`; preview and final verification pending. Not released to production.
+**Status:** [PR #129](https://github.com/KhuzaimaHassan/Quasar/pull/129), implemented on `fix/chat-completion-and-current-model`. Authenticated preview model/feature checks remain pending sign-in; not released to production.
 
 **Trigger:** An answer to “What are the latest updates in AI field?” persisted an unfinished fifth heading. Reload confirmed saved text, not viewport clipping. The earlier route ignored finish reason, so the precise historical cutoff cause remains unknown.
 
@@ -14,7 +14,7 @@ The backfill covers the recent repair and presentation PRs #112–127. Earlier f
 
 **Relevant files:** [AI pipeline](AI-Pipeline.md), [ADR-025](Decisions.md#adr-025-preserve-incomplete-chat-replies-and-separate-chatbackground-defaults), `src/lib/chat-completion.ts`, `src/lib/chat-instructions.ts`, chat API/page, message components and `tests/chat-completion.test.ts`.
 
-**Verification:** Real-SDK synthetic callback tests cover stop/limit/filter/error/abort/timeout and overlapping callbacks. Record complete local, fixture and authenticated preview outcomes before approval; provider documentation alone does not establish this project's API access.
+**Verification:** Local suite: 46 passed and two DB-only skips; the existing ingestion HTTP test requires loopback access. TypeScript, ESLint, secret scan, relative documentation links and whitespace checks passed. Nine new tests exercise actual SDK callbacks for stop/limit/filter/error/abort/timeout and overlapping callbacks. The actual chat page, hooks and transport were also tested against a synthetic loopback API: partial notice, continuation/reload, double-click single request, historical unknown status, filtered-response policy, failed history refresh with preserved text, and quota-error display/recovery. Chat layouts at 390×844, 768×1024 and 1440×1000 had readable controls and no horizontal page overflow; the fixture omits the authenticated dashboard sidebar. Browser checks exposed and repaired lost context on refresh error, a hidden subsequent request error, and an optimistic continuation turn remaining after a rejected request. These are local fixture results, not proof of configured-project Hydrogen access. Authenticated preview checks remain required before release.
 
 ## MEM-001 — preserve manual memory corrections
 

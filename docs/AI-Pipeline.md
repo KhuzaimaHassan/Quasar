@@ -54,7 +54,7 @@ A provider can report a normal stop for a semantically unfinished answer. This i
 
 The latest saved assistant reply offers **Continue response**, including historical replies whose completion status is unknown. For a safety-filter outcome the dedicated continuation control is omitted. Continue is an explicit new user turn, preserves the original reply and asks the model to resume without repetition. It does not retry automatically, edit old text, replay tools or bypass provider filtering.
 
-The client fetches saved history, confirms the same assistant reply is still latest, restores it into the SDK, and submits one continuation. A synchronous lock and in-flight state prevent repeated clicks while it is running. A changed conversation produces a visible message instead of continuing an older reply. Continuations consume ordinary chat quota and can also fail or reach limits.
+The client fetches saved history, confirms the same assistant reply is still latest, restores it into the SDK, and submits one continuation. A synchronous lock and in-flight state prevent repeated clicks while it is running. A changed conversation produces a visible message instead of continuing an older reply. After submission the client explicitly reconciles saved history, including when a quota failure left only an optimistic turn; failed refreshes retain the already loaded answer and show a recovery message. Continuations consume ordinary chat quota and can also fail or reach limits.
 
 **Try again** is the existing recovery path for an orphaned user turn that received no saved assistant text. Error messages remain safe and readable after reopening the chat.
 

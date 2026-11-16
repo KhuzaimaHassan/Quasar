@@ -8,8 +8,9 @@ import { buildChatInstructions } from '@/lib/chat-instructions'
 
 test('only a confirmed stop is complete; limits, safety, errors and unknown finishes remain explicit', () => {
   assert.equal(classifyCompletion('stop').status, 'complete')
-  for (const reason of ['length', 'content-filter', 'error', 'aborted', 'timeout', 'other', 'tool-calls']) {
+  for (const reason of ['length', 'content-filter', 'error', 'aborted', 'timeout', 'other', 'tool-calls', 'toString', '__proto__']) {
     assert.equal(classifyCompletion(reason).status, 'incomplete')
+    assert.equal(typeof classifyCompletion(reason).message, 'string')
   }
   assert.equal(readCompletion({}), undefined) // historical responses have unknown completion
   assert.equal(readCompletion({ completion: null }), undefined)

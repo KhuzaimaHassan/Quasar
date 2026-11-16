@@ -17,7 +17,7 @@ export function classifyCompletion(finishReason: string): ChatCompletion {
     timeout: 'Generation reached its time limit. The partial response has been kept.',
     error: 'Generation failed before finishing. The partial response has been kept.',
   }
-  return { status: 'incomplete', finishReason, message: messages[finishReason] ?? 'The model did not confirm a complete response. The partial text has been kept.' }
+  return { status: 'incomplete', finishReason, message: Object.hasOwn(messages, finishReason) ? messages[finishReason] : 'The model did not confirm a complete response. The partial text has been kept.' }
 }
 
 export function readCompletion(metadata: unknown): ChatCompletion | undefined {
