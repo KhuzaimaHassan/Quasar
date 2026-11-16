@@ -6,7 +6,7 @@ Quasar's Next.js chat route authenticates the account, checks conversation owner
 
 | Model | Access and purpose |
 |---|---|
-| `gemini-4-hydrogen` | New-chat default on this review branch; Google documents API free-tier access. Actual configured-project verification is recorded in [fix history](Fix-History.md). |
+| `gemini-4-hydrogen` | New-chat default on this review branch; authenticated preview API access verified. See [fix history](Fix-History.md) for release status. |
 | `gemini-3.5-flash-lite` | Retained chat option and background model for memory extraction and titles. |
 | `gemini-3.8-flash` | Retained optional server-key chat model; availability and provider quotas can vary. |
 | `gemini-2.5-pro` | Google BYOK option; scheduled provider routing/deprecation changes should be reviewed separately. |

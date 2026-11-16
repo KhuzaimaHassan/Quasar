@@ -71,15 +71,21 @@ One conversation belongs to one workspace and one user.
 
 ### `messages`
 
-| Column | Type | Notes |
-|--------|------|-------|
-| `id` | `uuid` PK | |
-| `conversation_id` | `uuid` FK → conversations | |
-| `role` | `text` | `user`, `assistant`, `system`, `tool` |
-| `content` | `text` | Raw message content |
-| `metadata` | `jsonb` | Model used, finish reason, tool calls |
-| `token_count` | `int` | Tokens for this message |
-| `created_at` | `timestamptz` | |
+These are the current Prisma/migration column names; message IDs are UUID-formatted strings stored as SQL text.
+
+| Column | SQL type | Notes |
+|---|---|---|
+| `id` | `text` PK | Prisma-generated UUID string |
+| `conversationId` | `text` FK → conversations | Parent conversation |
+| `role` | `text` | Current chat writes `user` or `assistant`; not a database enum |
+| `content` | `text` | Saved plain/Markdown message text |
+| `metadata` | `jsonb` | Defaults to `{}`; structured fields below |
+| `tokenCount` | `integer` | Reported total usage for an assistant reply; zero when unavailable |
+| `createdAt` | `timestamp(3)` | Creation time |
+
+User-message metadata can contain attachment metadata, `generationError` and `generation: {id, state, modelId, citations}`. The ID is server generated; states are `active`, `settled` and `failed`. Assistant metadata can contain `modelId`, `generationId`, `citations`, `completion: {status, finishReason, message?}` and `tokenUsageAvailable`. Historical rows need not contain the new fields and are not retroactively assigned a completion status.
+
+The authenticated Stop endpoint and model callbacks lock the matching owned user row before creating an assistant answer, incrementing conversation tokens and updating terminal generation state in one transaction. This prevents a late model completion from replacing/doubling a stopped reply. No new column, table or backfill migration is required for these JSON fields. See [AI pipeline](AI-Pipeline.md#stop-persistence) and [fix history](Fix-History.md).
 
 ### `documents`
 
