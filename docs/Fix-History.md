@@ -6,7 +6,7 @@ The backfill covers the recent repair and presentation PRs #112–127. Earlier f
 
 ## In review: MEM-001 — preserve manual memory corrections
 
-**Status:** [PR #128](https://github.com/KhuzaimaHassan/Quasar/pull/128), implemented on `fix/protect-manual-memory`; unmerged and not deployed. No account database migration has been applied.
+**Status:** [PR #128](https://github.com/KhuzaimaHassan/Quasar/pull/128), implemented on `fix/protect-manual-memory`; unmerged. The reviewed additive migration was applied to the intended shared database on 2026-11-16; final preview feature verification is in progress.
 
 **Trigger and defect:** A user adds or corrects a long-term memory. Later background extraction finds the same `(userId, scope, key)` in chat history and used to overwrite the saved value and confidence unconditionally.
 
@@ -16,7 +16,7 @@ The backfill covers the recent repair and presentation PRs #112–127. Earlier f
 
 **Verification:** Local `npm test`: 37 passed, two isolated-database cases explicitly skipped. TypeScript, ESLint, whitespace, secret scan and relative documentation-link checks passed. The actual Memory page/query hooks were exercised in fresh Chrome against a synthetic loopback API: manual add, edit-to-protected, cancel, reload and five widths 320–1440px passed. This is UI evidence, not a live account test. [CI run 43837192996](https://github.com/KhuzaimaHassan/Quasar/actions/runs/43837192996) passed all three jobs for the implementation commit: the isolated PostgreSQL job passed 44 tests with zero skips, including backfill, concurrent first writes/edits and ownership; the frontend job passed 37 with its two DB-only skips and passed the production build. Check the latest PR head's checks as well before release. No real user memories were changed.
 
-**Rollout:** Apply `20261116090000_protect_user_managed_memories` to the intended database before new code uses it. CI's migration database is isolated and does not migrate Supabase. Automatic Vercel deployment is disabled only for this review branch until the migration/release is approved. Remove that branch rule after the target database is ready, then verify the deployed preview before merging. Main and unrelated branches keep their normal deployment behavior.
+**Rollout:** The owner-approved `20261116090000_protect_user_managed_memories` migration ran in preview build commit `b68e0cc`, before new code used the database. Its guarded step verified the reviewed SQL checksum, only that pending migration, recorded history, protected legacy rows and unchanged values/confidence. Vercel's existing write-only connection settings stayed inside its build environment. The temporary deployment exclusion and migration build hook were removed afterward; normal builds do not automatically migrate. CI's database remains isolated from the account database. A final preview feature check and green CI are required before the conditional merge approval is used.
 
 **Limits:** Memories remain user-wide. Deleting a fact does not erase its source chat or prevent later re-extraction. No permanent-forgetting or unprotect control is introduced.
 

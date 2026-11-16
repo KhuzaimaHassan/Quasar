@@ -87,7 +87,9 @@ The migration adds one Boolean column, defaults historical rows to protected and
 
 For review before rollout, use an isolated migrated test database or a clearly labeled local UI fixture. Keep the review branch unmerged until release approval. Leaving the additive column in place permits old code to run, but old code does not enforce protection against background overwrites.
 
-The temporary `vercel.json` rule disables automatic deployment only for `fix/protect-manual-memory`; unspecified branches, including main, retain normal deployment behavior. Once the target database is migrated, remove this branch rule and verify a fresh preview before merging. No database credentials or environment settings are changed by this rule.
+For PR #128, the owner approved the additive migration on 2026-11-16. It ran in a temporary exact-branch preview build using the database connection already configured in Vercel. The guarded step pinned the reviewed SQL checksum, refused other pending/failed migrations, ran Prisma Migrate and verified history, protected legacy rows, and unchanged value/confidence fingerprints. Only Boolean verification results were logged; credentials were not revealed or exported.
+
+The temporary deployment exclusion, build override and migration runner were removed after that successful migration. Normal preview and production builds do not retain an automatic migration hook. Future migrations still require the reviewed deployment ordering above. See [Fix History](Fix-History.md) and the PR's release verification for the actual preview/merge/production outcomes.
 
 ---
 

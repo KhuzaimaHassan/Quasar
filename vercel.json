@@ -1,4 +1,0 @@
-{
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "node scripts/apply-reviewed-memory-migration.mjs && npm run build"
-}

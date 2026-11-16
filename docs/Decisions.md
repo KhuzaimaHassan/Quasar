@@ -408,7 +408,7 @@ Each decision is recorded here with the context, options considered, and rationa
 
 **Legacy policy**: Protect every existing row through a true default. Do not infer ownership from confidence or promote old confidence values. This intentionally prevents automatic refresh of ambiguous historical facts; users can still edit/delete them.
 
-**Consequences**: Requires an additive migration before the new application uses the target database. A review preview must not use an unmigrated shared database; its exact branch is temporarily excluded from automatic Vercel deployment while CI remains enabled. User-wide scope and deletion/relearning behavior are unchanged. No unprotect UI, tombstones or permanent forgetting is implemented. The real PostgreSQL tests cover backfill, ownership, automatic updates and concurrent first writes/edits.
+**Consequences**: Requires an additive migration before the new application uses the target database. The review branch's deployment was initially excluded until approval. The migration subsequently ran in a guarded exact-branch build, then that one-time build hook was removed; normal builds do not migrate automatically. User-wide scope and deletion/relearning behavior are unchanged. No unprotect UI, tombstones or permanent forgetting is implemented. The real PostgreSQL tests cover backfill, ownership, automatic updates and concurrent first writes/edits.
 
 **Sources**: [PostgreSQL INSERT / ON CONFLICT](https://www.postgresql.org/docs/current/sql-insert.html#SQL-ON-CONFLICT), [Vercel branch deployment configuration](https://vercel.com/docs/project-configuration/git-configuration#git.deploymentenabled).
 
