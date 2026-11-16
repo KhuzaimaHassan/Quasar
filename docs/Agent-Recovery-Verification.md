@@ -2,6 +2,8 @@
 
 Checked on November 6, 2026 (Asia/Karachi).
 
+The repair subsequently merged in [PR #124](https://github.com/KhuzaimaHassan/Quasar/pull/124), commit `40b45c1`. The observations below retain their original environments and timing: the live baseline preceded the patch, and the mocked local graph tests verify recovery. Merge/deployment does not turn that baseline into a live injected-503 recovery test. See [Fix History](Fix-History.md) for later repairs and verification limits.
+
 ## Live baseline, before this patch
 
 The existing deployment at `qausar.vercel.app` retained three failed runs with provider HTTP 503. A new small text-file task reached the reviewer, then failed its revision limit over trailing-newline formatting. This showed the provider was responding again; it did not prove that the application recovered from a transient error within a run.

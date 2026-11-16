@@ -167,6 +167,14 @@ Also check a short landscape viewport such as 667×375 and the 767px/769px navig
 
 Reuse existing messages and documents for these visual checks; resizing and opening a completed agent run do not require new model calls or document processing. Browser viewport tests do not simulate a physical device's on-screen keyboard or touch input.
 
+For chat headers, check the sidebar both expanded and collapsed. A narrow chat area must give the title its own row; wide desktop should retain the compact single row. Open the model menu and agent panel, confirm the panel starts below the complete header, and check reload. A viewport breakpoint alone does not describe the width left after the sidebar.
+
+## Recording repairs
+
+Every fix PR updates [Fix History](Fix-History.md) and the relevant feature/API/deployment guide. Include the failure trigger, resulting behavior, regression coverage, verification environment and limitations. Distinguish local fixtures from authenticated preview/production checks. Record PR/merge identifiers and deployment/migration status after approval; never include account data, private conversation URLs, signed capabilities or secrets. This record must be sufficient to continue without the originating chat.
+
+The memory-protection integration suite runs with the same isolated `TEST_DATABASE_*` configuration as quota checks. It verifies migration backfill and races across independent connections, using synthetic users that are removed afterward. Never point it at a hosted account database.
+
 ---
 
 ## Running Locally

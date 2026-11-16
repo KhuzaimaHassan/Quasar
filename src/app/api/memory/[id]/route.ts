@@ -2,6 +2,7 @@ import { auth } from "@clerk/nextjs/server"
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { updateMemorySchema } from "@/lib/validations/memory"
+import { updateManualMemory } from "@/lib/memory-store"
 
 export async function PATCH(
   req: Request,
@@ -32,12 +33,7 @@ export async function PATCH(
     const json = await req.json()
     const body = updateMemorySchema.parse(json)
 
-    const updatedMemory = await db.memory.update({
-      where: { id: memoryId },
-      data: {
-        value: body.value,
-      },
-    })
+    const updatedMemory = await updateManualMemory(user.id, memoryId, body.value)
 
     return NextResponse.json(updatedMemory)
   } catch (error) {

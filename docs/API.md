@@ -243,6 +243,12 @@ Get document status (for polling after upload).
 #### `DELETE /api/documents/:id`
 Delete document, its chunks, and its storage file.
 
+#### `GET /api/documents/:id/download`
+Resolve a saved source citation. Requires authentication and ownership of the document's workspace. Responds with a redirect to a fresh 60-second signed file URL. Responses are private/no-store. Unknown or foreign documents return 404; unavailable signing returns a safe 503. Citation links store document identity rather than depending on an expired upload-time URL. Added in [PR #125](https://github.com/KhuzaimaHassan/Quasar/pull/125).
+
+#### `GET /api/conversations/:id/attachments/:attachmentId`
+Resolve a saved chat attachment. Requires authentication and conversation ownership. Validates persisted metadata and the canonical storage path under that conversation before redirecting to a fresh 60-second URL. Inline image/PDF behavior is preserved; redirects/errors are private/no-store. Missing/foreign/invalid attachments return 404 and signing failure returns a safe 503. Client attachment IDs may differ from the server-generated storage UUID; both are supported. Added in [PR #126](https://github.com/KhuzaimaHassan/Quasar/pull/126).
+
 ---
 
 ### Memory
@@ -253,13 +259,13 @@ Get all memories for the authenticated user.
 ```json
 // Response 200
 [
-  { "id": "uuid", "scope": "preference", "key": "preferred_language", "value": "TypeScript", "confidence": 0.95 },
+  { "id": "uuid", "scope": "preference", "key": "preferred_language", "value": "TypeScript", "confidence": 1, "isUserManaged": true },
   ...
 ]
 ```
 
 #### `POST /api/memory`
-Manually add a memory.
+Manually add or replace the authenticated user's memory for the supplied scope/key. Saves confidence 1 and `isUserManaged=true`; automatic extraction cannot replace it. The server sets these fields; they are not accepted in the request.
 
 ```json
 // Request body
@@ -267,7 +273,7 @@ Manually add a memory.
 ```
 
 #### `PATCH /api/memory/:id`
-Update a memory's value or confidence.
+Update an owned memory's value with `{ "value": "new value" }`. Saves confidence 1 and protects the correction from automatic extraction. Confidence, ownership and protection flags cannot be supplied by the client.
 
 #### `DELETE /api/memory/:id`
 Delete a single memory.

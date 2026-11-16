@@ -39,7 +39,14 @@ function MemoryRow({ memory }: { memory: Memory }) {
   return (
     <div className="flex items-start justify-between py-3 px-4 border-b last:border-0 group">
       <div className="flex min-w-0 flex-1 flex-col gap-1 mr-2">
-        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground [overflow-wrap:anywhere]">{memory.key}</span>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground [overflow-wrap:anywhere]">{memory.key}</span>
+          {memory.isUserManaged && (
+            <span className="rounded border px-1.5 py-0.5 text-[10px] text-muted-foreground" title="Protected from automatic memory updates">
+              Protected
+            </span>
+          )}
+        </div>
         {isEditing ? (
           <div className="flex items-center gap-2 mt-1">
             <Input 
@@ -233,6 +240,9 @@ export default function MemoryPage() {
 
       <div className="flex flex-col gap-8 pb-10">
         <AddMemoryForm />
+        <p className="text-sm text-muted-foreground">
+          Memories you add or edit are protected from automatic updates. Existing memories are protected too.
+        </p>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
           <MemorySection 
