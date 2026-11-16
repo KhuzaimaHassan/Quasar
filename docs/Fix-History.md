@@ -4,6 +4,18 @@ This is the repository's handoff record for the recent audit and repair work. St
 
 The backfill covers the recent repair and presentation PRs #112–127. Earlier feature-development PRs are not retroactively labeled bug fixes. Historical test references name the relevant current regression files; they do not imply that today's suite size or every later browser check existed at the original merge.
 
+## In review: CHAT-001 — incomplete replies and current-model support
+
+**Status:** Implemented on `fix/chat-completion-and-current-model`; preview and final verification pending. Not released to production.
+
+**Trigger:** An answer to “What are the latest updates in AI field?” persisted an unfinished fifth heading. Reload confirmed saved text, not viewport clipping. The earlier route ignored finish reason, so the precise historical cutoff cause remains unknown.
+
+**Repair:** Record completion category and safe notices; preserve partial text on errors, stops and timeouts; settle once per request and flag missing usage. Continue adds an explicit new turn using freshly fetched saved history, with repeated-click protection and no automatic replay. Historical replies retain unknown completion status. Add Hydrogen for new chats while retaining Flash-Lite background calls and legacy choices. Prompt includes UTC date and truthful absence of live search. No paid search grounding or migration is introduced.
+
+**Relevant files:** [AI pipeline](AI-Pipeline.md), [ADR-025](Decisions.md#adr-025-preserve-incomplete-chat-replies-and-separate-chatbackground-defaults), `src/lib/chat-completion.ts`, `src/lib/chat-instructions.ts`, chat API/page, message components and `tests/chat-completion.test.ts`.
+
+**Verification:** Real-SDK synthetic callback tests cover stop/limit/filter/error/abort/timeout and overlapping callbacks. Record complete local, fixture and authenticated preview outcomes before approval; provider documentation alone does not establish this project's API access.
+
 ## MEM-001 — preserve manual memory corrections
 
 **Release record:** [PR #128](https://github.com/KhuzaimaHassan/Quasar/pull/128) records the current merge commit, checks and deployment outcome. The reviewed additive migration was applied to the intended shared database on 2026-11-16, and authenticated preview feature verification passed before merge. Consult the PR's release verification for the subsequent production result.

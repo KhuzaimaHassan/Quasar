@@ -19,6 +19,7 @@ import { useWorkspaces } from "@/lib/queries/workspaces";
 import { AgentPanel } from "@/components/agents/AgentPanel";
 import Link from "next/link";
 import { ConversationQueryError } from "@/lib/queries/conversations";
+import { CONTINUE_RESPONSE_PROMPT } from "@/lib/chat-completion";
 
 export default function DynamicChatPage({ params }: { params: Promise<{ id: string }> }) {
   // Unwrap the Promise params for Client Components in Next.js 15+
@@ -72,6 +73,9 @@ function ChatContainer({ conversationId, persistedMessages }: { conversationId: 
   // Track attachments sent with each message for optimistic rendering
   // Maps a "send index" to the attachments for that send
   const [pendingAttachments, setPendingAttachments] = useState<PersistedAttachment[]>([]);
+  const [isContinuing, setIsContinuing] = useState(false);
+  const [continuationError, setContinuationError] = useState<string | null>(null);
+  const continuationLock = useRef(false);
 
   const { messages, setMessages, sendMessage, regenerate, clearError, stop, status, error } = useChat({
     transport,
@@ -111,7 +115,7 @@ function ChatContainer({ conversationId, persistedMessages }: { conversationId: 
     prevStatusRef.current = status;
   }, [status, conversationId, queryClient]);
 
-  const isSending = status === 'submitted' || status === 'streaming';
+  const isSending = status === 'submitted' || status === 'streaming' || isContinuing;
 
   const handleSend = async (content: string, attachments: UploadedAttachment[]) => {
     // Separate images (have .file) from non-images
@@ -196,7 +200,7 @@ function ChatContainer({ conversationId, persistedMessages }: { conversationId: 
   }
 
   // Surface any errors gracefully in the UI instead of hanging silently
-  if (error && !persistedMessages.at(-1)?.metadata?.generationError) {
+  if (error && !persistedMessages.at(-1)?.metadata?.generationError && !persistedMessages.at(-1)?.metadata?.completion) {
     draftMessages.push({
       id: 'error-stub',
       role: 'assistant',
@@ -219,11 +223,43 @@ function ChatContainer({ conversationId, persistedMessages }: { conversationId: 
     }
   };
 
+  const handleContinue = async (messageId: string) => {
+    if (isSending || continuationLock.current) return;
+    continuationLock.current = true;
+    setIsContinuing(true);
+    setContinuationError(null);
+    try {
+      // Use saved history, including the partial answer, instead of a stale SDK draft.
+      const history = await queryClient.fetchQuery({
+        queryKey: ['messages', conversationId],
+        queryFn: async () => {
+          const res = await fetch(`/api/conversations/${conversationId}/messages`);
+          if (!res.ok) throw new Error('Unable to load the saved response. Please try again.');
+          return res.json();
+        },
+        staleTime: 0,
+      });
+      if (history.at(-1)?.id !== messageId || history.at(-1)?.role !== 'assistant') {
+        throw new Error('This conversation changed. Continue its latest response instead.');
+      }
+      clearError();
+      setPendingAttachments([]);
+      setMessages(toInitialMessages(history));
+      await sendMessage({ text: CONTINUE_RESPONSE_PROMPT }, { body: { conversationId } });
+    } catch (err) {
+      setContinuationError(err instanceof Error ? getChatErrorMessage(err.message) : 'Unable to continue this response.');
+    } finally {
+      continuationLock.current = false;
+      setIsContinuing(false);
+    }
+  };
+
   return (
     <div className="flex h-full w-full min-w-0 overflow-hidden">
       <div className="flex flex-1 flex-col min-w-0 bg-muted/10 h-full relative">
         <ChatHeader conversationId={conversationId} />
-        <MessageList draftMessages={draftMessages} persistedMessages={persistedMessages} onRetry={handleRetry} isSending={isSending} />
+        <MessageList draftMessages={draftMessages} persistedMessages={persistedMessages} onRetry={handleRetry} onContinue={handleContinue} isSending={isSending} />
+        {continuationError && <p role="alert" className="px-4 py-2 text-sm text-destructive">{continuationError}</p>}
         <ChatInput onSend={handleSend} isSending={isSending} onStop={stop} conversationId={conversationId} />
       </div>
     </div>

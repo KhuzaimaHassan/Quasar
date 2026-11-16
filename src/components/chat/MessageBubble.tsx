@@ -6,6 +6,7 @@ import type { PersistedAttachment } from "@/lib/attachment-types";
 import { AttachmentChip } from "./AttachmentChip";
 import { CitationChip, type CitationProps } from "./CitationChip";
 import { ThumbsUp, ThumbsDown } from "lucide-react";
+import type { ChatCompletion } from "@/lib/chat-completion";
 import { useSetFeedback, useClearFeedback } from "@/lib/queries/conversations";
 
 export interface MessageProps {
@@ -15,9 +16,11 @@ export interface MessageProps {
   createdAt: string | Date;
   attachments?: PersistedAttachment[];
   tokenCount?: number;
+  tokenUsageAvailable?: boolean;
   citations?: CitationProps[];
   conversationId?: string;
   feedback?: { rating: number };
+  completion?: ChatCompletion;
 }
 
 interface MessageBubbleProps {
@@ -88,6 +91,11 @@ export function MessageBubble({ message, isPending, isStreaming }: MessageBubble
           </div>
         )}
 
+        {!isUser && message.completion?.status === 'incomplete' && !isStreaming && (
+          <p role="status" className="mb-3 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-foreground">
+            {message.completion.message}
+          </p>
+        )}
         {isPending ? (
           <div className="flex items-center h-5 gap-1 px-1">
             <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce [animation-delay:-0.3s]"></span>
@@ -134,6 +142,7 @@ export function MessageBubble({ message, isPending, isStreaming }: MessageBubble
           <span>
             {formatRelativeTime(message.createdAt)}
             {!isUser && !isStreaming && !isPending && message.tokenCount ? ` · ${message.tokenCount.toLocaleString()} tokens` : ""}
+            {!isUser && !isStreaming && message.tokenUsageAvailable === false ? ' · Token usage unavailable' : ''}
           </span>
 
           {/* Feedback Controls - Only for resolved assistant messages */}

@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { test } from 'node:test';
 import { PrismaClient, type Message } from '@prisma/client';
 import { PostgresRateLimiter, RateLimitUnavailableError, type RateLimitStore } from '@/lib/rate-limit-store';
-import { DEFAULT_MODEL_ID, MODEL_CATALOG, getModelLabel, resolveModelId } from '@/lib/models';
+import { DEFAULT_MODEL_ID, BACKGROUND_MODEL_ID, MODEL_CATALOG, getModelLabel, resolveModelId } from '@/lib/models';
 import { toInitialMessages, getMessageText, getChatErrorMessage } from '@/lib/chat-utils';
 import { createConversationSchema, updateConversationSchema } from '@/lib/validations/conversation';
 import { estimateCost, isFreeTierModel } from '@/lib/pricing';
@@ -15,9 +15,11 @@ import { uploadUrlSchema } from '@/lib/validations/attachment';
 
 test('legacy free chat IDs resolve to the active free model without unlocking premium models', () => {
   for (const id of ['gemini-1.5-flash', 'gemini-3.5-flash', 'gemini-3.6-flash']) {
-    assert.equal(resolveModelId(id), DEFAULT_MODEL_ID);
+    assert.equal(resolveModelId(id), BACKGROUND_MODEL_ID);
   }
-  assert.equal(DEFAULT_MODEL_ID, 'gemini-3.5-flash-lite');
+  assert.equal(DEFAULT_MODEL_ID, 'gemini-4-hydrogen');
+  assert.equal(BACKGROUND_MODEL_ID, 'gemini-3.5-flash-lite');
+  assert.equal(resolveModelId(BACKGROUND_MODEL_ID), BACKGROUND_MODEL_ID);
   assert.equal(resolveModelId('gemini-3.8-flash'), 'gemini-3.8-flash');
   for (const model of MODEL_CATALOG.filter((item) => item.provider !== 'google' || item.id.includes('pro'))) {
     assert.equal(model.requiresKey, true);
@@ -28,7 +30,7 @@ test('legacy free chat IDs resolve to the active free model without unlocking pr
 
 test('conversation validation supplies the default, accepts legacy aliases, and rejects unknown models', () => {
   assert.equal(createConversationSchema.parse({}).model, DEFAULT_MODEL_ID);
-  assert.equal(updateConversationSchema.parse({ model: 'gemini-3.5-flash' }).model, DEFAULT_MODEL_ID);
+  assert.equal(updateConversationSchema.parse({ model: 'gemini-3.5-flash' }).model, BACKGROUND_MODEL_ID);
   assert.equal(createConversationSchema.safeParse({ model: 'invented-model' }).success, false);
 });
 

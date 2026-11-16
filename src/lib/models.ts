@@ -7,13 +7,13 @@ export interface ModelConfig {
   requiresKey: boolean;
 }
 
-export const DEFAULT_MODEL_ID = 'gemini-3.5-flash-lite';
+export const DEFAULT_MODEL_ID = 'gemini-4-hydrogen';
 export const BACKGROUND_MODEL_ID = 'gemini-3.5-flash-lite';
 
 const LEGACY_MODEL_ALIASES: Record<string, string> = {
-  'gemini-1.5-flash': DEFAULT_MODEL_ID,
-  'gemini-3.5-flash': DEFAULT_MODEL_ID,
-  'gemini-3.6-flash': DEFAULT_MODEL_ID,
+  'gemini-1.5-flash': BACKGROUND_MODEL_ID,
+  'gemini-3.5-flash': BACKGROUND_MODEL_ID,
+  'gemini-3.6-flash': BACKGROUND_MODEL_ID,
 };
 
 export function resolveModelId(modelId: string): string {
@@ -37,6 +37,12 @@ export function getModelLabel(modelId: string): string {
 export const MODEL_CATALOG: ModelConfig[] = [
   {
     id: DEFAULT_MODEL_ID,
+    label: 'Gemini 4 Hydrogen',
+    provider: 'google',
+    requiresKey: false,
+  },
+  {
+    id: BACKGROUND_MODEL_ID,
     label: 'Gemini 3.5 Flash-Lite',
     provider: 'google',
     requiresKey: false,

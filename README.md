@@ -25,7 +25,7 @@ An AI developer workspace for streaming conversations, answers with sources, and
 
 | | Inside Quasar |
 | :--- | :--- |
-| 💬 **Chat across providers** | Stream responses, render code, and choose a model per conversation. Gemini Flash-Lite is the default; premium models require your own provider key. |
+| 💬 **Chat across providers** | Stream responses, render code, and choose a model per conversation. New chats default to Gemini 4 Hydrogen; Flash-Lite remains available. Premium models require your own provider key. |
 | 📚 **Ask your documents** | Upload PDF or DOCX files, follow indexing progress, and open source citations alongside answers. |
 | 🧠 **Keep useful context** | Save and manage preferences that carry into future conversations. |
 | 🤖 **Work with agents** | Follow Planner → Coder → Reviewer runs, inspect tool activity, and approve changes before execution. |

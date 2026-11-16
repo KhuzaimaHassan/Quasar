@@ -1,234 +1,71 @@
-# AI Pipeline
+# AI pipeline
 
-## Overview
+Quasar's Next.js chat route authenticates the account, checks conversation ownership and quota, assembles context, streams model output and persists the result. Agent execution is separate; see [Agents.md](Agents.md).
 
-The AI pipeline is the core of Quasar. It handles everything from accepting a user message to streaming a response back — including model selection, context assembly, RAG retrieval injection, and token tracking. This document covers the chat completion pipeline. Agent-specific orchestration is in [Agents.md](Agents.md).
+## Models and defaults
 
----
+| Model | Access and purpose |
+|---|---|
+| `gemini-4-hydrogen` | New-chat default on this review branch; Google documents API free-tier access. Actual configured-project verification is recorded in [fix history](Fix-History.md). |
+| `gemini-3.5-flash-lite` | Retained chat option and background model for memory extraction and titles. |
+| `gemini-3.8-flash` | Retained optional server-key chat model; availability and provider quotas can vary. |
+| `gemini-2.5-pro` | Google BYOK option; scheduled provider routing/deprecation changes should be reviewed separately. |
+| `claude-sonnet-5`, `claude-sonnet-4-6`, `claude-haiku-4-5-20251001` | Anthropic BYOK options. |
+| `gpt-4o` | OpenAI BYOK option. |
 
-## Models Supported
+Models are stored per conversation. Selecting a new-chat default does not rewrite existing conversations. Legacy aliases `gemini-1.5-flash`, `gemini-3.5-flash` and `gemini-3.6-flash` keep resolving to Flash-Lite; they do not silently upgrade to Hydrogen. `DEFAULT_MODEL_ID` and `BACKGROUND_MODEL_ID` are deliberately independent. Premium options still require an encrypted user key, checked on the server as well as in the picker. There is no automatic model fallback or replay of a failed generation.
 
-| Model | Provider | Use case |
-|-------|----------|----------|
-| `gemini-3.5-flash-lite` | Google | Verified free-tier default, server-provided key |
-| `gemini-3.8-flash` | Google | Optional free-tier model; earlier requests timed out or returned provider 503 |
-| `claude-sonnet-5` | Anthropic | Available only with BYOK |
-| `claude-sonnet-4-6` | Anthropic | Available only with BYOK |
-| `claude-haiku-4-5-20251001` | Anthropic | Available only with BYOK |
-| `gpt-4o` | OpenAI | Available only with BYOK |
+Google documents Hydrogen's free API input/output and its GenerateContent support. This does not mean all Google features are free: Google Search grounding is unavailable on the API Free tier. Actual quota and model access depend on the configured Google project. See [Google's Hydrogen migration guide](https://aistudio.google.com/docs/whats-new-gemini-4-hydrogen) and [pricing](https://aistudio.google.com/docs/pricing#gemini-4-hydrogen).
 
-Model is stored per-conversation and switchable mid-conversation by the user.
+## Request and context
 
----
+`src/app/api/chat/route.ts` accepts validated UI messages and obtains the model from the owned conversation, not an arbitrary request model. It persists the user turn before generation. An explicit retry may reuse only the latest owned matching user message.
 
-## Model Strategy
+The context contains:
 
-Quasar defaults to Gemini 3.5 Flash-Lite, which returned a response successfully in the production browser smoke test. Gemini 3.8 Flash remains selectable, but earlier attempts timed out or returned provider HTTP 503. Premium models require the user's encrypted BYOK credential at both the UI and API layers, including the sidebar's new-chat picker. This picker controls new chats independently of existing conversation choices. `DEFAULT_MODEL_ID` and `BACKGROUND_MODEL_ID` in `src/lib/models.ts` keep frontend defaults and background calls consistent. Older free Gemini conversation IDs resolve to the active default without rewriting historical usage. Chat has no automatic model fallback or provider retry. Agents have separate, bounded generation recovery described in [Agents.md](Agents.md). Failures remain visible after reopening a chat; Retry reuses only the latest owned user message. Assistant text and token totals are saved atomically. See ADR-009, ADR-017, and ADR-021 in [Decisions.md](Decisions.md).
+1. A system instruction with the current UTC date and the lack of live web search.
+2. Up to ten user-wide memories with confidence at least 0.7, ordered by update time.
+3. Retrieved document chunks for the conversation's workspace, when available.
+4. The request's conversation messages converted to model-message format, capped to the last 30 entries.
 
----
+There is no implementation of a per-slot token budget or automatic context-overflow retry. The system instruction asks for complete sections, and requires current-events limitations instead of presenting recalled facts as verified latest news. Supplying today's date does not give a model live knowledge. Uploaded sources support their contents, not their continued currency.
 
-## SDK
+Images sent as chat attachments are model inputs. PDF/DOCX chat attachments remain downloadable files; indexed document question answering uses Documents. See [RAG](RAG.md), [API](API.md) and [Memory](Memory.md).
 
-Use **Vercel AI SDK** (`ai` package) for all LLM calls in Next.js:
+## Streaming and completion status
 
-```typescript
-import { streamText } from 'ai';
-import { google } from '@ai-sdk/google';
-import { anthropic } from '@ai-sdk/anthropic';
-import { openai } from '@ai-sdk/openai';
+The application uses `streamText`, `DefaultChatTransport` and `useChat` from the installed Vercel AI SDK. Provider retries are disabled. Google chat requests use low thinking effort. The generation signal is bounded to 45 seconds; the Next.js route maximum is 90 seconds. Chat does not impose a new small output-token cap. These bounds do not guarantee every long answer can finish in one request.
 
-const modelMap = {
-  'gemini-3.8-flash': google('gemini-3.8-flash'),
-  'gemini-3.5-flash-lite': google('gemini-3.5-flash-lite'),
-  'claude-sonnet-5': anthropic('claude-sonnet-5'),
-  'claude-sonnet-4-6': anthropic('claude-sonnet-4-6'),
-  'claude-haiku-4-5-20251001': anthropic('claude-haiku-4-5-20251001'),
-  'gpt-4o': openai('gpt-4o'),
-};
-```
+`src/lib/chat-completion.ts` records one terminal outcome per request:
 
-The SDK handles:
-- Streaming via SSE (Server-Sent Events)
-- Unified interface across providers
-- `useChat` React hook on the client side
-- Tool calling schema
+| Outcome | Saved behavior |
+|---|---|
+| `stop` | Completed assistant text and reported token usage. |
+| `length` | Partial text with an output-limit notice. |
+| `content-filter` | Partial text with a safety-filter notice; no dedicated Continue action. |
+| Error, user stop, timeout | Preserve already received text with an incomplete notice; retain a retryable user-message error if no text arrived. |
+| Other/unconfirmed finish | Preserve text with an explicit unconfirmed-completion notice. |
 
----
+Saved assistant metadata includes `modelId`, `citations`, `completion` (`status`, `finishReason`, safe message) and `tokenUsageAvailable`. The response, conversation token increment and clearing of the corresponding user error commit in one transaction. Overlapping end/error/abort callbacks share a single settlement; they cannot persist/count the same response twice. No memory extraction is scheduled from an incomplete response.
 
-## Context Assembly
+A provider can report a normal stop for a semantically unfinished answer. This is not reliably detectable from a finish code. Historical replies have no completion metadata and are not retroactively labeled complete or incomplete. The exact cutoff cause of the originally reported answer is unknown.
 
-For every chat request, the pipeline assembles the prompt in this order:
+## Continue and retry
 
-```
-1. System prompt
-2. Long-term memory facts (from memories table, top 5 by relevance)
-3. Conversation history (from PostgreSQL, capped at the last 30 messages)
-4. RAG context (retrieved chunks, if workspace has documents)
-5. User message
-```
+The latest saved assistant reply offers **Continue response**, including historical replies whose completion status is unknown. For a safety-filter outcome the dedicated continuation control is omitted. Continue is an explicit new user turn, preserves the original reply and asks the model to resume without repetition. It does not retry automatically, edit old text, replay tools or bypass provider filtering.
 
-### Token Budget
+The client fetches saved history, confirms the same assistant reply is still latest, restores it into the SDK, and submits one continuation. A synchronous lock and in-flight state prevent repeated clicks while it is running. A changed conversation produces a visible message instead of continuing an older reply. Continuations consume ordinary chat quota and can also fail or reach limits.
 
-| Slot | Max tokens |
-|------|-----------|
-| System prompt | 500 |
-| Memory facts | 300 |
-| Conversation history | 6,000 |
-| RAG context | 3,000 |
-| User message | 1,000 |
-| Response (reserved) | 2,000 |
-| **Total** | **~12,800** |
+**Try again** is the existing recovery path for an orphaned user turn that received no saved assistant text. Error messages remain safe and readable after reopening the chat.
 
-Adjust these as you learn actual usage patterns. The conversation history slot shrinks first when budget is tight.
+## Usage and observability
 
----
+When reported, `usage.totalTokens` is saved and added to the conversation total. The displayed number is total usage, not an output-token limit. If an error/abort supplies no final usage, a zero placeholder avoids inventing a count, `tokenUsageAvailable=false` is recorded and the reply says usage is unavailable. Totals can therefore undercount interrupted provider work; they are not billing records.
 
-## System Prompt
+LangSmith tracing is optional and degrades gracefully. The current wrapper records sanitized request metadata and startup outcome/latency; it does not provide complete stream-finish diagnosis or a full prompt/token trace. Completion status is recorded separately on the saved assistant message. Do not assume old trace-success metadata proves a complete answer.
 
-Keep the system prompt short and factual. Avoid roleplay framing.
+## Verification and release
 
-```
-You are Quasar, an AI developer workspace assistant.
+`tests/chat-completion.test.ts` exercises real SDK callbacks with synthetic provider streams for normal stop, output limit, content filtering, partial-stream error, user stop and timeout. It also checks single settlement, empty-failure recovery, safe metadata display and current-events instructions. Other suites cover model validation, BYOK restrictions, history conversion, attachments, citations and protected memory writes.
 
-Context about the user:
-- Name: {user.display_name}
-- Preferred language/framework: {memory.preferred_framework}
-- Current workspace: {workspace.name}
-
-You have access to the user's uploaded documents (context provided below).
-When citing a document, mention the filename. Be concise and specific.
-If you don't know something, say so rather than guessing.
-```
-
-Update this as you discover what produces the best outputs.
-
----
-
-## Streaming Implementation
-
-### API Route (`/api/chat`)
-
-```typescript
-import { streamText, StreamData, createUIMessageStreamResponse, toUIMessageStream } from 'ai';
-import { NextRequest } from 'next/server';
-import { auth } from '@clerk/nextjs';
-import { retrieveContext, buildSystemPrompt, resolveCitations } from '@/lib/rag';
-
-export async function POST(req: NextRequest) {
-  const { userId } = auth();
-  if (!userId) return new Response('Unauthorized', { status: 401 });
-
-  const { messages, conversationId, model } = await req.json();
-
-  // 1. Load context (RAG chunks)
-  const chunks = await retrieveContext(conversationId, messages[messages.length - 1].content);
-  const citations = await resolveCitations(chunks);
-
-  // 2. Stream Setup
-  const data = new StreamData();
-  if (citations.length > 0) {
-    data.appendMessageAnnotation({ type: 'data-citations', citations });
-  }
-
-  const result = await streamText({
-    model: modelMap[model],
-    system: buildSystemPrompt(chunks),
-    messages,
-    onFinish: async ({ text, usage }) => {
-      // 3. Persist after stream ends
-      await saveMessage({ conversationId, role: 'assistant', content: text, tokens: usage.totalTokens, metadata: { citations } });
-      data.close();
-    },
-  });
-
-  return createUIMessageStreamResponse({
-    stream: toUIMessageStream({ stream: result.stream }),
-    data
-  });
-}
-```
-
-### Client (`useChat` hook)
-
-```typescript
-const { messages, input, handleSubmit, isLoading, stop } = useChat({
-  api: '/api/chat',
-  body: { conversationId, model },
-  onFinish: (message) => {
-    // Update conversation title if first message
-  },
-});
-```
-
----
-
-## Token Tracking
-
-After every completion:
-1. Add `usage.totalTokens` (which is `usage.inputTokens + usage.outputTokens`) to `messages.token_count` for the assistant message.
-2. Increment `conversations.total_tokens` with `usage.totalTokens`.
-3. Display raw token counts in the UI (conversation headers and message hover states).
-
-> [!NOTE]
-> **Cost Estimation Deferred**: Cost estimation mapping is deferred to the Milestone 6 cost dashboard. Since the current default model (Gemini free tier) has no meaningful per-token cost to display right now, we do not attempt to show dollar amounts in the chat interface.
-
-Store raw token counts in the DB, compute cost at display time so pricing changes don't require a migration.
-
----
-
-## Tool Calling
-
-From M5 onward, the chat pipeline can invoke MCP tools. The Vercel AI SDK handles tool calling with streaming:
-
-```typescript
-const result = await streamText({
-  model: modelMap[model],
-  tools: {
-    createGithubIssue: {
-      description: 'Create a GitHub issue in the user\'s repository',
-      parameters: z.object({
-        repo: z.string(),
-        title: z.string(),
-        body: z.string(),
-      }),
-      execute: async ({ repo, title, body }) => mcpClient.github.createIssue(repo, title, body),
-    },
-  },
-  // ...
-});
-```
-
----
-
-## Prompt Engineering Notes
-
-> Fill this section as you learn from real usage.
-
-- **Be specific in the system prompt about output format** — if you want code in fenced blocks, say so.
-- **Don't instruct the model to "always" do things** — it tends to ignore persistent instructions. Rely on the context structure instead.
-- **RAG quality > prompt quality** — if retrieved chunks are irrelevant, no prompt will save the answer. Invest in retrieval before prompt tuning.
-- **Temperature**: Use `temperature: 0.3` for coding tasks, `0.7` for conversational responses. Make this configurable per conversation.
-
----
-
-## Error Handling
-
-| Error | Handling |
-|-------|----------|
-| Rate limit (429) | Exponential backoff with jitter; surface "trying again" to user |
-| Context too long | Trim conversation history (oldest first), retry |
-| Model unavailable | Fall back to secondary model; log the incident |
-| Stream interrupted | Client retries with `Last-Event-ID`; server replays from last chunk |
-
----
-
-## Observability
-
-All LLM calls are traced via LangSmith (from M6). Every trace captures:
-- Model used
-- Full prompt (system + messages)
-- Token counts
-- Latency (time to first token, total time)
-- Whether RAG context was injected and how many chunks
-
-See [Deployment.md](Deployment.md) for LangSmith setup.
+Local mocked/fixture results, authenticated preview checks and production results must be reported separately in [Fix-History.md](Fix-History.md). A provider's free-tier documentation or a successful build does not by itself establish live access for this deployment.
