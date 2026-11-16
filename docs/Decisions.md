@@ -384,7 +384,7 @@ Each decision is recorded here with the context, options considered, and rationa
 
 ## ADR-023: Recover a Failed Agent Generation Without Replaying Execution
 
-**Status**: Proposed
+**Status**: Accepted — [PR #124](https://github.com/KhuzaimaHassan/Quasar/pull/124)
 **Date**: 2026-11-06
 
 **Context**: Three recorded agent starts failed on provider HTTP 503 while document chat worked. Each synchronous agent generation explicitly disabled SDK retries. A later live baseline reached approval and completed a single sandbox file after the provider recovered; that success does not demonstrate within-run error recovery.
@@ -394,4 +394,21 @@ Each decision is recorded here with the context, options considered, and rationa
 **Consequences**: A transient error may cost one additional generation attempt, but cannot duplicate approved writes through this retry policy. This supersedes the no-provider-retry policy for agent generation only; chat and ingestion retry policies remain unchanged. Cold starts and checkpoint/storage latency still count against the existing frontend deadline, and this does not implement cancellation or a durable job worker. Local regression tests include the real graph's approval boundary with mocked model/storage operations. See [verification evidence](Agent-Recovery-Verification.md).
 
 **Source**: [Google Gen AI SDK retry implementation](https://github.com/googleapis/python-genai/blob/main/google/genai/_api_client.py). Explicit per-call retry settings prevent the SDK's own retry loop from multiplying this policy.
+
+---
+
+## ADR-024: User-Managed Memories Take Precedence Over Extraction
+
+**Status**: Accepted — [PR #128](https://github.com/KhuzaimaHassan/Quasar/pull/128); see its release verification for deployment status
+**Date**: 2026-11-16
+
+**Context**: Background extraction unconditionally upserted a matching user/scope/key. A later inference could overwrite a value a user entered or corrected, including when extraction and editing raced. Confidence did not record provenance: the extractor could return 1, and older manual edits did not change confidence.
+
+**Decision**: Add `Memory.isUserManaged`. Manual adds and edits set true and confidence 1. New automatic rows explicitly set false. Automatic updates use a single parameterized PostgreSQL upsert with a conflict predicate that permits updates only to false rows. PostgreSQL checks that condition under the conflicting row's lock, so a prior-read application guard is unnecessary and insufficient. Preserve protected values, confidence and timestamps.
+
+**Legacy policy**: Protect every existing row through a true default. Do not infer ownership from confidence or promote old confidence values. This intentionally prevents automatic refresh of ambiguous historical facts; users can still edit/delete them.
+
+**Consequences**: Requires an additive migration before the new application uses the target database. The review branch's deployment was initially excluded until approval. The migration subsequently ran in a guarded exact-branch build, then that one-time build hook was removed; normal builds do not migrate automatically. User-wide scope and deletion/relearning behavior are unchanged. No unprotect UI, tombstones or permanent forgetting is implemented. The real PostgreSQL tests cover backfill, ownership, automatic updates and concurrent first writes/edits.
+
+**Sources**: [PostgreSQL INSERT / ON CONFLICT](https://www.postgresql.org/docs/current/sql-insert.html#SQL-ON-CONFLICT), [Vercel branch deployment configuration](https://vercel.com/docs/project-configuration/git-configuration#git.deploymentenabled).
 

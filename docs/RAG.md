@@ -2,7 +2,7 @@
 
 ## Overview
 
-Quasar lets users upload documents (PDFs, DOCX, codebases) to a workspace. When they chat, the system retrieves the most relevant chunks from those documents and injects them into the LLM's context. This allows the model to answer questions about documents it has never seen in training.
+Quasar lets users upload text-based PDF and DOCX documents to a workspace. When they chat, the system retrieves the most relevant chunks from those documents and injects them into the LLM's context. This allows the model to answer questions about documents it has never seen in training. Codebase ingestion remains planned.
 
 RAG is implemented in the FastAPI service (M3 onward).
 
@@ -37,6 +37,8 @@ Query
 Scanned PDFs require OCR before upload. TXT, Markdown, and AST-aware code ingestion are planned capabilities, not current upload formats. PDF/DOCX files attached directly in chat are downloadable attachments; upload them in Documents to index their contents for Q&A.
 
 Failed documents, abandoned uploads older than five minutes, and historical ready documents with zero chunks can be retried manually without uploading another copy. Concurrent ingestion requests are admitted atomically; indexed documents are not re-embedded by Retry. Upload URL creation and ingestion requests each have a separate per-user limit of 10/hour. No retries are started automatically by the UI.
+
+Saved source citations use the authenticated document download route, which checks workspace ownership and signs a fresh 60-second URL on each click. They no longer depend on the historical upload-time URL. Chat attachments have a separate conversation-owned renewal route; renewing a chat attachment does not index it. See the [API reference](API.md) and [fix history](Fix-History.md) for PRs #125–126.
 
 ---
 

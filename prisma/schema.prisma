@@ -127,6 +127,7 @@ model Memory {
   key         String
   value       String
   confidence  Float
+  isUserManaged Boolean @default(true)
   createdAt   DateTime @default(now())
   lastUpdated DateTime @updatedAt
 

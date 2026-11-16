@@ -29,7 +29,7 @@ An AI developer workspace for streaming conversations, answers with sources, and
 | 📚 **Ask your documents** | Upload PDF or DOCX files, follow indexing progress, and open source citations alongside answers. |
 | 🧠 **Keep useful context** | Save and manage preferences that carry into future conversations. |
 | 🤖 **Work with agents** | Follow Planner → Coder → Reviewer runs, inspect tool activity, and approve changes before execution. |
-| 🗂️ **Separate your work** | Keep conversations, documents, memory, and agent runs scoped to individual workspaces. |
+| 🗂️ **Separate your work** | Organize conversations, documents, and agent runs by workspace. Long-term memories are shared across your account. |
 | 🔑 **Control your keys and usage** | Add encrypted provider keys in Settings and inspect recorded token and cost usage. |
 
 ## Explore the workspace
@@ -116,5 +116,5 @@ See [Contributing](docs/Contributing.md) for backend checks, responsive verifica
 | **System design** | [Architecture](docs/Architecture.md) · [Decision records](docs/Decisions.md) · [Database](docs/Database.md) |
 | **AI features** | [Chat pipeline](docs/AI-Pipeline.md) · [RAG](docs/RAG.md) · [Agents](docs/Agents.md) · [Memory](docs/Memory.md) |
 | **Build & deploy** | [Environment setup](docs/Environment-Setup.md) · [API reference](docs/API.md) · [Deployment](docs/Deployment.md) |
-| **Engineering** | [Security](docs/Security.md) · [Performance](docs/Performance.md) · [Contributing](docs/Contributing.md) |
+| **Engineering** | [Fix history](docs/Fix-History.md) · [Security](docs/Security.md) · [Performance](docs/Performance.md) · [Contributing](docs/Contributing.md) |
 | **Project story** | [Roadmap](docs/Roadmap.md) · [Lessons learned](docs/Lessons-Learned.md) · [RAG evaluation](docs/rag-evaluation.prd.md) · [GitHub setup](docs/GitHub-Setup.md) |

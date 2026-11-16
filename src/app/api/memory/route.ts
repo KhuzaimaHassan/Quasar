@@ -2,6 +2,7 @@ import { auth } from "@clerk/nextjs/server"
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { createMemorySchema } from "@/lib/validations/memory"
+import { saveManualMemory } from "@/lib/memory-store"
 
 export async function GET() {
   try {
@@ -42,26 +43,7 @@ export async function POST(req: Request) {
     const json = await req.json()
     const body = createMemorySchema.parse(json)
 
-    const memory = await db.memory.upsert({
-      where: {
-        userId_scope_key: {
-          userId: user.id,
-          scope: body.scope,
-          key: body.key,
-        },
-      },
-      update: {
-        value: body.value,
-        confidence: 1.0, // Fully trusted user-entered memory
-      },
-      create: {
-        userId: user.id,
-        scope: body.scope,
-        key: body.key,
-        value: body.value,
-        confidence: 1.0,
-      },
-    })
+    const memory = await saveManualMemory(user.id, body)
 
     return NextResponse.json(memory)
   } catch (error) {

@@ -6,6 +6,7 @@ import { google } from '@ai-sdk/google'
 import { convertToModelMessages } from '@/lib/chat-utils'
 import { retrieveContext, buildSystemPrompt, resolveCitations } from '@/lib/rag'
 import { extractMemories } from '@/lib/memory-extraction'
+import { saveExtractedMemory } from '@/lib/memory-store'
 import { BACKGROUND_MODEL_ID, MODEL_CATALOG, resolveModelId } from '@/lib/models'
 import { decrypt } from '@/lib/encryption'
 import { chatRateLimiter } from '@/lib/rate-limit'
@@ -269,28 +270,9 @@ export async function POST(req: Request) {
                   .then(async (facts) => {
                     for (const fact of facts) {
                       try {
-                        await db.memory.upsert({
-                          where: {
-                            userId_scope_key: {
-                              userId: user.id,
-                              scope: fact.scope,
-                              key: fact.key,
-                            },
-                          },
-                          update: {
-                            value: fact.value,
-                            confidence: fact.confidence,
-                          },
-                          create: {
-                            userId: user.id,
-                            scope: fact.scope,
-                            key: fact.key,
-                            value: fact.value,
-                            confidence: fact.confidence,
-                          },
-                        })
+                        await saveExtractedMemory(user.id, fact)
                       } catch (err) {
-                        console.error('[MEMORY_UPSERT_ERROR] Failed to upsert fact:', err)
+                        console.error('[MEMORY_UPSERT_ERROR]', { type: err instanceof Error ? err.name : 'UnknownError' })
                       }
                     }
                   })

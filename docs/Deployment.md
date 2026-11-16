@@ -79,6 +79,18 @@ The Next.js Google SDK reads `GOOGLE_GENERATIVE_AI_API_KEY`; FastAPI reads `GOOG
 
 Before this release, apply the additive quota migration with `npx prisma migrate deploy`. Vercel Preview does not apply production migrations automatically. Production Clerk keys must be scoped to Vercel's **Production** environment and use the matching production Clerk instance. `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` is embedded during the build, so changing it requires a fresh deployment; do not hardcode keys in application code.
 
+### Memory protection release
+
+The memory-protection code requires migration `20261116090000_protect_user_managed_memories`. Review/approve the release before changing a shared account database. Apply the committed additive migration with `npx prisma migrate deploy` against the intended database **before deploying the new code**, including a preview that uses that database. Do not use `migrate dev`, `db push` or a reset against production.
+
+The migration adds one Boolean column, defaults historical rows to protected and preserves values/confidence. CI verifies it in an isolated PostgreSQL service; a green migration job does not apply it to Supabase. Vercel builds do not apply it automatically either. Do not label the release live until the target migration, deployment and browser checks have all been recorded in [Fix History](Fix-History.md).
+
+For review before rollout, use an isolated migrated test database or a clearly labeled local UI fixture. Keep the review branch unmerged until release approval. Leaving the additive column in place permits old code to run, but old code does not enforce protection against background overwrites.
+
+For PR #128, the owner approved the additive migration on 2026-11-16. It ran in a temporary exact-branch preview build using the database connection already configured in Vercel. The guarded step pinned the reviewed SQL checksum, refused other pending/failed migrations, ran Prisma Migrate and verified history, protected legacy rows, and unchanged value/confidence fingerprints. Only Boolean verification results were logged; credentials were not revealed or exported.
+
+The temporary deployment exclusion, build override and migration runner were removed after that successful migration. Normal preview and production builds do not retain an automatic migration hook. Future migrations still require the reviewed deployment ordering above. See [Fix History](Fix-History.md) and the PR's release verification for the actual preview/merge/production outcomes.
+
 ---
 
 ## Local Development
