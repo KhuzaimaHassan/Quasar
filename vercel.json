@@ -1,8 +1,4 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "git": {
-    "deploymentEnabled": {
-      "fix/protect-manual-memory": false
-    }
-  }
+  "buildCommand": "node scripts/apply-reviewed-memory-migration.mjs && npm run build"
 }
