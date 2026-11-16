@@ -2,7 +2,7 @@
 
 ## Overview
 
-Quasar lets users upload documents (PDFs, DOCX, codebases) to a workspace. When they chat, the system retrieves the most relevant chunks from those documents and injects them into the LLM's context. This allows the model to answer questions about documents it has never seen in training.
+Quasar lets users upload text-based PDF and DOCX documents to a workspace. When they chat, the system retrieves the most relevant chunks from those documents and injects them into the LLM's context. This allows the model to answer questions about documents it has never seen in training. Codebase ingestion remains planned.
 
 RAG is implemented in the FastAPI service (M3 onward).
 

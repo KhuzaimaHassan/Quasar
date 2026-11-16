@@ -6,7 +6,7 @@ The backfill covers the recent repair and presentation PRs #112–127. Earlier f
 
 ## In review: MEM-001 — preserve manual memory corrections
 
-**Status:** Implemented on `fix/protect-manual-memory`; unmerged and not deployed. Validation results are recorded as checks complete. No account database migration has been applied.
+**Status:** [PR #128](https://github.com/KhuzaimaHassan/Quasar/pull/128), implemented on `fix/protect-manual-memory`; unmerged and not deployed. No account database migration has been applied.
 
 **Trigger and defect:** A user adds or corrects a long-term memory. Later background extraction finds the same `(userId, scope, key)` in chat history and used to overwrite the saved value and confidence unconditionally.
 
@@ -14,7 +14,7 @@ The backfill covers the recent repair and presentation PRs #112–127. Earlier f
 
 **Relevant files:** [Memory behavior](Memory.md), [API](API.md#memory), [database](Database.md#memory), [ADR-024](Decisions.md#adr-024-user-managed-memories-take-precedence-over-extraction), [release ordering](Deployment.md#memory-protection-release), `src/lib/memory-store.ts`, `tests/memory-protection.test.ts`.
 
-**Verification:** Local `npm test`: 37 passed, two isolated-database cases explicitly skipped. TypeScript, ESLint, whitespace, secret scan and relative documentation-link checks passed. The actual Memory page/query hooks were exercised in fresh Chrome against a synthetic loopback API: manual add, edit-to-protected, cancel, reload and five widths 320–1440px passed. This is UI evidence, not proof of a live account or PostgreSQL behavior. Isolated PostgreSQL migration/concurrency tests are part of CI's `npm test`; their final result must be checked before release. No real user memories were changed.
+**Verification:** Local `npm test`: 37 passed, two isolated-database cases explicitly skipped. TypeScript, ESLint, whitespace, secret scan and relative documentation-link checks passed. The actual Memory page/query hooks were exercised in fresh Chrome against a synthetic loopback API: manual add, edit-to-protected, cancel, reload and five widths 320–1440px passed. This is UI evidence, not a live account test. [CI run 43837192996](https://github.com/KhuzaimaHassan/Quasar/actions/runs/43837192996) passed all three jobs for the implementation commit: the isolated PostgreSQL job passed 44 tests with zero skips, including backfill, concurrent first writes/edits and ownership; the frontend job passed 37 with its two DB-only skips and passed the production build. Check the latest PR head's checks as well before release. No real user memories were changed.
 
 **Rollout:** Apply `20261116090000_protect_user_managed_memories` to the intended database before new code uses it. CI's migration database is isolated and does not migrate Supabase. Automatic Vercel deployment is disabled only for this review branch until the migration/release is approved. Remove that branch rule after the target database is ready, then verify the deployed preview before merging. Main and unrelated branches keep their normal deployment behavior.
 

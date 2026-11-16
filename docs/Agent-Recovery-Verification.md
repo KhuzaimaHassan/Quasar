@@ -26,4 +26,4 @@ The real LangGraph definition is also exercised with an in-memory checkpointer, 
 
 Backend Ruff checks and type checks passed. Local type checking used `--follow-imports=skip` to check all 40 backend source files without re-analyzing the installed cloud SDK dependency tree. The normal CI type-check command remains unchanged.
 
-This patch is intended to recover from a brief provider failure, not to resolve a persistent provider outage. Live deployment and end-to-end verification of the patched backend require review and deployment; the baseline browser test above used the existing main deployment.
+This patch is intended to recover from a brief provider failure, not to resolve a persistent provider outage. At the time of this local verification, live deployment and end-to-end testing of the patched backend still required review/deployment; the baseline browser test above used the then-existing main deployment. The subsequent merge is recorded at the top of this document without changing the scope of that evidence.
