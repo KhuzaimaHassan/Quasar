@@ -6,7 +6,7 @@ The backfill covers the recent repair and presentation PRs #112–127. Earlier f
 
 ## CHAT-002 — reliable new-chat default after production provider failures
 
-**Date:** 2026-11-17. Follow-up to merged [PR #129](https://github.com/KhuzaimaHassan/Quasar/pull/129), release commit `db2dd4c`.
+**Release record:** [PR #130](https://github.com/KhuzaimaHassan/Quasar/pull/130), 2026-11-17. Follow-up to merged [PR #129](https://github.com/KhuzaimaHassan/Quasar/pull/129), release commit `db2dd4c`. Consult PR #130 for final checks, merge and deployment status.
 
 **Trigger and evidence:** Authenticated production checks returned Hydrogen timeouts before text and a safe temporary-provider error, including a minimal one-line prompt. Retrying the same saved question with Flash-Lite succeeded. A comparison with 3.8 Flash also returned a temporary-provider error. Approved Vercel runtime-log inspection confirmed an `AI_APICallError` on the Hydrogen `streamGenerateContent` request; the sanitized log did not contain the provider response/status, so the precise upstream cause is unconfirmed. The successful November 16 preview is separate evidence and does not establish November 17 production availability.
 
