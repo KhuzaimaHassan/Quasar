@@ -4,13 +4,23 @@ This is the repository's handoff record for the recent audit and repair work. St
 
 The backfill covers the recent repair and presentation PRs #112–127. Earlier feature-development PRs are not retroactively labeled bug fixes. Historical test references name the relevant current regression files; they do not imply that today's suite size or every later browser check existed at the original merge.
 
+## CHAT-002 — reliable new-chat default after production provider failures
+
+**Date:** 2026-11-17. Follow-up to merged [PR #129](https://github.com/KhuzaimaHassan/Quasar/pull/129), release commit `db2dd4c`.
+
+**Trigger and evidence:** Authenticated production checks returned Hydrogen timeouts before text and a safe temporary-provider error, including a minimal one-line prompt. Retrying the same saved question with Flash-Lite succeeded. A comparison with 3.8 Flash also returned a temporary-provider error. Approved Vercel runtime-log inspection confirmed an `AI_APICallError` on the Hydrogen `streamGenerateContent` request; the sanitized log did not contain the provider response/status, so the precise upstream cause is unconfirmed. The successful November 16 preview is separate evidence and does not establish November 17 production availability.
+
+**Repair:** Use the production-verified Flash-Lite model for new chats. Keep Hydrogen and 3.8 Flash explicitly selectable with their original IDs and labels; preserve existing conversation selections, aliases, background routing and all completion/Stop/Continue repairs. No automatic fallback or request replay, credential changes or migration. Availability remains dependent on the provider; a successful check is not an uptime guarantee.
+
+**Verification:** Existing model/conversation validation tests assert the reliable default, distinct catalog IDs, retained Hydrogen selection and premium access controls. Check this follow-up's PR release record for final CI, deployment and live verification; do not infer these passed from this entry alone.
+
 ## CHAT-001 — incomplete replies and current-model support
 
 **Release record:** [PR #129](https://github.com/KhuzaimaHassan/Quasar/pull/129) records the merge commit, final checks/deployment and post-release production verification. Authenticated preview checks passed on functional commit `52f4137`; the owner approved merging on 2026-11-17. Consult the PR release record for the subsequent production outcome.
 
 **Trigger:** An answer to “What are the latest updates in AI field?” persisted an unfinished fifth heading. Reload confirmed saved text, not viewport clipping. Historical metadata did not record finish reason, so the exact original cutoff cause remains unknown.
 
-**Repair:** Record completion categories and safe notices, preserve partial text on errors/stops/timeouts, and flag unavailable token usage. Continue creates an explicit new turn from freshly fetched saved history, with a click lock and post-request reconciliation. Historical completion remains unknown. Hydrogen is the new-chat default; existing choices, legacy Flash-Lite aliases and lighter background calls remain supported. UTC date and no-live-search instructions prevent presenting recalled facts as verified latest news. No migration or paid grounding is introduced.
+**Repair:** Record completion categories and safe notices, preserve partial text on errors/stops/timeouts, and flag unavailable token usage. Continue creates an explicit new turn from freshly fetched saved history, with a click lock and post-request reconciliation. Historical completion remains unknown. This release initially made Hydrogen the new-chat default; CHAT-002 records the subsequent production availability correction. Existing choices, legacy Flash-Lite aliases and lighter background calls remain supported. UTC date and no-live-search instructions prevent presenting recalled facts as verified latest news. No migration or paid grounding is introduced.
 
 **Live-discovered stop defect:** Initial SDK/fixture checks passed, but real serverless testing showed browser abort alone could lose received text on refresh. The completed repair saves visible text through an authenticated Stop endpoint before closing the local stream. Stop and model callbacks share an owned-row database lock and server-generated generation identity in existing message JSON, so only one answer/token increment can be committed. Late callbacks cannot overwrite stopped text. Empty stops remain retryable; active turns remain stoppable after reload. Immediate cancellation of remote provider computation is not guaranteed; its generation deadline remains bounded.
 

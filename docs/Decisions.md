@@ -424,6 +424,8 @@ Each decision is recorded here with the context, options considered, and rationa
 
 Add Gemini 4 Hydrogen as the new-chat default, retaining supported old choices and Flash-Lite for background extraction/titles. Keep historical aliases resolving to Flash-Lite. Require configured-project preview verification before release. Include a server UTC date and truthful current-events limitations in prompts; a model upgrade is not live search. Google Search grounding is not enabled because its API Free tier does not include it.
 
+**Operational amendment, 2026-11-17:** Production Hydrogen requests timed out or returned provider errors, while Flash-Lite answered the same saved question. Restore Flash-Lite as the new-chat default and retain Hydrogen as an explicit option. Existing conversation selections remain unchanged. See CHAT-002 in [fix history](Fix-History.md) for evidence and release tracking. Preview success alone does not guarantee production provider availability.
+
 **Consequences**: No schema migration, automatic continuation or model switch for existing chats. Existing request/quota and BYOK controls remain. One bounded request cannot guarantee arbitrary answer length, and a normal provider stop cannot prove semantic completeness. See [AI pipeline](AI-Pipeline.md) and [fix history](Fix-History.md) for actual verification.
 
 **Sources**: [Google Hydrogen migration guide](https://aistudio.google.com/docs/whats-new-gemini-4-hydrogen), [API pricing](https://aistudio.google.com/docs/pricing#gemini-4-hydrogen), [AI SDK streaming callbacks](https://ai-sdk.dev/docs/reference/ai-sdk-core/stream-text).
