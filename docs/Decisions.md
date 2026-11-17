@@ -415,7 +415,7 @@ Each decision is recorded here with the context, options considered, and rationa
 
 ## ADR-025: Preserve incomplete chat replies and separate chat/background defaults
 
-**Status**: Proposed — `fix/chat-completion-and-current-model`
+**Status**: Accepted — [PR #129](https://github.com/KhuzaimaHassan/Quasar/pull/129); see its release record for deployment status
 **Date**: 2026-11-16
 
 **Context**: An authenticated production answer to a latest-AI-updates question persisted an unfinished fifth heading. Historical metadata did not record the finish reason, so the exact cause cannot be established. Nonempty output was always treated as success. The app had no live search and used Flash-Lite for both foreground and background defaults, despite a newer documented free API model.

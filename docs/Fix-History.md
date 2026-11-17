@@ -4,9 +4,9 @@ This is the repository's handoff record for the recent audit and repair work. St
 
 The backfill covers the recent repair and presentation PRs #112–127. Earlier feature-development PRs are not retroactively labeled bug fixes. Historical test references name the relevant current regression files; they do not imply that today's suite size or every later browser check existed at the original merge.
 
-## In review: CHAT-001 — incomplete replies and current-model support
+## CHAT-001 — incomplete replies and current-model support
 
-**Status:** [PR #129](https://github.com/KhuzaimaHassan/Quasar/pull/129), branch `fix/chat-completion-and-current-model`. Authenticated preview checks passed on functional commit `52f4137`; unmerged and awaiting owner review. The PR records latest checks/deployment status. Production has not been updated by this repair.
+**Release record:** [PR #129](https://github.com/KhuzaimaHassan/Quasar/pull/129) records the merge commit, final checks/deployment and post-release production verification. Authenticated preview checks passed on functional commit `52f4137`; the owner approved merging on 2026-11-17. Consult the PR release record for the subsequent production outcome.
 
 **Trigger:** An answer to “What are the latest updates in AI field?” persisted an unfinished fifth heading. Reload confirmed saved text, not viewport clipping. Historical metadata did not record finish reason, so the exact original cutoff cause remains unknown.
 
