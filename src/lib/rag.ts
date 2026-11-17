@@ -1,3 +1,4 @@
+import { buildChatInstructions } from "@/lib/chat-instructions";
 import { db } from "@/lib/db";
 import { documentDownloadPath } from "@/lib/document-links";
 
@@ -74,7 +75,7 @@ export async function retrieveContext(workspaceId: string, query: string): Promi
 }
 
 export function buildSystemPrompt(chunks: RetrievedChunk[], memories?: { key: string, value: string }[]): string {
-  const basePrompt = "You are Quasar, an AI developer workspace assistant. Be concise and specific.";
+  const basePrompt = buildChatInstructions();
   
   let prompt = basePrompt;
 

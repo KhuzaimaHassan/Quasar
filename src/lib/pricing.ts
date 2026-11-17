@@ -7,6 +7,12 @@ export interface ModelPricing {
 }
 
 export const MODEL_PRICING: Record<string, ModelPricing> = {
+  'gemini-4-hydrogen': {
+    inputPerMillion: 0,
+    outputPerMillion: 0,
+    effectiveFrom: '2026-11-12',
+    note: 'Free tier'
+  },
   'gemini-3.8-flash': {
     inputPerMillion: 0,
     outputPerMillion: 0,

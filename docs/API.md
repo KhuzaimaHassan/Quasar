@@ -104,7 +104,7 @@ List conversations in a workspace, ordered by `updated_at` desc.
 ```json
 // Response 200
 [
-  { "id": "uuid", "title": "How does RAG work?", "model": "claude-sonnet-4-5", "updatedAt": "..." },
+  { "id": "uuid", "title": "How does RAG work?", "model": "gemini-4-hydrogen", "updatedAt": "..." },
   ...
 ]
 ```
@@ -114,10 +114,10 @@ Create a new conversation.
 
 ```json
 // Request body
-{ "workspaceId": "uuid", "model": "claude-sonnet-4-5" }
+{ "workspaceId": "uuid", "model": "gemini-4-hydrogen" }
 
 // Response 201
-{ "id": "uuid", "title": "New conversation", "model": "claude-sonnet-4-5", ... }
+{ "id": "uuid", "title": "New conversation", "model": "gemini-4-hydrogen", ... }
 ```
 
 #### `PATCH /api/conversations/:id`
@@ -142,7 +142,7 @@ Get all messages in a conversation (used for initial load; streaming handles new
 // Response 200
 [
   { "id": "uuid", "role": "user", "content": "...", "tokenCount": 24, "createdAt": "..." },
-  { "id": "uuid", "role": "assistant", "content": "...", "tokenCount": 312, "sources": [...], "createdAt": "..." }
+  { "id": "uuid", "role": "assistant", "content": "...", "tokenCount": 312, "metadata": { "modelId": "gemini-4-hydrogen", "citations": [], "completion": { "status": "complete", "finishReason": "stop" }, "tokenUsageAvailable": true }, "createdAt": "..." }
 ]
 ```
 
@@ -178,15 +178,27 @@ Core chat completion endpoint. Returns a streaming SSE response consumed by `use
   "messages": [
     { "role": "user", "content": "Explain pgvector indexes" }
   ],
-  "conversationId": "uuid",
-  "workspaceId": "uuid",
-  "model": "claude-sonnet-4-5"
+  "conversationId": "uuid"
 }
 ```
 
 Response: `text/event-stream` (Vercel AI SDK data stream format).
 
-After stream ends, the server persists the assistant message to the DB (including token count and source citations if RAG was used).
+The route obtains model and workspace from the authenticated account's owned conversation. It saves the user turn before generation. A nonempty assistant response is persisted with citations, reported token usage and completion metadata; partial errors/aborts preserve received text. `completion.status` is `complete` only for a confirmed `stop`; other categories produce a safe incomplete notice. Historical replies without this field remain unknown. Missing interrupted usage has `tokenUsageAvailable=false` and a zero storage placeholder rather than an invented token estimate.
+
+Continue response uses the same endpoint as an explicit new user turn after the client reloads saved history. It preserves the earlier answer and consumes ordinary chat quota. It is not an automatic retry or a privileged continuation endpoint. The existing `retryMessageId` path reuses only the latest owned matching orphaned user turn. See [completion and recovery behavior](AI-Pipeline.md#continue-and-retry).
+
+---
+
+#### `POST /api/conversations/:id/stop`
+
+Save a stopped response before closing the client stream. Requires authentication and ownership of the conversation and matching server-generated generation ID (available in the chat stream's `X-Generation-Id` header or the saved pending user-message metadata).
+
+```json
+{ "generationId": "uuid", "text": "Already visible partial answer" }
+```
+
+The strict payload accepts only the UUID and text (maximum 100,000 characters). Model identity/citations and terminal state are server controlled. `200 {"status":"saved"}` means this request finalized the generation; `200 {"status":"settled"}` preserves a prior terminal result without rewriting it. Empty text creates a retryable stopped user turn, not an empty assistant answer. Missing/foreign generations return the same 404, invalid input 400, account stop quota 429 and persistence failure a safe 500/503. Responses are private/no-store. Stop and model completion share a row-lock transaction, so only one assistant result/token increment is admitted. Stop does not guarantee immediate provider-side computation cancellation; see [stop persistence](AI-Pipeline.md#stop-persistence).
 
 ---
 

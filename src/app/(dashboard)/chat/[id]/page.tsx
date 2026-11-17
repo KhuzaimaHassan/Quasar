@@ -3,7 +3,7 @@
 import { use, useMemo, useRef, useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport } from "ai";
+import { createChatTransport } from "@/lib/chat-transport";
 import { MessageList } from "@/components/chat/MessageList";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { useMessages, useConversation } from "@/lib/queries/conversations";
@@ -19,6 +19,7 @@ import { useWorkspaces } from "@/lib/queries/workspaces";
 import { AgentPanel } from "@/components/agents/AgentPanel";
 import Link from "next/link";
 import { ConversationQueryError } from "@/lib/queries/conversations";
+import { CONTINUE_RESPONSE_PROMPT } from "@/lib/chat-completion";
 
 export default function DynamicChatPage({ params }: { params: Promise<{ id: string }> }) {
   // Unwrap the Promise params for Client Components in Next.js 15+
@@ -38,7 +39,8 @@ export default function DynamicChatPage({ params }: { params: Promise<{ id: stri
     );
   }
 
-  if (error) {
+  // Keep already loaded text visible when a background/continuation refresh fails.
+  if (error && persistedMessages.length === 0) {
     const isNotFound = error instanceof ConversationQueryError && error.status === 404;
     return (
       <div role="alert" className="flex flex-1 flex-col items-center justify-center gap-4 p-6 text-center">
@@ -60,18 +62,19 @@ export default function DynamicChatPage({ params }: { params: Promise<{ id: stri
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function ChatContainer({ conversationId, persistedMessages }: { conversationId: string, persistedMessages: any[] }) {
-  const transport = useMemo(() => new DefaultChatTransport({
-    api: '/api/chat',
-    headers: {
-      'x-conversation-id': conversationId
-    }
-  }), [conversationId]);
+  const { transport, getGenerationId } = useMemo(() => createChatTransport(conversationId), [conversationId]);
 
   const initMsgs = useMemo(() => toInitialMessages(persistedMessages), [persistedMessages]);
 
   // Track attachments sent with each message for optimistic rendering
   // Maps a "send index" to the attachments for that send
   const [pendingAttachments, setPendingAttachments] = useState<PersistedAttachment[]>([]);
+  const [isContinuing, setIsContinuing] = useState(false);
+  const [isStopping, setIsStopping] = useState(false);
+  const stopLock = useRef(false);
+  const [continuationError, setContinuationError] = useState<string | null>(null);
+  const continuationLock = useRef(false);
+  const [requestStartCount, setRequestStartCount] = useState(persistedMessages.length);
 
   const { messages, setMessages, sendMessage, regenerate, clearError, stop, status, error } = useChat({
     transport,
@@ -111,9 +114,12 @@ function ChatContainer({ conversationId, persistedMessages }: { conversationId: 
     prevStatusRef.current = status;
   }, [status, conversationId, queryClient]);
 
-  const isSending = status === 'submitted' || status === 'streaming';
+  const hasPendingGeneration = persistedMessages.at(-1)?.role === 'user' &&
+    persistedMessages.at(-1)?.metadata?.generation?.state === 'active';
+  const isSending = status === 'submitted' || status === 'streaming' || isContinuing || isStopping || hasPendingGeneration;
 
   const handleSend = async (content: string, attachments: UploadedAttachment[]) => {
+    setRequestStartCount(persistedMessages.length);
     // Separate images (have .file) from non-images
     // PDF/DOCX chat attachments are downloadable files; document Q&A uses workspace indexing.
     const imageAttachments = attachments.filter(a => isImageMimeType(a.mimeType) && a.file);
@@ -196,7 +202,10 @@ function ChatContainer({ conversationId, persistedMessages }: { conversationId: 
   }
 
   // Surface any errors gracefully in the UI instead of hanging silently
-  if (error && !persistedMessages.at(-1)?.metadata?.generationError) {
+  const savedPartialForThisRequest = persistedMessages.length > requestStartCount &&
+    persistedMessages.at(-1)?.role === 'assistant' &&
+    persistedMessages.at(-1)?.metadata?.completion?.status === 'incomplete';
+  if (error && !persistedMessages.at(-1)?.metadata?.generationError && !savedPartialForThisRequest) {
     draftMessages.push({
       id: 'error-stub',
       role: 'assistant',
@@ -212,6 +221,7 @@ function ChatContainer({ conversationId, persistedMessages }: { conversationId: 
     if (persistedMessages.length > 0) {
       const lastMsg = persistedMessages[persistedMessages.length - 1];
       if (lastMsg.role === 'user' && lastMsg.content) {
+        setRequestStartCount(persistedMessages.length);
         clearError();
         setMessages(toInitialMessages(persistedMessages));
         regenerate({ body: { conversationId, retryMessageId: lastMsg.id } });
@@ -219,12 +229,95 @@ function ChatContainer({ conversationId, persistedMessages }: { conversationId: 
     }
   };
 
+  const handleContinue = async (messageId: string) => {
+    if (isSending || continuationLock.current) return;
+    continuationLock.current = true;
+    setIsContinuing(true);
+    setContinuationError(null);
+    let submitted = false;
+    const loadHistory = () => queryClient.fetchQuery({
+      queryKey: ['messages', conversationId],
+      queryFn: async () => {
+        const res = await fetch(`/api/conversations/${conversationId}/messages`);
+        if (!res.ok) throw new Error('Unable to load the saved response. Please try again.');
+        return res.json();
+      },
+      staleTime: 0,
+    });
+    try {
+      // Use saved history, including the partial answer, instead of a stale SDK draft.
+      const history = await loadHistory();
+      if (history.at(-1)?.id !== messageId || history.at(-1)?.role !== 'assistant') {
+        throw new Error('This conversation changed. Continue its latest response instead.');
+      }
+      clearError();
+      setRequestStartCount(history.length);
+      setPendingAttachments([]);
+      setMessages(toInitialMessages(history));
+      submitted = true;
+      await sendMessage({ text: CONTINUE_RESPONSE_PROMPT }, { body: { conversationId } });
+    } catch (err) {
+      setContinuationError(err instanceof Error ? getChatErrorMessage(err.message) : 'Unable to continue this response.');
+    } finally {
+      // A rejected request may leave an optimistic user turn in the SDK even
+      // when the database is unchanged and React Query reuses its cached array.
+      if (submitted) {
+        try {
+          setMessages(toInitialMessages(await loadHistory()));
+        } catch {
+          setContinuationError('Unable to refresh saved messages. Reload before continuing.');
+        }
+      }
+      continuationLock.current = false;
+      setIsContinuing(false);
+    }
+  };
+
+  const handleStop = async () => {
+    if (stopLock.current) return;
+    const pending = persistedMessages.at(-1);
+    const generationId = getGenerationId() ||
+      (pending?.role === 'user' && pending.metadata?.generation?.state === 'active' ? pending.metadata.generation.id : null);
+    // Before response headers arrive there is no received text to preserve.
+    if (!generationId) { await stop(); return; }
+    stopLock.current = true;
+    setIsStopping(true);
+    setContinuationError(null);
+    try {
+      const last = messages.at(-1);
+      const text = last?.role === 'assistant' ? getMessageText(last) : '';
+      const response = await fetch(`/api/conversations/${conversationId}/stop`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ generationId, text }),
+      });
+      if (!response.ok) throw new Error(getChatErrorMessage(await response.text()));
+      // Save first: aborting fetch alone does not reliably reach a serverless worker.
+      await stop();
+      const saved = await queryClient.fetchQuery({
+        queryKey: ['messages', conversationId], staleTime: 0,
+        queryFn: async () => {
+          const res = await fetch(`/api/conversations/${conversationId}/messages`);
+          if (!res.ok) throw new Error('The stop was saved, but messages could not be refreshed. Reload this chat.');
+          return res.json();
+        },
+      });
+      setMessages(toInitialMessages(saved));
+      queryClient.invalidateQueries({ queryKey: ['conversation', conversationId] });
+    } catch (err) {
+      setContinuationError(err instanceof Error ? err.message : 'Unable to save the stopped response. Please try again.');
+    } finally {
+      stopLock.current = false;
+      setIsStopping(false);
+    }
+  };
+
   return (
     <div className="flex h-full w-full min-w-0 overflow-hidden">
       <div className="flex flex-1 flex-col min-w-0 bg-muted/10 h-full relative">
         <ChatHeader conversationId={conversationId} />
-        <MessageList draftMessages={draftMessages} persistedMessages={persistedMessages} onRetry={handleRetry} isSending={isSending} />
-        <ChatInput onSend={handleSend} isSending={isSending} onStop={stop} conversationId={conversationId} />
+        <MessageList draftMessages={draftMessages} persistedMessages={persistedMessages} onRetry={handleRetry} onContinue={handleContinue} onStopPending={handleStop} isSending={isSending} />
+        {continuationError && <p role="alert" className="px-4 py-2 text-sm text-destructive">{continuationError}</p>}
+        <ChatInput onSend={handleSend} isSending={isSending} onStop={handleStop} canStop={!isStopping && (status === 'submitted' || status === 'streaming' || hasPendingGeneration)} conversationId={conversationId} />
       </div>
     </div>
   );

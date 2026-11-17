@@ -412,3 +412,18 @@ Each decision is recorded here with the context, options considered, and rationa
 
 **Sources**: [PostgreSQL INSERT / ON CONFLICT](https://www.postgresql.org/docs/current/sql-insert.html#SQL-ON-CONFLICT), [Vercel branch deployment configuration](https://vercel.com/docs/project-configuration/git-configuration#git.deploymentenabled).
 
+
+## ADR-025: Preserve incomplete chat replies and separate chat/background defaults
+
+**Status**: Accepted — [PR #129](https://github.com/KhuzaimaHassan/Quasar/pull/129); see its release record for deployment status
+**Date**: 2026-11-16
+
+**Context**: An authenticated production answer to a latest-AI-updates question persisted an unfinished fifth heading. Historical metadata did not record the finish reason, so the exact cause cannot be established. Nonempty output was always treated as success. The app had no live search and used Flash-Lite for both foreground and background defaults, despite a newer documented free API model.
+
+**Decision**: Record safe completion status and provider finish category; preserve streamed text on error/abort and show incomplete notices after reload. Settle each request once even if callbacks overlap. A real serverless stop test exposed unreliable browser-abort propagation, so an authenticated Stop endpoint saves visible text before closing the local stream. It and model callbacks claim one terminal result under an owned user-row lock using a server-generated generation ID; late results cannot overwrite stopped text or double-count usage. Generation state lives in existing message JSON metadata, with retry blocked until an active generation is stopped/failed. Provider computation may continue until its bounded deadline; immediate remote cancellation is not claimed. Expose an explicit Continue turn using freshly loaded saved history and a client click lock. Do not automatically replay generations, change saved answers or offer dedicated continuation for safety-filter outcomes. Historical statuses stay unknown. Token usage absent on interruption stays explicitly unavailable rather than being estimated.
+
+Add Gemini 4 Hydrogen as the new-chat default, retaining supported old choices and Flash-Lite for background extraction/titles. Keep historical aliases resolving to Flash-Lite. Require configured-project preview verification before release. Include a server UTC date and truthful current-events limitations in prompts; a model upgrade is not live search. Google Search grounding is not enabled because its API Free tier does not include it.
+
+**Consequences**: No schema migration, automatic continuation or model switch for existing chats. Existing request/quota and BYOK controls remain. One bounded request cannot guarantee arbitrary answer length, and a normal provider stop cannot prove semantic completeness. See [AI pipeline](AI-Pipeline.md) and [fix history](Fix-History.md) for actual verification.
+
+**Sources**: [Google Hydrogen migration guide](https://aistudio.google.com/docs/whats-new-gemini-4-hydrogen), [API pricing](https://aistudio.google.com/docs/pricing#gemini-4-hydrogen), [AI SDK streaming callbacks](https://ai-sdk.dev/docs/reference/ai-sdk-core/stream-text).

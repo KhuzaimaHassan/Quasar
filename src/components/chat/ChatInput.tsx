@@ -16,6 +16,7 @@ interface ChatInputProps {
   onSend: (content: string, attachments: UploadedAttachment[]) => void;
   isSending: boolean;
   onStop: () => void;
+  canStop?: boolean;
   /** Conversation ID needed to request presigned upload URLs */
   conversationId: string;
 }
@@ -23,7 +24,7 @@ interface ChatInputProps {
 /** File extensions accepted by the hidden file input */
 const ACCEPTED_EXTENSIONS = ".png,.jpeg,.jpg,.pdf,.docx";
 
-export function ChatInput({ onSend, isSending, onStop, conversationId }: ChatInputProps) {
+export function ChatInput({ onSend, isSending, onStop, canStop = true, conversationId }: ChatInputProps) {
   const [content, setContent] = useState("");
   const [attachments, setAttachments] = useState<AttachmentUpload[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -330,6 +331,7 @@ export function ChatInput({ onSend, isSending, onStop, conversationId }: ChatInp
                 variant="default"
                 className="h-8 w-8 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm"
                 onClick={onStop}
+                disabled={!canStop}
                 aria-label="Stop generating"
               >
                 <Square className="h-3.5 w-3.5 fill-current" />
