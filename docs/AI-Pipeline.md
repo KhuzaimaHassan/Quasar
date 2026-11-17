@@ -6,8 +6,8 @@ Quasar's Next.js chat route authenticates the account, checks conversation owner
 
 | Model | Access and purpose |
 |---|---|
-| `gemini-4-hydrogen` | New-chat default; authenticated preview API access verified. See [fix history](Fix-History.md) for release status. |
-| `gemini-3.5-flash-lite` | Retained chat option and background model for memory extraction and titles. |
+| `gemini-4-hydrogen` | Optional server-key chat model. Preview succeeded on November 16; production returned timeouts/provider errors on November 17. See [fix history](Fix-History.md). |
+| `gemini-3.5-flash-lite` | New-chat default and background model for memory extraction and titles; production response verified November 17. |
 | `gemini-3.8-flash` | Retained optional server-key chat model; availability and provider quotas can vary. |
 | `gemini-2.5-pro` | Google BYOK option; scheduled provider routing/deprecation changes should be reviewed separately. |
 | `claude-sonnet-5`, `claude-sonnet-4-6`, `claude-haiku-4-5-20251001` | Anthropic BYOK options. |

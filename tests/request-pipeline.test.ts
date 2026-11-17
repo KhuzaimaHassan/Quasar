@@ -17,10 +17,14 @@ test('legacy free chat IDs resolve to the active free model without unlocking pr
   for (const id of ['gemini-1.5-flash', 'gemini-3.5-flash', 'gemini-3.6-flash']) {
     assert.equal(resolveModelId(id), BACKGROUND_MODEL_ID);
   }
-  assert.equal(DEFAULT_MODEL_ID, 'gemini-4-hydrogen');
+  assert.equal(DEFAULT_MODEL_ID, 'gemini-3.5-flash-lite');
   assert.equal(BACKGROUND_MODEL_ID, 'gemini-3.5-flash-lite');
   assert.equal(resolveModelId(BACKGROUND_MODEL_ID), BACKGROUND_MODEL_ID);
   assert.equal(resolveModelId('gemini-3.8-flash'), 'gemini-3.8-flash');
+  assert.equal(resolveModelId('gemini-4-hydrogen'), 'gemini-4-hydrogen');
+  assert.equal(MODEL_CATALOG.find((model) => model.id === DEFAULT_MODEL_ID)?.label, 'Gemini 3.5 Flash-Lite');
+  assert.equal(MODEL_CATALOG.find((model) => model.id === 'gemini-4-hydrogen')?.requiresKey, false);
+  assert.equal(new Set(MODEL_CATALOG.map((model) => model.id)).size, MODEL_CATALOG.length);
   for (const model of MODEL_CATALOG.filter((item) => item.provider !== 'google' || item.id.includes('pro'))) {
     assert.equal(model.requiresKey, true);
     assert.equal(resolveModelId(model.id), model.id);
