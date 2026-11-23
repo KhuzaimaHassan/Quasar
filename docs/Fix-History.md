@@ -4,6 +4,16 @@ This is the repository's handoff record for the recent audit and repair work. St
 
 The backfill covers the recent repair and presentation PRs #112–127. Earlier feature-development PRs are not retroactively labeled bug fixes. Historical test references name the relevant current regression files; they do not imply that today's suite size or every later browser check existed at the original merge.
 
+## CHAT-003 — extend generation time and expose free-tier Gemini choices
+
+**Status:** Prepared on a review branch; not merged or live-verified.
+
+**Trigger:** The user reported repeated partial answers in multiple chats. The screenshot shows a saved response ending after one short sentence and an unconfirmed-completion notice. The deployed route's explicit 45-second abort is a plausible cause, but this screenshot alone does not identify the provider finish reason.
+
+**Repair:** Raise the app timeout to 75 seconds while keeping it below the route's 90-second maximum. Remove Gemini 4 Hydrogen and Gemini 3.8 Flash from the selectable server-key catalog because this deployment previously returned provider errors for them; old conversation IDs resolve to the verified Flash-Lite default. Add Gemini 3.6 Flash and 3.1 Flash-Lite, whose API pricing documentation currently lists free input/output tiers. A documented free tier does not guarantee access or quota for this specific Google project.
+
+**Verification:** Not run. The screenshot's exact finish reason and the selected Google project's current model access remain unconfirmed; verify both with a live request before treating this repair as complete.
+
 ## CHAT-002 — reliable new-chat default after production provider failures
 
 **Release record:** [PR #130](https://github.com/KhuzaimaHassan/Quasar/pull/130), 2026-11-17. Follow-up to merged [PR #129](https://github.com/KhuzaimaHassan/Quasar/pull/129), release commit `db2dd4c`. Consult PR #130 for final checks, merge and deployment status.

@@ -13,7 +13,9 @@ export const BACKGROUND_MODEL_ID = 'gemini-3.5-flash-lite';
 const LEGACY_MODEL_ALIASES: Record<string, string> = {
   'gemini-1.5-flash': BACKGROUND_MODEL_ID,
   'gemini-3.5-flash': BACKGROUND_MODEL_ID,
-  'gemini-3.6-flash': BACKGROUND_MODEL_ID,
+  // These server-key models have not been reliable in the current deployment.
+  'gemini-3.8-flash': BACKGROUND_MODEL_ID,
+  'gemini-4-hydrogen': BACKGROUND_MODEL_ID,
 };
 
 export function resolveModelId(modelId: string): string {
@@ -25,6 +27,8 @@ const HISTORICAL_MODEL_LABELS: Record<string, string> = {
   'gemini-1.5-pro': 'Gemini 1.5 Pro',
   'gemini-3.5-flash': 'Gemini 3.5 Flash',
   'gemini-3.6-flash': 'Gemini 3.6 Flash',
+  'gemini-3.8-flash': 'Gemini 3.8 Flash',
+  'gemini-4-hydrogen': 'Gemini 4 Hydrogen',
   'claude-sonnet-4-5': 'Claude Sonnet 4.5',
 };
 
@@ -36,20 +40,20 @@ export function getModelLabel(modelId: string): string {
 
 export const MODEL_CATALOG: ModelConfig[] = [
   {
-    id: 'gemini-4-hydrogen',
-    label: 'Gemini 4 Hydrogen',
-    provider: 'google',
-    requiresKey: false,
-  },
-  {
     id: BACKGROUND_MODEL_ID,
     label: 'Gemini 3.5 Flash-Lite',
     provider: 'google',
     requiresKey: false,
   },
   {
-    id: 'gemini-3.8-flash',
-    label: 'Gemini 3.8 Flash',
+    id: 'gemini-3.6-flash',
+    label: 'Gemini 3.6 Flash',
+    provider: 'google',
+    requiresKey: false,
+  },
+  {
+    id: 'gemini-3.1-flash-lite',
+    label: 'Gemini 3.1 Flash-Lite',
     provider: 'google',
     requiresKey: false,
   },

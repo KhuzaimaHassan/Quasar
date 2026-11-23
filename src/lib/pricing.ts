@@ -25,6 +25,18 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
     effectiveFrom: '2026-01-01',
     note: 'Free tier'
   },
+  'gemini-3.6-flash': {
+    inputPerMillion: 0,
+    outputPerMillion: 0,
+    effectiveFrom: '2026-11-23',
+    note: 'Free tier'
+  },
+  'gemini-3.1-flash-lite': {
+    inputPerMillion: 0,
+    outputPerMillion: 0,
+    effectiveFrom: '2026-11-23',
+    note: 'Free tier'
+  },
   'gemini-2.5-pro': {
     inputPerMillion: 3.50,
     outputPerMillion: 10.50, // Standard published rates for 2.5 Pro as an example
@@ -52,7 +64,7 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   }
 };
 
-const HISTORICAL_FREE_MODELS = new Set(['gemini-1.5-flash', 'gemini-3.5-flash', 'gemini-3.6-flash']);
+const HISTORICAL_FREE_MODELS = new Set(['gemini-1.5-flash', 'gemini-3.5-flash']);
 
 export function isFreeTierModel(modelId: string): boolean {
   return HISTORICAL_FREE_MODELS.has(modelId) || MODEL_PRICING[modelId]?.note === 'Free tier';

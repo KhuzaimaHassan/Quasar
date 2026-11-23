@@ -6,16 +6,16 @@ Quasar's Next.js chat route authenticates the account, checks conversation owner
 
 | Model | Access and purpose |
 |---|---|
-| `gemini-4-hydrogen` | Optional server-key chat model. Preview succeeded on November 16; production returned timeouts/provider errors on November 17. See [fix history](Fix-History.md). |
 | `gemini-3.5-flash-lite` | New-chat default and background model for memory extraction and titles; production response verified November 17. |
-| `gemini-3.8-flash` | Retained optional server-key chat model; availability and provider quotas can vary. |
+| `gemini-3.6-flash` | Optional server-key chat model; listed on Google's API Free tier. |
+| `gemini-3.1-flash-lite` | Optional server-key chat model; listed on Google's API Free tier. |
 | `gemini-2.5-pro` | Google BYOK option; scheduled provider routing/deprecation changes should be reviewed separately. |
 | `claude-sonnet-5`, `claude-sonnet-4-6`, `claude-haiku-4-5-20251001` | Anthropic BYOK options. |
 | `gpt-4o` | OpenAI BYOK option. |
 
-Models are stored per conversation. Selecting a new-chat default does not rewrite existing conversations. Legacy aliases `gemini-1.5-flash`, `gemini-3.5-flash` and `gemini-3.6-flash` keep resolving to Flash-Lite; they do not silently upgrade to Hydrogen. `DEFAULT_MODEL_ID` and `BACKGROUND_MODEL_ID` are deliberately independent. Premium options still require an encrypted user key, checked on the server as well as in the picker. There is no automatic model fallback or replay of a failed generation.
+Models are stored per conversation. Selecting a new-chat default does not rewrite existing conversations. Legacy IDs `gemini-1.5-flash`, `gemini-3.5-flash`, `gemini-3.8-flash` and `gemini-4-hydrogen` resolve to Flash-Lite at request time because the deployment's Google project previously returned provider errors for them. Gemini 3.6 Flash and 3.1 Flash-Lite are exposed as free-tier alternatives; free-tier listing does not guarantee access or quota on every Google project. `DEFAULT_MODEL_ID` and `BACKGROUND_MODEL_ID` remain independent. Premium options still require an encrypted user key, checked on the server as well as in the picker. There is no automatic fallback or replay of a failed generation.
 
-Google documents Hydrogen's free API input/output and its GenerateContent support. This does not mean all Google features are free: Google Search grounding is unavailable on the API Free tier. Actual quota and model access depend on the configured Google project. See [Google's Hydrogen migration guide](https://aistudio.google.com/docs/whats-new-gemini-4-hydrogen) and [pricing](https://aistudio.google.com/docs/pricing#gemini-4-hydrogen).
+Google lists free input/output tiers for the models above. This does not mean all Google features are free: grounding may be unavailable or separately limited, and actual model access depends on the configured Google project. See [Google's models](https://ai.google.dev/gemini-api/docs/models) and [pricing](https://ai.google.dev/gemini-api/docs/pricing).
 
 ## Request and context
 
@@ -34,7 +34,7 @@ Images sent as chat attachments are model inputs. PDF/DOCX chat attachments rema
 
 ## Streaming and completion status
 
-The application uses `streamText`, `DefaultChatTransport` and `useChat` from the installed Vercel AI SDK. Provider retries are disabled. Google chat requests use low thinking effort. The generation signal is bounded to 45 seconds; the Next.js route maximum is 90 seconds. Chat does not impose a new small output-token cap. These bounds do not guarantee every long answer can finish in one request.
+The application uses `streamText`, `DefaultChatTransport` and `useChat` from the installed Vercel AI SDK. Provider retries are disabled. Google chat requests use low thinking effort. The generation signal is bounded to 75 seconds; the Next.js route maximum is 90 seconds. Chat does not impose a new small output-token cap. These bounds do not guarantee every long answer can finish in one request.
 
 `src/lib/chat-completion.ts` records one terminal outcome per request:
 

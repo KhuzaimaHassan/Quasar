@@ -14,16 +14,17 @@ import { createDocumentUploadSchema } from '@/lib/validations/document';
 import { uploadUrlSchema } from '@/lib/validations/attachment';
 
 test('legacy free chat IDs resolve to the active free model without unlocking premium models', () => {
-  for (const id of ['gemini-1.5-flash', 'gemini-3.5-flash', 'gemini-3.6-flash']) {
+  for (const id of ['gemini-1.5-flash', 'gemini-3.5-flash', 'gemini-3.8-flash', 'gemini-4-hydrogen']) {
     assert.equal(resolveModelId(id), BACKGROUND_MODEL_ID);
   }
   assert.equal(DEFAULT_MODEL_ID, 'gemini-3.5-flash-lite');
   assert.equal(BACKGROUND_MODEL_ID, 'gemini-3.5-flash-lite');
   assert.equal(resolveModelId(BACKGROUND_MODEL_ID), BACKGROUND_MODEL_ID);
-  assert.equal(resolveModelId('gemini-3.8-flash'), 'gemini-3.8-flash');
-  assert.equal(resolveModelId('gemini-4-hydrogen'), 'gemini-4-hydrogen');
+  assert.equal(resolveModelId('gemini-3.6-flash'), 'gemini-3.6-flash');
+  assert.equal(resolveModelId('gemini-3.1-flash-lite'), 'gemini-3.1-flash-lite');
   assert.equal(MODEL_CATALOG.find((model) => model.id === DEFAULT_MODEL_ID)?.label, 'Gemini 3.5 Flash-Lite');
-  assert.equal(MODEL_CATALOG.find((model) => model.id === 'gemini-4-hydrogen')?.requiresKey, false);
+  assert.equal(MODEL_CATALOG.find((model) => model.id === 'gemini-3.6-flash')?.requiresKey, false);
+  assert.equal(MODEL_CATALOG.find((model) => model.id === 'gemini-3.1-flash-lite')?.requiresKey, false);
   assert.equal(new Set(MODEL_CATALOG.map((model) => model.id)).size, MODEL_CATALOG.length);
   for (const model of MODEL_CATALOG.filter((item) => item.provider !== 'google' || item.id.includes('pro'))) {
     assert.equal(model.requiresKey, true);
@@ -43,6 +44,8 @@ test('historical labels and free-tier classification do not depend on the active
   assert.equal(getModelLabel('claude-sonnet-4-5'), 'Claude Sonnet 4.5');
   assert.equal(isFreeTierModel('gemini-3.5-flash'), true);
   assert.equal(isFreeTierModel(DEFAULT_MODEL_ID), true);
+  assert.equal(isFreeTierModel('gemini-3.6-flash'), true);
+  assert.equal(isFreeTierModel('gemini-3.1-flash-lite'), true);
   assert.equal(isFreeTierModel('claude-sonnet-5'), false);
   assert.equal(estimateCost('gemini-3.5-flash', 500, 500), 0);
   assert.equal(estimateCost('unknown-historical-model', 500, 500), null);

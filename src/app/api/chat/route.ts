@@ -209,7 +209,9 @@ export async function POST(req: Request) {
     }
 
     stage = 'generation'
-    const generationTimeout = AbortSignal.timeout(45_000)
+    // Give slower free-tier responses more room while staying inside this
+    // route's Vercel maxDuration.
+    const generationTimeout = AbortSignal.timeout(75_000)
     const recorder = createReplyRecorder({
       modelLabel: catalogEntry.label,
       timedOut: () => generationTimeout.aborted,
