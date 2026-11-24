@@ -186,8 +186,8 @@ function ChatContainer({ conversationId, persistedMessages }: { conversationId: 
       };
     });
 
-  // Vercel AI SDK only appends the assistant message once the stream actually begins.
-  // To show immediate feedback (the bouncing dots), we inject a stub if a request is actively inflight.
+  // Vercel AI SDK appends the assistant message when the stream begins.
+  // Inject an accessible pre-first-token status while the request is active.
   const lastMessage = draftMessages.length > 0 ? draftMessages[draftMessages.length - 1] : persistedMessages[persistedMessages.length - 1];
   if (isSending && lastMessage?.role === 'user') {
     draftMessages.push({

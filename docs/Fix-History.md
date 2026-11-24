@@ -4,6 +4,16 @@ This is the repository's handoff record for the recent audit and repair work. St
 
 The backfill covers the recent repair and presentation PRs #112–127. Earlier feature-development PRs are not retroactively labeled bug fixes. Historical test references name the relevant current regression files; they do not imply that today's suite size or every later browser check existed at the original merge.
 
+## CHAT-004 — smoother streamed response presentation
+
+**Status:** Prepared on a review branch; not merged or browser-verified.
+
+**Trigger:** The user asked for a ChatGPT-like response flow without the bouncing three-dot placeholder or a pause until the full answer is ready. Quasar already streamed provider chunks; the initial placeholder and repeated message-list work made the experience feel buffered.
+
+**Repair:** Replace the dots with an accessible `Thinking` status until the first text delta; show the existing incoming Markdown immediately with a lightweight `Writing` status during generation. Memoize message bubbles by their visible fields so unchanged history does not rerender for every token. Coalesce auto-scroll measurements to one animation frame and keep auto-follow disabled after a reader scrolls up. Keep the provider stream, Markdown rendering, Stop and partial-answer recovery behavior intact.
+
+**Verification:** Not run or browser-verified. Review the preview for first-token timing, steady Markdown updates, scroll-follow behavior and Stop/recovery before merging.
+
 ## CHAT-003 — extend generation time and expose free-tier Gemini choices
 
 **Status:** Prepared on a review branch; not merged or live-verified.

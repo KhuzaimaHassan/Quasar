@@ -36,6 +36,8 @@ Images sent as chat attachments are model inputs. PDF/DOCX chat attachments rema
 
 The application uses `streamText`, `DefaultChatTransport` and `useChat` from the installed Vercel AI SDK. Provider retries are disabled. Google chat requests use low thinking effort. The generation signal is bounded to 75 seconds; the Next.js route maximum is 90 seconds. Chat does not impose a new small output-token cap. These bounds do not guarantee every long answer can finish in one request.
 
+The client renders the provider's incoming stream directly; it does not add a character-by-character delay. Before the first text delta, the assistant shows a quiet `Thinking` status and caret instead of bouncing dots. While text is streaming, only message bubbles whose visible content or status changed need to rerender, and scroll-follow work is coalesced to one animation frame while preserving a reader's upward scroll position. The scroll container is not a live region, avoiding repeated announcements of the entire growing answer; the short generation statuses remain accessible.
+
 `src/lib/chat-completion.ts` records one terminal outcome per request:
 
 | Outcome | Saved behavior |
