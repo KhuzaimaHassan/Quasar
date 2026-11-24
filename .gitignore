@@ -53,3 +53,16 @@ backend/.ruff_cache/
 
 # Local tooling / Agent cache
 .agents/
+
+# Generated RAG evaluation reports. Keep the current baseline referenced by Roadmap.md.
+/evals/results/eval_report_*.json
+/evals/results/eval_report_*.md
+!/evals/results/eval_report_20260828_155553.json
+!/evals/results/eval_report_20260828_155553.md
+
+# Unused Next.js starter assets (kept locally, not part of the app)
+/public/file.svg
+/public/globe.svg
+/public/next.svg
+/public/vercel.svg
+/public/window.svg
