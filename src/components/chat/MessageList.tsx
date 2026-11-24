@@ -46,8 +46,8 @@ export function MessageList({ draftMessages, persistedMessages = [], onRetry, on
     };
   });
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const allMessages = [...mappedPersisted, ...mappedDrafts];
+  const latestMessage = allMessages.at(-1);
 
   // Detect orphaned user message: last persisted message is from user,
   // and there are no draft messages (streaming/pending) in progress
@@ -62,11 +62,16 @@ export function MessageList({ draftMessages, persistedMessages = [], onRetry, on
   useEffect(() => {
     if (!scrollRef.current) return;
     
-    // If the user hasn't manually scrolled up, auto-scroll to bottom
-    if (!isUserScrolledUp) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [allMessages, isUserScrolledUp]);
+    // Coalesce token-sized updates into one scroll measurement per frame.
+    // Keep a reader's position stable after they deliberately scroll upward.
+    if (isUserScrolledUp) return;
+    const frame = requestAnimationFrame(() => {
+      if (scrollRef.current) {
+        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      }
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [latestMessage?.id, latestMessage?.content, isUserScrolledUp]);
 
   const handleScroll = () => {
     if (!scrollRef.current) return;
@@ -90,7 +95,7 @@ export function MessageList({ draftMessages, persistedMessages = [], onRetry, on
       ref={scrollRef}
       onScroll={handleScroll}
       className="flex-1 overflow-y-auto overflow-x-hidden min-w-0 p-3 sm:p-4 md:p-6 pb-0"
-      aria-live="polite"
+      aria-live="off"
     >
       <div className="max-w-3xl w-full mx-auto flex flex-col pb-4 min-w-0">
         {allMessages.map((msg) => (

@@ -8,6 +8,7 @@ import { CitationChip, type CitationProps } from "./CitationChip";
 import { ThumbsUp, ThumbsDown } from "lucide-react";
 import type { ChatCompletion } from "@/lib/chat-completion";
 import { useSetFeedback, useClearFeedback } from "@/lib/queries/conversations";
+import { memo } from "react";
 
 export interface MessageProps {
   id: string;
@@ -52,7 +53,7 @@ const streamdownComponents = {
   ),
 };
 
-export function MessageBubble({ message, isPending, isStreaming }: MessageBubbleProps) {
+function MessageBubbleComponent({ message, isPending, isStreaming }: MessageBubbleProps) {
   const isUser = message.role === "user";
 
   const setFeedback = useSetFeedback(message.conversationId || "");
@@ -96,11 +97,10 @@ export function MessageBubble({ message, isPending, isStreaming }: MessageBubble
             {message.completion.message}
           </p>
         )}
-        {isPending ? (
-          <div className="flex items-center h-5 gap-1 px-1">
-            <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce [animation-delay:-0.3s]"></span>
-            <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce [animation-delay:-0.15s]"></span>
-            <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce"></span>
+        {isPending || (isStreaming && !message.content) ? (
+          <div role="status" aria-live="polite" className="flex min-h-5 items-center px-1 text-xs text-muted-foreground">
+            <span>Thinking</span>
+            <span aria-hidden="true" className="ml-1 h-3.5 w-px animate-pulse bg-primary" />
           </div>
         ) : (
           <div className="w-full break-words leading-relaxed overflow-x-auto min-w-0">
@@ -144,6 +144,12 @@ export function MessageBubble({ message, isPending, isStreaming }: MessageBubble
             {!isUser && !isStreaming && !isPending && message.tokenCount ? ` · ${message.tokenCount.toLocaleString()} tokens` : ""}
             {!isUser && !isStreaming && message.tokenUsageAvailable === false ? ' · Token usage unavailable' : ''}
           </span>
+          {!isUser && isStreaming && message.content && (
+            <span role="status" aria-live="polite" className="inline-flex items-center gap-1.5">
+              <span>Writing</span>
+              <span aria-hidden="true" className="h-3.5 w-px animate-pulse bg-primary" />
+            </span>
+          )}
 
           {/* Feedback Controls - Only for resolved assistant messages */}
           {!isUser && !isStreaming && !isPending && message.conversationId && (
@@ -179,3 +185,24 @@ export function MessageBubble({ message, isPending, isStreaming }: MessageBubble
     </div>
   );
 }
+
+function areMessageBubblePropsEqual(previous: MessageBubbleProps, next: MessageBubbleProps) {
+  const a = previous.message;
+  const b = next.message;
+  return previous.isPending === next.isPending &&
+    previous.isStreaming === next.isStreaming &&
+    a.id === b.id &&
+    a.role === b.role &&
+    a.content === b.content &&
+    a.attachments === b.attachments &&
+    a.tokenCount === b.tokenCount &&
+    a.tokenUsageAvailable === b.tokenUsageAvailable &&
+    a.citations === b.citations &&
+    a.conversationId === b.conversationId &&
+    a.feedback?.rating === b.feedback?.rating &&
+    a.completion?.status === b.completion?.status &&
+    a.completion?.finishReason === b.completion?.finishReason &&
+    a.completion?.message === b.completion?.message;
+}
+
+export const MessageBubble = memo(MessageBubbleComponent, areMessageBubblePropsEqual);
