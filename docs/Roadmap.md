@@ -41,16 +41,19 @@ These are improvements to existing features. Pick from this list once v1.0 is sh
 - [ ] Codebase ingestion — parse and chunk code files by AST boundaries (function/class level)
 - [x] Hybrid search — vector similarity + BM25 re-ranking via Reciprocal Rank Fusion (RRF) implemented in M3
 - [ ] Cross-encoder re-ranking — replace RRF with sentence-transformers cross-encoder for higher precision
+- [ ] Independent BM25 candidate retrieval with a relevance gate — the 2026-11-26 experiment found all 11 expected document sources, but also returned chunks for all 3 out-of-domain queries when lexical candidates were admitted independently.
 - [ ] Document preview panel — show source document at the cited page when user clicks a citation
 - [ ] Incremental re-ingestion — update only changed chunks when a document is re-uploaded
 - [ ] Support for PPTX, XLSX, HTML, Markdown file types
 - [ ] Codebase ingestion — parse and chunk code files by AST boundaries (function/class level)
 
 ### Known Gaps & Next Up (Milestone 6 Baseline Findings)
-- **Retrieval Threshold Gap**: 6 of 14 golden-set cases have retrieval similarity scores between 0.58 and 0.69, just under the production 0.70 cosine similarity threshold, causing 0 chunks to be returned for otherwise-answerable questions (see [`evals/golden_set.json`](file:///c:/Users/Administrator/OneDrive/Desktop/Quasar/evals/golden_set.json), `knownRetrievalGap: true`).
-- **Empirical Baseline Confirmation**: Confirmed via the RAGAS evaluation baseline in [`evals/results/eval_report_20260828_155553.json`](file:///c:/Users/Administrator/OneDrive/Desktop/Quasar/evals/results/eval_report_20260828_155553.json) — Context Precision and Context Recall are both 0.0000 for this suite specifically because retrieval returns nothing, not because retrieval logic is wrong.
+- **Retrieval threshold retuned to 0.65**: A paired read-only test on 2026-11-26 improved expected-source hit@5 from 6/11 at `0.70` to 10/11 at `0.65`, with 0/3 negative queries returning chunks. `0.60` also reached 10/11 but returned more candidates (2.43 vs. 1.79 per query on average). The four newly recovered gap cases achieved RAGAS faithfulness 1.0000, answer relevancy 0.8565, context precision 0.9375 and context recall 1.0000 at `0.65`; the `0.70` run returned no context for those cases. See [RAG threshold experiment](RAG.md#similarity-threshold).
+- **One known retrieval gap remains**: `resume_teletabib` has a recorded target similarity of `0.5810`, below `0.65`. The threshold was not lowered further because `0.60` produced no additional expected-source hits in this test.
+- **Independent BM25 still needs a relevance gate**: BM25-only and vector-plus-independent-BM25 each found 11/11 expected document sources but also returned chunks for all 3 negative queries. The current thresholded vector candidate path remains in place; tune lexical candidate admission before switching to independent hybrid retrieval.
+- **Historical baseline**: The August 2026 RAGAS report recorded six known-gap cases and 0.0000 context precision/recall for that suite at the old `0.70` cutoff. Its three negative queries passed at that cutoff. See [`evals/results/eval_report_20260828_155553.md`](../evals/results/eval_report_20260828_155553.md).
 - **Negative-Guardrail Refusal Accuracy**: The negative-guardrail suite (3 cases) currently passes 100% refusal accuracy, but an earlier baseline run caught one case where the pipeline answered instead of refusing — worth monitoring if that recurs.
-- **Next Milestone Candidate**: Experiment with lowering the cosine similarity threshold to 0.60–0.65 (as flagged in `docs/Lessons-Learned.md`, Issue #88) and re-run [`evals/run_eval.py`](file:///c:/Users/Administrator/OneDrive/Desktop/Quasar/evals/run_eval.py) to measure whether that closes the gap without degrading precision on the negative-guardrail suite.
+- **Next Milestone Candidate**: Expand the golden set with more workspaces and negative queries, then evaluate page-aware citations and a calibrated independent lexical candidate source. The current `0.65` choice is based on this 14-query test workspace and should be rechecked as coverage grows.
 
 ### Chat
 - [ ] Conversation branching — fork a conversation from any message

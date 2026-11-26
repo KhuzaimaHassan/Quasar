@@ -28,7 +28,7 @@ While a working multi-script test harness exists in `evals/` (`eval_retrieval.py
    >   - *How we solved it*: We logged the exact similarity scores during retrieval (`1 - (embedding <=> query)`) to empirically validate our cutoffs. We kept `0.7` for now, but documented that it might need lowering to `0.6` or `0.65` if users experience missing context, proving that embedding thresholds cannot be blindly inherited from other projects.
 2. **Audit of `evals/golden_set.json` (Issue #105, commit `671515b`):**
    - Contains 14 curated test cases across ingested documents (`Khuzaima_Hassan_Resume_1.docx` and `Aspire-Certificate.pdf`) plus 3 out-of-domain negative guardrail queries.
-   - Logs observed similarity scores clustering between `0.5810` and `0.8112`, identifying 5 known retrieval gaps where relevant chunks fell below the `0.70` cutoff.
+   - At the time of the initial audit, observed scores clustered between `0.5810` and `0.8112`, identifying five known retrieval gaps below the `0.70` cutoff. The golden set was later updated to six known-gap cases; the August 28 baseline and current count are recorded in [Roadmap](Roadmap.md#known-gaps--next-up-milestone-6-baseline-findings).
 3. **Audit of Existing `evals/` Scripts & Repo Bindings:**
    - [`package.json`](file:///c:/Users/Administrator/OneDrive/Desktop/Quasar/package.json#L12-L14): Defines `"eval": "npx tsx evals/run_evals.ts"`, `"eval:retrieval": "python evals/eval_retrieval.py"`, and `"eval:generation": "npx tsx evals/eval_generation.ts"`.
    - [`docs/Contributing.md`](file:///c:/Users/Administrator/OneDrive/Desktop/Quasar/docs/Contributing.md#L121-L123): Documents `evals/` containing `golden_set.json` and `run_evals.py`.
@@ -36,7 +36,7 @@ While a working multi-script test harness exists in `evals/` (`eval_retrieval.py
    - [`evals/eval_generation.ts`](file:///c:/Users/Administrator/OneDrive/Desktop/Quasar/evals/eval_generation.ts): TypeScript LLM-as-judge with ad-hoc boolean schema.
    - [`evals/run_evals.ts`](file:///c:/Users/Administrator/OneDrive/Desktop/Quasar/evals/run_evals.ts): TypeScript orchestrator that spawns `eval_retrieval.py` and runs `eval_generation.ts`.
    - [`evals/run_evals.py`](file:///c:/Users/Administrator/OneDrive/Desktop/Quasar/evals/run_evals.py): Python shell wrapper with hardcoded summary printout strings.
-4. **Current Metric Baseline:** No RAGAS baseline (Faithfulness, Answer Relevancy, Context Precision, Context Recall) exists yet.
+4. **Metric Baseline at PRD Draft:** No RAGAS baseline existed when this PRD was drafted. The canonical runner and August 28 baseline were completed later; see [Roadmap](Roadmap.md#known-gaps--next-up-milestone-6-baseline-findings).
 
 ---
 

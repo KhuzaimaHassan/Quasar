@@ -227,6 +227,12 @@ After finishing each milestone (or whenever something significant happens), add 
   - *What happened*: Retrieving chunks with `gemini-embedding-001` yielded similarity scores (e.g., `0.719`) that were dangerously close to our theoretical `0.7` cutoff, even for highly relevant chunks.
   - *What happened*: Different embedding models cluster vectors differently in high-dimensional space. Gemini tends to group even disparate texts somewhat closely compared to other models, meaning a generic `0.7` cosine distance threshold is actually very strict for this specific model.
   - *How we solved it*: We logged the exact similarity scores during retrieval (`1 - (embedding <=> query)`) to empirically validate our cutoffs. We kept `0.7` for now, but documented that it might need lowering to `0.6` or `0.65` if users experience missing context, proving that embedding thresholds cannot be blindly inherited from other projects.
+
+- **2026-11-26 follow-up threshold experiment**:
+  - *What we tested*: On the golden-set workspace, compared `> 0.70`, `> 0.65`, and `> 0.60` using the same Gemini query embeddings, vector retrieval, BM25/RRF reranking, and top-5 results. Database access was read-only; no production code was changed during measurement.
+  - *What we found*: Expected-source hit@5 was 6/11, 10/11, and 10/11 respectively. All three negative queries returned no chunks for all three thresholds. `0.60` returned more candidates on average than `0.65` without gaining an expected source.
+  - *Answer-level confirmation*: On the four known-gap cases that gained their expected source at `0.65`, paired RAGAS scores at `0.65` were faithfulness 1.0000, answer relevancy 0.8565, context precision 0.9375, and context recall 1.0000. The old `0.70` threshold returned no context for these four. The three negative queries still returned no chunks and passed the existing refusal phrase heuristic (3/3).
+  - *Decision*: Set the retrieval default to `0.65`. This leaves the TeleTabib query at 0.5810 unresolved; do not lower the threshold further without a broader negative-query set. See [RAG threshold evidence](RAG.md#similarity-threshold).
   
 - **PowerShell vs curl JSON Escaping**:
   - *What happened*: Testing the FastAPI `/retrieve` endpoint manually via the PowerShell terminal failed with JSON decode errors and malformed URL errors.

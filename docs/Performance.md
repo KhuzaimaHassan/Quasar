@@ -89,7 +89,7 @@ FROM chunks c
 INNER JOIN documents d ON c.document_id = d.id
 WHERE d.workspace_id = $2        -- scope to workspace FIRST
   AND d.status = 'ready'
-  AND 1 - (c.embedding <=> $1) > 0.7
+  AND 1 - (c.embedding <=> $1) > 0.65
 ORDER BY similarity DESC
 LIMIT 10;
 ```

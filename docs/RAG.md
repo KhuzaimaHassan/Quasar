@@ -169,7 +169,7 @@ async def retrieve(query: str, workspace_id: str, top_k: int = 5) -> list[dict]:
     '''
     
     async with db.pool.acquire() as conn:
-        rows = await conn.fetch(sql, emb_str, workspace_id, 0.7, top_k * 2)
+        rows = await conn.fetch(sql, emb_str, workspace_id, 0.65, top_k * 2)
 
     # 3. Re-rank
     return rerank(query, [dict(r) for r in rows])[:top_k]
@@ -177,13 +177,26 @@ async def retrieve(query: str, workspace_id: str, top_k: int = 5) -> list[dict]:
 
 ### Similarity Threshold
 
-The `> 0.7` threshold filters out low-relevance chunks. Tune this:
-- Too high (> 0.85): misses relevant but paraphrased content.
-- Too low (< 0.6): injects irrelevant noise into the prompt.
+The current retrieval cutoff is `similarity > 0.65`, applied before BM25/RRF. A paired experiment on the golden-set workspace on 2026-11-26 compared `0.70`, `0.65`, and `0.60` using the same query embeddings, vector candidates, BM25 reranking, and top-5 output:
 
-**Note:** The `0.7` default was inherited from planning done before `gemini-embedding-001` was chosen as the embedding model. It should be validated against real logged scores rather than trusted blindly, as Gemini's embeddings tend to cluster differently.
+| Threshold | Expected source found in top 5 | Negative queries returning chunks | Mean returned chunks per query |
+|-----------|--------------------------------:|---------------------------------:|-------------------------------:|
+| `> 0.70` | 6/11 | 0/3 | 0.71 |
+| `> 0.65` | 10/11 | 0/3 | 1.79 |
+| `> 0.60` | 10/11 | 0/3 | 2.43 |
 
-Log similarity scores per query so you can tune empirically.
+`0.65` was selected because it recovered four additional expected document sources while preserving empty retrieval for all three negative queries. Lowering to `0.60` found no additional expected source and returned more chunks.
+
+An answer-level RAGAS comparison focused on the four known-gap queries that gained their expected source at `0.65`:
+
+| Threshold | Source hit@5 | Faithfulness | Answer relevancy | Context precision | Context recall |
+|-----------|-------------:|-------------:|-----------------:|------------------:|---------------:|
+| `> 0.70` | 0/4 | 0.9375 | 0.0000 | 0.0000 | 0.0000 |
+| `> 0.65` | 4/4 | 1.0000 | 0.8565 | 0.9375 | 1.0000 |
+
+At both thresholds the three negative queries returned no chunks and passed the existing refusal phrase check (3/3). This is a focused benchmark, not a guarantee for every workspace: it covers 11 document queries and only three negatives, and the refusal check is a phrase heuristic. `resume_teletabib` remains below the selected threshold at its recorded similarity of `0.5810`.
+
+The historical `0.70` value was inherited from planning before `gemini-embedding-001` was chosen. Thresholds should be evaluated against the embedding model and representative queries rather than copied from another system.
 
 ### pgvector operators
 
