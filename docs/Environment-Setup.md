@@ -26,6 +26,9 @@ pyenv global 3.11.9
 python --version  # should print Python 3.11.x
 ```
 
+### Tesseract OCR
+Install Tesseract OCR and its English language data for local backend development, then ensure the `tesseract` executable is on `PATH` (`tesseract --version` should work). The backend Docker image installs Tesseract automatically. The document parser uses `OCR_LANGUAGE=eng` by default; change it only when the corresponding Tesseract language data is installed.
+
 ### Docker Desktop
 Download from [docker.com/get-started](https://www.docker.com/get-started). Required for running PostgreSQL and Redis locally.
 
