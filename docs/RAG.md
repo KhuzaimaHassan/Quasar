@@ -31,10 +31,12 @@ Query
 
 | Type | Parser | Notes |
 |------|--------|-------|
-| Text-based PDF | `PyMuPDF` | Extracts page text; OCR is not implemented |
-| DOCX | `python-docx` | Extracts paragraph text |
+| PDF | `PyMuPDF` | Extracts selectable text; uses local Tesseract OCR for pages containing images, including scanned pages |
+| DOCX | `python-docx` + local Tesseract | Extracts paragraph text and OCRs embedded PNG, JPEG, TIFF, and BMP images |
 
-Scanned PDFs require OCR before upload. TXT, Markdown, and AST-aware code ingestion are planned capabilities, not current upload formats. PDF/DOCX files attached directly in chat are downloadable attachments; upload them in Documents to index their contents for Q&A.
+OCR runs locally in the backend container; document bytes and OCR text are not sent to a separate vision API. The Docker image installs Tesseract with English language data. Local backend developers must install Tesseract and make its executable available on `PATH`; set `OCR_LANGUAGE` to a language installed in Tesseract when needed (defaults to `eng`). If OCR is required but Tesseract or the selected language data is missing, ingestion fails with a visible document error rather than silently indexing empty content. PyMuPDF's partial OCR output follows selectable page text, so reading order may not match the original page layout. OCR output for DOCX media is appended after the document's paragraph text, so original image placement and layout are not preserved. Unsupported DOCX media formats such as SVG/EMF are currently skipped. See the [PyMuPDF OCR documentation](https://pymupdf.readthedocs.io/en/latest/page.html#Page.get_textpage_ocr) and [Tesseract installation guide](https://tesseract-ocr.github.io/tessdoc/Installation.html).
+
+TXT, Markdown, and AST-aware code ingestion are planned capabilities, not current upload formats. PDF/DOCX files attached directly in chat are downloadable attachments; upload them in Documents to index their contents for Q&A.
 
 Failed documents, abandoned uploads older than five minutes, and historical ready documents with zero chunks can be retried manually without uploading another copy. Concurrent ingestion requests are admitted atomically; indexed documents are not re-embedded by Retry. Upload URL creation and ingestion requests each have a separate per-user limit of 10/hour. No retries are started automatically by the UI.
 

@@ -99,4 +99,4 @@ The backfill covers the recent repair and presentation PRs #112–127. Earlier f
 
 ## Known boundaries
 
-Free-tier services can sleep and provider models/quotas can change. Agent generation retries do not create a durable worker or cancel an already running backend task. Document retries do not provide OCR. Memory remains user-wide; permanent forgetting is not implemented. These are separate capabilities, not regressions silently claimed as solved by the repairs above.
+Free-tier services can sleep and provider models/quotas can change. Agent generation retries do not create a durable worker or cancel an already running backend task. OCR is local Tesseract text recognition for supported PDF/DOCX content; it does not describe image meaning, and direct chat attachments are not document-indexed. Memory remains user-wide; permanent forgetting is not implemented. These are separate capabilities, not regressions silently claimed as solved by the repairs above.
